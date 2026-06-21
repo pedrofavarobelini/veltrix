@@ -1,36 +1,47 @@
 # PedroCore IA — Decisões Técnicas
 
-## Não treinar IA do zero
+Atualizado em: 21/06/2026
 
-Criar uma API/camada de orquestração de IA.
+## V4.0.0 — Componentização leve da interface React
 
-## Backend em Python
+A V4 iniciou a separação da interface do chat em componentes React pequenos.
 
-Python + FastAPI.
-
-## Frontend em React + TypeScript
-
-React + Vite + TypeScript.
-
-## V1 com MockProvider
-
-Gemini real fica para V2.
-
-## Sem banco na V1
-
-Banco entra depois.
-
-## Design simples
-
-Chat pessoal simples.
-
-## Projetos separados
+Componentes criados:
 
 ```txt
-C:\Projetos\FinGuard
-C:\Projetos\pedrocore-ia
+ChatSidebar
+MessageBubble
+ChatComposer
+LoadingBubble
+ErrorBanner
 ```
 
-## Comandos organizados
+## Motivo
 
-PowerShell sempre por blocos e por terminal.
+A interface estava concentrada em `ChatPage.tsx`. A componentização leve reduz o acoplamento visual e prepara o projeto para V5 e V6.
+
+## Decisão
+
+Usar React + TypeScript + CSS próprio.
+
+Não usar ainda:
+
+- Tailwind.
+- shadcn/ui.
+- Material UI.
+- Bootstrap.
+- Design system completo.
+
+## Justificativa
+
+A prioridade da V4 é melhorar a experiência de uso mantendo estabilidade. Bibliotecas visuais externas seriam custo adicional neste momento.
+
+## Compatibilidade com V3
+
+A V4 preserva a chave de armazenamento local da V3:
+
+```txt
+pedrocore:v3:chat-history
+```
+
+Essa decisão evita perda de histórico local ao atualizar da V3 para a V4.

@@ -33,5 +33,8 @@ Thumbs.db
 *_backup_*
 *.zip
 
+# TypeScript incremental build
+*.tsbuildinfo
+
 # Obsidian local config
 docs/.obsidian/

@@ -4,11 +4,11 @@ Atualizado em: 21/06/2026
 
 ## Versão atual
 
-V3.0.0 — Histórico local e feedback simples
+V4.0.0 — Interface melhorada do chat e experiência de uso
 
 ## Status
 
-IMPLEMENTADA PARA TESTES — aguardando aprovação final pela interface.
+IMPLEMENTADA PARA TESTES — aguardando aprovação visual local.
 
 ## Local oficial
 
@@ -18,7 +18,7 @@ C:\Projetos\pedrocore-ia
 
 ## Estado do projeto
 
-A V3 mantém a base da V2 e adiciona histórico local no frontend com feedback básico por resposta.
+A V4 mantém a base da V3 e melhora a interface React do chat, sem alterar backend, providers, banco, login ou integração com outros projetos.
 
 ## Funcionalidades disponíveis
 
@@ -33,8 +33,14 @@ A V3 mantém a base da V2 e adiciona histórico local no frontend com feedback b
 - Fallback para MockProvider preservado.
 - Histórico de mensagens salvo no navegador com `localStorage`.
 - Feedback `Gostei` e `Não gostei` salvo por resposta da IA.
-- Botão para limpar histórico local.
-- Contador simples de mensagens salvas no histórico local.
+- Interface com sidebar de histórico local.
+- Bolhas modernas de mensagem.
+- Botão copiar resposta.
+- Timestamp simples nas mensagens.
+- Loading visual `PedroCore está pensando...`.
+- Erro visual com opção de tentar novamente.
+- Métricas simples da conversa.
+- Layout responsivo.
 
 ## Providers validados
 
@@ -48,9 +54,9 @@ A V3 mantém a base da V2 e adiciona histórico local no frontend com feedback b
 - DeepSeekProvider.
 - GrokProvider.
 
-## Decisão técnica da V3
+## Decisão técnica da V4
 
-A persistência foi feita no frontend usando `localStorage` porque a V3 não deve introduzir banco de dados, login ou sincronização entre dispositivos.
+A V4 usa componentização leve no frontend React e CSS próprio. Não foi adicionada biblioteca visual externa.
 
 ## Limitações atuais
 
@@ -62,14 +68,38 @@ A persistência foi feita no frontend usando `localStorage` porque a V3 não dev
 - Sem deploy.
 - Sem integração com FinGuard.
 - GitHub remoto ainda não utilizado.
+- Botão `Nova conversa` limpa o histórico atual, mas ainda não cria sessões independentes.
+
+## Versionamento Git da V4
+
+Após os testes locais, a V4 deve ser salva no Git local com commit e tag próprios:
+
+```txt
+commit: feat: melhorar interface do chat
+tag: v4.0.0
+```
+
+A tag `v3.0.0` deve continuar existindo como marco da versão anterior aprovada.
+
+## Documentação Obsidian atualizada
+
+A documentação da V4 foi registrada em Markdown dentro da pasta `docs`, compatível com Obsidian.
+
+Arquivos principais:
+
+```txt
+docs/04-comandos/V4_COMANDOS.md
+docs/06_ERROS_E_CORRECOES.md
+docs/08_CHANGELOG.md
+docs/11_V4_INTERFACE_CHAT.md
+```
 
 ## Próxima versão
 
-V4 — Melhorias de interface do chat e experiência de uso.
+V5 — Configurações de provider pela interface.
 
 ## Próximas versões
 
-- V4 — Melhorias de interface do chat.
 - V5 — Configurações de provider pela interface.
 - V6 — Persistência real com banco de dados.
 - V7 — Sessões/conversas separadas.

@@ -4,14 +4,19 @@ API pessoal de IA para testar qualidade de resposta, comportamento, contexto, hi
 
 ## Versão atual
 
-**V3.0.0 — Histórico local e feedback simples**
+**V4.0.0 — Interface melhorada do chat e experiência de uso**
 
-A V3 mantém a base aprovada da V2 e adiciona:
+A V4 mantém a base aprovada da V3 e melhora a interface React do chat:
 
-- Histórico simples de mensagens no frontend.
-- Persistência local usando `localStorage`.
-- Feedback `Gostei` e `Não gostei` por resposta da IA.
-- Botão para limpar histórico local.
+- Sidebar de histórico local.
+- Layout mais limpo e profissional.
+- Bolhas modernas para usuário e IA.
+- Botão copiar resposta.
+- Feedback `Gostei` e `Não gostei` melhorado visualmente.
+- Timestamp simples por mensagem.
+- Estado de carregamento `PedroCore está pensando...`.
+- Erro visual com opção de tentar novamente.
+- Responsividade melhorada.
 
 ## Local correto
 
@@ -40,6 +45,25 @@ O arquivo `.env` contém chaves reais e não deve ser versionado nem enviado par
 
 Use `.env.example` como modelo seguro de configuração.
 
-## Limitação da V3
+## Limitação da V4
 
-O histórico e os feedbacks ficam apenas no navegador atual. Eles ainda não são salvos em banco de dados e não treinam o modelo.
+A V4 melhora a interface, mas não cria banco, login, RAG, deploy ou GitHub. O histórico e os feedbacks continuam salvos apenas no navegador atual via `localStorage`.
+
+## Git local e Obsidian
+
+A V4 deve ser aplicada por cima da pasta local `C:\Projetos\pedrocore-ia`, preservando `.git` e `.env`.
+
+Depois dos testes, salvar a versão no Git local:
+
+```txt
+commit: feat: melhorar interface do chat
+tag: v4.0.0
+```
+
+A documentação foi atualizada em Markdown dentro de `docs`, compatível com Obsidian.
+
+Documento principal da V4:
+
+```txt
+docs/11_V4_INTERFACE_CHAT.md
+```

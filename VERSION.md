@@ -4,11 +4,11 @@ Atualizado em: 21/06/2026
 
 ## Versão atual
 
-V3.0.0 — Histórico local e feedback simples
+V4.0.0 — Interface melhorada do chat e experiência de uso
 
 ## Status
 
-IMPLEMENTADA PARA TESTES — aguardando aprovação final pela interface.
+IMPLEMENTADA PARA TESTES — aguardando aprovação visual local.
 
 ## Local oficial
 
@@ -16,46 +16,75 @@ IMPLEMENTADA PARA TESTES — aguardando aprovação final pela interface.
 C:\Projetos\pedrocore-ia
 ```
 
-## Resumo da V3
+## Resumo da V4
 
-A V3 adiciona persistência local de conversas no frontend e feedback básico por resposta da IA.
+A V4 melhora a interface React do chat sem alterar a arquitetura do backend, os providers ou a persistência local criada na V3.
 
-## Entregas concluídas na V3
+## Entregas concluídas na V4
 
-- Histórico simples de mensagens no frontend.
-- Persistência usando `localStorage`.
-- Identificador único por mensagem.
-- Feedback `Gostei` e `Não gostei` vinculado a cada resposta da IA.
-- Feedback persistente após recarregar a página.
-- Contador de mensagens do histórico local.
-- Botão para limpar histórico local.
-- Limite técnico de 100 mensagens de conversa salvas localmente.
-- Leitura segura do histórico salvo, com proteção contra JSON inválido.
-- Documentação da V3 criada/atualizada.
+- Layout principal reorganizado com sidebar de histórico local.
+- Chat visualmente mais limpo e profissional.
+- Bolhas modernas para mensagens do usuário e da IA.
+- Componentização leve da interface React.
+- Componentes criados para sidebar, bolha de mensagem, composer, loading e erro visual.
+- Botão copiar resposta mantido e melhorado visualmente.
+- Feedback `Gostei` e `Não gostei` preservado e melhorado visualmente.
+- Timestamp simples por mensagem.
+- Indicador de carregamento `PedroCore está pensando...`.
+- Tratamento visual de erro com botão `Tentar novamente`.
+- Métricas simples da conversa: mensagens, respostas, gostei e não gostei.
+- Responsividade melhorada para telas menores.
+- Persistência local da V3 preservada usando `localStorage`.
+- Documentação da V4 criada/atualizada em Markdown compatível com Obsidian.
 
-## Limitações conhecidas da V3
+## Limitações conhecidas da V4
 
-- O histórico fica apenas no navegador atual.
-- Limpar dados do navegador remove o histórico.
+- O histórico continua local, apenas no navegador atual.
 - O feedback ainda não treina o modelo e não altera respostas futuras.
 - Ainda não existe banco de dados.
 - Ainda não existe login.
-- Ainda não existe sincronização entre dispositivos.
+- Ainda não existe sistema real de múltiplas conversas.
+- Ainda não existe RAG.
+- Ainda não existe deploy.
+- Ainda não existe integração com FinGuard.
 
 ## Versões concluídas
 
 - V1 — Chat simples + API mock. APROVADA.
 - V1.0.4 — Correção definitiva dos textos da interface. APROVADA.
 - V2 — Multi-provider com Gemini real. APROVADA.
-- V3.0.0 — Histórico local + feedback simples. IMPLEMENTADA PARA TESTES.
+- V3.0.0 — Histórico local + feedback simples. APROVADA E VERSIONADA.
+- V4.0.0 — Interface melhorada do chat e experiência de uso. IMPLEMENTADA PARA TESTES.
+
+## Git local da V4
+
+Depois dos testes e da aprovação visual, a V4 deve ser salva no Git local com:
+
+```txt
+commit: feat: melhorar interface do chat
+tag: v4.0.0
+```
+
+A tag anterior `v3.0.0` deve ser preservada.
+
+## Documentação Obsidian da V4
+
+Documentos principais da V4:
+
+```txt
+docs/04-comandos/V4_COMANDOS.md
+docs/06_ERROS_E_CORRECOES.md
+docs/08_CHANGELOG.md
+docs/09_STATUS_ATUAL.md
+docs/11_V4_INTERFACE_CHAT.md
+```
 
 ## Próxima versão
 
-V4 — Melhorias de interface do chat e experiência de uso.
+V5 — Configurações de provider pela interface.
 
 ## Roadmap
 
-- V4 — Melhorias de interface do chat.
 - V5 — Configurações de provider pela interface.
 - V6 — Persistência real com banco de dados.
 - V7 — Sessões/conversas separadas.

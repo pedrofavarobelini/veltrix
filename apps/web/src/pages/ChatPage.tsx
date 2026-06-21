@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getProviders, ProviderInfo, sendChatMessage } from "../services/api";
+import { ChatComposer } from "../components/ChatComposer";
+import { ChatSidebar } from "../components/ChatSidebar";
+import { ErrorBanner } from "../components/ErrorBanner";
+import { LoadingBubble } from "../components/LoadingBubble";
+import { MessageBubble } from "../components/MessageBubble";
+import { getProviders, sendChatMessage } from "../services/api";
+import type { ProviderInfo } from "../services/api";
 import type { ChatMessage, FeedbackType } from "../types/chat";
 import {
   createChatMessageId,
@@ -20,43 +26,34 @@ const UI = {
   technical: "Técnico",
   summarized: "Resumido",
   code: "Código",
-  config: "Config",
+  config: "Configurações",
   clearHistory: "Limpar histórico",
-  assistant: "Assistente",
-  helper: "Como posso ajudar hoje?",
-  historyTitle: "Histórico local",
-  historyHelp: "As conversas e feedbacks desta V3 ficam salvos apenas neste navegador.",
+  historyHelp: "Histórico e feedbacks salvos apenas neste navegador.",
   you: "Você",
-  copy: "Copiar",
-  copied: "Copiado",
-  redo: "Refazer",
-  liked: "Gostei",
-  disliked: "Não gostei",
   inputPlaceholder: "Digite sua mensagem...",
-  sending: "Enviando...",
-  send: "Enviar",
   settingsTitle: "Configurações",
   settingsDescription:
-    "Ajuste o provider, o modo e o prompt base usado nos testes do assistente.",
+    "Ajuste provider, modo e prompt base sem expor chaves de API no frontend.",
   provider: "Provider",
   model: "Modelo",
   providerHelp:
-    "Providers reais exigem chave no .env. Se a chave não existir, o sistema usa fallback para Mock.",
+    "Providers reais exigem chave no .env local. Se a chave não existir, o backend pode usar fallback para Mock.",
   promptBase: "Prompt base",
-  promptHelp:
-    "Esse texto orienta o comportamento do PedroCore IA durante os testes.",
+  promptHelp: "Esse texto orienta o comportamento do PedroCore IA durante os testes.",
   cancel: "Cancelar",
   saveAndClose: "Salvar e fechar",
   typeBeforeSend: "Digite uma mensagem antes de enviar.",
   generatingAgain: "Gerando nova resposta...",
   apiError:
-    "Erro ao conectar com a API. Verifique se o backend está rodando na porta 3333.",
+    "Verifique se o backend FastAPI está aberto em http://127.0.0.1:3333 e tente novamente.",
   copySuccess: "Resposta copiada.",
   copyError: "Não foi possível copiar a resposta.",
   feedbackLike: "Feedback registrado: gostei.",
   feedbackDislike: "Feedback registrado: não gostei.",
   clearConfirm: "Tem certeza que deseja limpar o histórico local desta conversa?",
   historyCleared: "Histórico local limpo.",
+  fallbackToast: "Fallback para MockProvider acionado.",
+  providersError: "Não foi possível carregar providers. Usando lista local.",
   close: "×",
 };
 
@@ -90,19 +87,12 @@ function createMessage(role: ChatMessage["role"], content: string): ChatMessage 
   };
 }
 
-function formatMessageTime(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toLocaleString("pt-BR", {
+function formatCurrentDate() {
+  return new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
     day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+    month: "long",
+  }).format(new Date());
 }
 
 export function ChatPage() {
@@ -121,9 +111,11 @@ export function ChatPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const toastTimeoutRef = useRef<number | null>(null);
   const copiedTimeoutRef = useRef<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const selectedProvider = providers.find((item) => item.name === provider);
   const lastUserMessage = useMemo(
@@ -131,6 +123,11 @@ export function ChatPage() {
     [messages],
   );
   const storedMessagesCount = messages.filter((item) => !item.isSystem).length;
+  const assistantResponsesCount = messages.filter(
+    (item) => item.role === "assistant" && !item.isSystem,
+  ).length;
+  const likedResponsesCount = messages.filter((item) => item.feedback === "like").length;
+  const dislikedResponsesCount = messages.filter((item) => item.feedback === "dislike").length;
 
   useEffect(() => {
     getProviders()
@@ -142,7 +139,7 @@ export function ChatPage() {
         }
       })
       .catch(() => {
-        showToast("Não foi possível carregar providers. Usando lista local.");
+        showToast(UI.providersError);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -150,6 +147,10 @@ export function ChatPage() {
   useEffect(() => {
     saveChatHistory(messages);
   }, [messages]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading, errorMessage]);
 
   function showToast(text: string, duration = 2600) {
     if (toastTimeoutRef.current) {
@@ -182,6 +183,7 @@ export function ChatPage() {
 
     const userMessage = createMessage("user", text);
 
+    setErrorMessage("");
     setMessages((prev) => limitChatHistory([...prev, userMessage]));
     setMessage("");
     setLoading(true);
@@ -212,12 +214,10 @@ export function ChatPage() {
       setMessages((prev) => limitChatHistory([...prev, assistantMessage]));
 
       if (response.fallback_used) {
-        showToast("Fallback para MockProvider acionado.");
+        showToast(UI.fallbackToast);
       }
     } catch {
-      const errorMessage = createMessage("assistant", UI.apiError);
-
-      setMessages((prev) => limitChatHistory([...prev, errorMessage]));
+      setErrorMessage(UI.apiError);
       showToast("Erro ao conectar com a API.");
     } finally {
       setLoading(false);
@@ -250,160 +250,140 @@ export function ChatPage() {
   }
 
   function handleClearHistory() {
-    if (!window.confirm(UI.clearConfirm)) {
+    if (storedMessagesCount > 0 && !window.confirm(UI.clearConfirm)) {
       return;
     }
 
     setMessages([createWelcomeMessage()]);
     setCopiedMessageId(null);
+    setErrorMessage("");
     showToast(UI.historyCleared);
   }
 
+  function handleRetry() {
+    if (!lastUserMessage || loading) {
+      return;
+    }
+
+    void handleSend(lastUserMessage);
+  }
+
   return (
-    <main className="app">
+    <main className="app-shell">
       {toast && <div className="toast">{toast}</div>}
 
-      <header className="header">
-        <div className="brand">
-          <div className="logo">IA</div>
+      <ChatSidebar
+        messages={messages}
+        storedMessagesCount={storedMessagesCount}
+        providerLabel={selectedProvider?.label ?? provider}
+        model={model}
+        fallbackWarning={Boolean(selectedProvider && !selectedProvider.configured && selectedProvider.real_provider)}
+        loading={loading}
+        onClearHistory={handleClearHistory}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      <section className="chat-workspace">
+        <header className="chat-topbar">
           <div>
+            <span>{formatCurrentDate()}</span>
             <h1>{UI.assistantName}</h1>
-            <span>{UI.subtitle}</span>
+            <p>{UI.subtitle}</p>
+          </div>
+
+          <div className="topbar-controls">
+            <select value={mode} onChange={(event) => setMode(event.target.value)}>
+              <option value="normal">{UI.normal}</option>
+              <option value="tecnico">{UI.technical}</option>
+              <option value="resumido">{UI.summarized}</option>
+              <option value="codigo">{UI.code}</option>
+            </select>
+
+            <select value={provider} onChange={(event) => handleProviderChange(event.target.value)}>
+              {providers.map((item) => (
+                <option key={item.name} value={item.name}>
+                  {item.label}{item.configured ? "" : " (sem chave)"}
+                </option>
+              ))}
+            </select>
+
+            <button type="button" onClick={() => setSettingsOpen(true)}>
+              {UI.config}
+            </button>
+          </div>
+        </header>
+
+        <div className="metrics-grid" aria-label="Resumo do chat">
+          <div>
+            <span>Mensagens</span>
+            <strong>{storedMessagesCount}</strong>
+          </div>
+          <div>
+            <span>Respostas</span>
+            <strong>{assistantResponsesCount}</strong>
+          </div>
+          <div>
+            <span>Gostei</span>
+            <strong>{likedResponsesCount}</strong>
+          </div>
+          <div>
+            <span>Não gostei</span>
+            <strong>{dislikedResponsesCount}</strong>
           </div>
         </div>
 
-        <div className="controls">
-          <select value={mode} onChange={(event) => setMode(event.target.value)}>
-            <option value="normal">{UI.normal}</option>
-            <option value="tecnico">{UI.technical}</option>
-            <option value="resumido">{UI.summarized}</option>
-            <option value="codigo">{UI.code}</option>
-          </select>
-
-          <select value={provider} onChange={(event) => handleProviderChange(event.target.value)}>
-            {providers.map((item) => (
-              <option key={item.name} value={item.name}>
-                {item.label}{item.configured ? "" : " (sem chave)"}
-              </option>
-            ))}
-          </select>
-
-          <button onClick={() => setSettingsOpen(true)}>{UI.config}</button>
-          <button onClick={handleClearHistory} disabled={storedMessagesCount === 0 || loading}>
-            {UI.clearHistory}
-          </button>
-        </div>
-      </header>
-
-      <section className="hero">
-        <h2>{UI.assistant}</h2>
-        <p>{UI.helper}</p>
-        <div className="provider-status">
-          <span>Provider: {selectedProvider?.label ?? provider}</span>
-          <span>Modelo: {model}</span>
-          <span>{UI.historyTitle}: {storedMessagesCount} mensagem(ns)</span>
-          {selectedProvider && !selectedProvider.configured && selectedProvider.real_provider && (
-            <span className="warning-pill">sem chave — fallback ativo</span>
-          )}
-        </div>
         <p className="history-help">{UI.historyHelp}</p>
-      </section>
 
-      <section className="chat">
-        {messages.map((item) => {
-          const showAssistantActions = item.role === "assistant" && !item.isSystem;
+        <section className="chat-panel" aria-label="Conversa atual">
+          <div className="messages-list">
+            {messages.map((item) => (
+              <MessageBubble
+                key={item.id}
+                message={item}
+                assistantName={UI.assistantName}
+                userName={UI.you}
+                copied={copiedMessageId === item.id}
+                retryDisabled={!lastUserMessage || loading}
+                onCopy={handleCopy}
+                onFeedback={handleFeedback}
+                onRetry={handleRetry}
+              />
+            ))}
 
-          return (
-            <article
-              key={item.id}
-              className={`message ${item.role === "user" ? "user" : "assistant"}`}
-            >
-              <div className="avatar">{item.role === "user" ? "P" : "IA"}</div>
+            {loading && <LoadingBubble />}
 
-              <div className="message-content">
-                <div className="message-heading">
-                  <strong>{item.role === "user" ? UI.you : UI.assistantName}</strong>
-                  <span>{formatMessageTime(item.createdAt)}</span>
-                </div>
+            {errorMessage && (
+              <ErrorBanner
+                message={errorMessage}
+                retryDisabled={!lastUserMessage || loading}
+                onRetry={handleRetry}
+                onDismiss={() => setErrorMessage("")}
+              />
+            )}
 
-                <p>{item.content}</p>
+            <div ref={messagesEndRef} />
+          </div>
+        </section>
 
-                {item.meta && (
-                  <div className="response-meta">
-                    <span>{item.meta.provider}</span>
-                    <span>{item.meta.model}</span>
-                    {item.meta.fallbackUsed && <span className="warning-pill">fallback usado</span>}
-                  </div>
-                )}
-
-                {showAssistantActions && (
-                  <div className="actions">
-                    <button onClick={() => handleCopy(item.content, item.id)}>
-                      {copiedMessageId === item.id ? UI.copied : UI.copy}
-                    </button>
-
-                    <button disabled={!lastUserMessage || loading} onClick={() => handleSend(lastUserMessage)}>
-                      {UI.redo}
-                    </button>
-
-                    <button
-                      className={item.feedback === "like" ? "active-feedback" : ""}
-                      onClick={() => handleFeedback(item.id, "like")}
-                    >
-                      {UI.liked}
-                    </button>
-
-                    <button
-                      className={item.feedback === "dislike" ? "active-feedback" : ""}
-                      onClick={() => handleFeedback(item.id, "dislike")}
-                    >
-                      {UI.disliked}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </article>
-          );
-        })}
-
-        {loading && (
-          <article className="message assistant">
-            <div className="avatar">IA</div>
-            <div className="message-content">
-              <strong>{UI.assistantName}</strong>
-              <p>Gerando resposta...</p>
-            </div>
-          </article>
-        )}
-      </section>
-
-      <footer className="input-area">
-        <input
+        <ChatComposer
           value={message}
-          onChange={(event) => setMessage(event.target.value)}
+          loading={loading}
           placeholder={UI.inputPlaceholder}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              handleSend();
-            }
-          }}
+          onChange={setMessage}
+          onSend={() => void handleSend()}
         />
-
-        <button onClick={() => handleSend()} disabled={loading}>
-          {loading ? UI.sending : UI.send}
-        </button>
-      </footer>
+      </section>
 
       {settingsOpen && (
         <aside className="settings">
           <div className="settings-card">
-            <div className="settings-header settings-header-v102">
+            <div className="settings-header">
               <div>
                 <h3>{UI.settingsTitle}</h3>
                 <p>{UI.settingsDescription}</p>
               </div>
 
-              <button className="close-button" onClick={() => setSettingsOpen(false)}>
+              <button className="close-button" type="button" onClick={() => setSettingsOpen(false)}>
                 {UI.close}
               </button>
             </div>
@@ -438,11 +418,11 @@ export function ChatPage() {
             </div>
 
             <div className="settings-actions">
-              <button className="secondary-button" onClick={() => setSettingsOpen(false)}>
+              <button className="secondary-button" type="button" onClick={() => setSettingsOpen(false)}>
                 {UI.cancel}
               </button>
 
-              <button className="primary-button" onClick={() => setSettingsOpen(false)}>
+              <button className="primary-button" type="button" onClick={() => setSettingsOpen(false)}>
                 {UI.saveAndClose}
               </button>
             </div>

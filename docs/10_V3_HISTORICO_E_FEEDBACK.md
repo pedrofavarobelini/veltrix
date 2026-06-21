@@ -128,3 +128,41 @@ A V3 só deve ser considerada aprovada depois que:
 - O feedback persistir após recarregar a página.
 - O botão `Limpar histórico` funcionar.
 - Nenhuma chave de API aparecer no Git.
+
+
+## Git e versionamento
+
+A V3 deve ser registrada no Git local somente depois da validação dos testes.
+
+Comando de commit previsto:
+
+```powershell
+git commit -m "feat: adicionar historico local e feedback das respostas"
+```
+
+Tag prevista:
+
+```powershell
+git tag v3.0.0
+```
+
+A tag `v2.0.0` deve permanecer preservada.
+
+## Documentação no Obsidian
+
+A documentação da V3 está em Markdown dentro da pasta `docs`. Para revisar no Obsidian, abrir:
+
+```txt
+C:\Projetos\pedrocore-ia\docs
+```
+
+Arquivos diretamente relacionados à V3:
+
+```txt
+docs/04-comandos/V3_COMANDOS.md
+docs/04-comandos/V3_GIT_VERSIONAMENTO.md
+docs/06_ERROS_E_CORRECOES.md
+docs/08_CHANGELOG.md
+docs/09_STATUS_ATUAL.md
+docs/10_V3_HISTORICO_E_FEEDBACK.md
+```
