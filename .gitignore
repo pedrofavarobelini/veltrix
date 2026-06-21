@@ -1,0 +1,34 @@
+﻿
+# Ambiente Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Ambiente Node
+node_modules/
+dist/
+.vite/
+
+# Variaveis de ambiente / chaves
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Backups locais
+*.bak*
+*_backup_*
+*.zip
