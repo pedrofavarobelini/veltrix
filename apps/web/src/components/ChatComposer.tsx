@@ -9,6 +9,10 @@ type ChatComposerProps = {
 export function ChatComposer({ value, loading, placeholder, onChange, onSend }: ChatComposerProps) {
   return (
     <footer className="chat-composer">
+      <button className="composer-icon-button" type="button" aria-label="Anexar arquivo" disabled>
+        +
+      </button>
+
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -22,8 +26,8 @@ export function ChatComposer({ value, loading, placeholder, onChange, onSend }: 
         }}
       />
 
-      <button type="button" onClick={onSend} disabled={loading}>
-        {loading ? "Enviando..." : "Enviar"}
+      <button className="send-button" type="button" onClick={onSend} disabled={loading}>
+        {loading ? "..." : "➤"}
       </button>
     </footer>
   );

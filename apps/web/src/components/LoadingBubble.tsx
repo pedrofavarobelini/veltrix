@@ -1,7 +1,9 @@
+import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+
 export function LoadingBubble() {
   return (
     <article className="message-row from-assistant loading-row">
-      <div className="message-avatar">P</div>
+      <img className="message-avatar brand-logo-image" src={pedrocoreLogo} alt="PedroCore IA" />
       <div className="message-bubble loading-bubble">
         <div className="message-heading">
           <strong>PedroCore IA</strong>

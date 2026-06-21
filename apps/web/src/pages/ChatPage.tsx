@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+import mockProviderLogo from "../assets/providers/mock.svg";
+import geminiProviderLogo from "../assets/providers/gemini.svg";
+import openaiProviderLogo from "../assets/providers/openai.svg";
+import claudeProviderLogo from "../assets/providers/claude.svg";
+import deepseekProviderLogo from "../assets/providers/deepseek.svg";
+import grokProviderLogo from "../assets/providers/grok.svg";
 import { ChatComposer } from "../components/ChatComposer";
 import { ChatSidebar } from "../components/ChatSidebar";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingBubble } from "../components/LoadingBubble";
 import { MessageBubble } from "../components/MessageBubble";
+import { ProviderSettingsPanel } from "../components/ProviderSettingsPanel";
 import { getProviders, sendChatMessage } from "../services/api";
 import type { ProviderInfo } from "../services/api";
 import type { ChatMessage, FeedbackType } from "../types/chat";
@@ -14,34 +22,28 @@ import {
   saveChatHistory,
   updateMessageFeedback,
 } from "../utils/chatStorage";
+import { loadProviderSettings, saveProviderSettings } from "../utils/providerSettings";
 
 const UI = {
   welcome:
-    "Olá, eu sou o PedroCore IA. Escolha um provider e envie uma pergunta para testar minhas respostas.",
+    "Olá, eu sou o PedroCore IA. Configure seu provider, escolha um modo de resposta e envie uma pergunta para testar a nova interface.",
   defaultPrompt:
     "Você é o PedroCore IA, um assistente pessoal técnico, claro, direto e útil.",
   assistantName: "PedroCore IA",
-  subtitle: "Assistente pessoal multi-provider",
-  normal: "Normal",
+  subtitle: "Assistente inteligente multi-provider",
+  versionLabel: "V5.1.9",
+  normal: "Padrão",
   technical: "Técnico",
   summarized: "Resumido",
   code: "Código",
-  config: "Configurações",
+  config: "Providers",
   clearHistory: "Limpar histórico",
-  historyHelp: "Histórico e feedbacks salvos apenas neste navegador.",
+  historyHelp: "Histórico, feedbacks e configurações ficam salvos apenas neste navegador.",
   you: "Você",
   inputPlaceholder: "Digite sua mensagem...",
-  settingsTitle: "Configurações",
-  settingsDescription:
-    "Ajuste provider, modo e prompt base sem expor chaves de API no frontend.",
-  provider: "Provider",
-  model: "Modelo",
-  providerHelp:
-    "Providers reais exigem chave no .env local. Se a chave não existir, o backend pode usar fallback para Mock.",
-  promptBase: "Prompt base",
-  promptHelp: "Esse texto orienta o comportamento do PedroCore IA durante os testes.",
-  cancel: "Cancelar",
-  saveAndClose: "Salvar e fechar",
+  settingsSaved: "Configurações de provider salvas localmente.",
+  modelReset: "Modelo padrão aplicado.",
+  promptReset: "Prompt base restaurado.",
   typeBeforeSend: "Digite uma mensagem antes de enviar.",
   generatingAgain: "Gerando nova resposta...",
   apiError:
@@ -54,7 +56,15 @@ const UI = {
   historyCleared: "Histórico local limpo.",
   fallbackToast: "Fallback para MockProvider acionado.",
   providersError: "Não foi possível carregar providers. Usando lista local.",
-  close: "×",
+};
+
+const PROVIDER_LOGOS: Record<string, string> = {
+  mock: mockProviderLogo,
+  gemini: geminiProviderLogo,
+  openai: openaiProviderLogo,
+  claude: claudeProviderLogo,
+  deepseek: deepseekProviderLogo,
+  grok: grokProviderLogo,
 };
 
 const DEFAULT_PROVIDERS: ProviderInfo[] = [
@@ -65,6 +75,13 @@ const DEFAULT_PROVIDERS: ProviderInfo[] = [
   { name: "deepseek", label: "DeepSeek", default_model: "deepseek-chat", configured: false, real_provider: true },
   { name: "grok", label: "Grok/xAI", default_model: "grok-4.3", configured: false, real_provider: true },
 ];
+
+const DEFAULT_PROVIDER_SETTINGS = {
+  provider: "mock",
+  model: "mock-v1",
+  mode: "tecnico",
+  systemPrompt: UI.defaultPrompt,
+};
 
 function createWelcomeMessage(): ChatMessage {
   return {
@@ -100,15 +117,19 @@ export function ChatPage() {
     loadChatHistory([createWelcomeMessage()]),
   );
 
+  const initialProviderSettings = useMemo(
+    () => loadProviderSettings(DEFAULT_PROVIDER_SETTINGS),
+    [],
+  );
+
   const [message, setMessage] = useState("");
-  const [mode, setMode] = useState("tecnico");
-  const [provider, setProvider] = useState("mock");
-  const [model, setModel] = useState("mock-v1");
+  const [mode, setMode] = useState(initialProviderSettings.mode);
+  const [provider, setProvider] = useState(initialProviderSettings.provider);
+  const [model, setModel] = useState(initialProviderSettings.model);
   const [providers, setProviders] = useState<ProviderInfo[]>(DEFAULT_PROVIDERS);
-  const [systemPrompt, setSystemPrompt] = useState(UI.defaultPrompt);
+  const [systemPrompt, setSystemPrompt] = useState(initialProviderSettings.systemPrompt);
 
   const [loading, setLoading] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -116,6 +137,7 @@ export function ChatPage() {
   const toastTimeoutRef = useRef<number | null>(null);
   const copiedTimeoutRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const providerDockRef = useRef<HTMLElement | null>(null);
 
   const selectedProvider = providers.find((item) => item.name === provider);
   const lastUserMessage = useMemo(
@@ -123,11 +145,6 @@ export function ChatPage() {
     [messages],
   );
   const storedMessagesCount = messages.filter((item) => !item.isSystem).length;
-  const assistantResponsesCount = messages.filter(
-    (item) => item.role === "assistant" && !item.isSystem,
-  ).length;
-  const likedResponsesCount = messages.filter((item) => item.feedback === "like").length;
-  const dislikedResponsesCount = messages.filter((item) => item.feedback === "dislike").length;
 
   useEffect(() => {
     getProviders()
@@ -135,7 +152,7 @@ export function ChatPage() {
         setProviders(data);
         const current = data.find((item) => item.name === provider);
         if (current) {
-          setModel(current.default_model);
+          setModel((currentModel) => currentModel.trim() || current.default_model);
         }
       })
       .catch(() => {
@@ -147,6 +164,10 @@ export function ChatPage() {
   useEffect(() => {
     saveChatHistory(messages);
   }, [messages]);
+
+  useEffect(() => {
+    saveProviderSettings({ provider, model, mode, systemPrompt });
+  }, [provider, model, mode, systemPrompt]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -171,6 +192,26 @@ export function ChatPage() {
     if (next) {
       setModel(next.default_model);
     }
+  }
+
+  function handleResetModel() {
+    const current = providers.find((item) => item.name === provider);
+    if (!current) {
+      return;
+    }
+
+    setModel(current.default_model);
+    showToast(UI.modelReset);
+  }
+
+  function handleResetPrompt() {
+    setSystemPrompt(UI.defaultPrompt);
+    showToast(UI.promptReset);
+  }
+
+  function handleSaveSettings() {
+    saveProviderSettings({ provider, model, mode, systemPrompt });
+    showToast(UI.settingsSaved);
   }
 
   async function handleSend(customMessage?: string) {
@@ -269,166 +310,133 @@ export function ChatPage() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-shell v51-redesign">
       {toast && <div className="toast">{toast}</div>}
 
-      <ChatSidebar
-        messages={messages}
-        storedMessagesCount={storedMessagesCount}
-        providerLabel={selectedProvider?.label ?? provider}
-        model={model}
-        fallbackWarning={Boolean(selectedProvider && !selectedProvider.configured && selectedProvider.real_provider)}
-        loading={loading}
-        onClearHistory={handleClearHistory}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
-
-      <section className="chat-workspace">
-        <header className="chat-topbar">
+      <header className="reference-brandbar" aria-label="Marca PedroCore IA">
+        <div className="reference-brand">
+          <img src={pedrocoreLogo} alt="Logo oficial do PedroCore IA" />
           <div>
-            <span>{formatCurrentDate()}</span>
-            <h1>{UI.assistantName}</h1>
-            <p>{UI.subtitle}</p>
-          </div>
-
-          <div className="topbar-controls">
-            <select value={mode} onChange={(event) => setMode(event.target.value)}>
-              <option value="normal">{UI.normal}</option>
-              <option value="tecnico">{UI.technical}</option>
-              <option value="resumido">{UI.summarized}</option>
-              <option value="codigo">{UI.code}</option>
-            </select>
-
-            <select value={provider} onChange={(event) => handleProviderChange(event.target.value)}>
-              {providers.map((item) => (
-                <option key={item.name} value={item.name}>
-                  {item.label}{item.configured ? "" : " (sem chave)"}
-                </option>
-              ))}
-            </select>
-
-            <button type="button" onClick={() => setSettingsOpen(true)}>
-              {UI.config}
-            </button>
-          </div>
-        </header>
-
-        <div className="metrics-grid" aria-label="Resumo do chat">
-          <div>
-            <span>Mensagens</span>
-            <strong>{storedMessagesCount}</strong>
-          </div>
-          <div>
-            <span>Respostas</span>
-            <strong>{assistantResponsesCount}</strong>
-          </div>
-          <div>
-            <span>Gostei</span>
-            <strong>{likedResponsesCount}</strong>
-          </div>
-          <div>
-            <span>Não gostei</span>
-            <strong>{dislikedResponsesCount}</strong>
+            <strong>PedroCore <span>IA</span></strong>
           </div>
         </div>
+      </header>
 
-        <p className="history-help">{UI.historyHelp}</p>
+      <section className="console-window">
+        <div className="console-window-bar">
+          <div className="window-title" aria-hidden="true" />
+        </div>
 
-        <section className="chat-panel" aria-label="Conversa atual">
-          <div className="messages-list">
-            {messages.map((item) => (
-              <MessageBubble
-                key={item.id}
-                message={item}
-                assistantName={UI.assistantName}
-                userName={UI.you}
-                copied={copiedMessageId === item.id}
-                retryDisabled={!lastUserMessage || loading}
-                onCopy={handleCopy}
-                onFeedback={handleFeedback}
-                onRetry={handleRetry}
-              />
-            ))}
+        <div className="console-frame">
+          <ChatSidebar
+            messages={messages}
+            storedMessagesCount={storedMessagesCount}
+            providerLabel={selectedProvider?.label ?? provider}
+            model={model}
+            versionLabel={UI.versionLabel}
+            providerConfigured={Boolean(selectedProvider?.configured)}
+            realProvider={Boolean(selectedProvider?.real_provider)}
+            fallbackWarning={Boolean(selectedProvider && !selectedProvider.configured && selectedProvider.real_provider)}
+            loading={loading}
+            onClearHistory={handleClearHistory}
+          />
 
-            {loading && <LoadingBubble />}
-
-            {errorMessage && (
-              <ErrorBanner
-                message={errorMessage}
-                retryDisabled={!lastUserMessage || loading}
-                onRetry={handleRetry}
-                onDismiss={() => setErrorMessage("")}
-              />
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-        </section>
-
-        <ChatComposer
-          value={message}
-          loading={loading}
-          placeholder={UI.inputPlaceholder}
-          onChange={setMessage}
-          onSend={() => void handleSend()}
-        />
-      </section>
-
-      {settingsOpen && (
-        <aside className="settings">
-          <div className="settings-card">
-            <div className="settings-header">
+          <section className="chat-workspace">
+            <header className="chat-topbar">
               <div>
-                <h3>{UI.settingsTitle}</h3>
-                <p>{UI.settingsDescription}</p>
+                <span>{formatCurrentDate()}</span>
+                <h1>Chat com PedroCore <span>IA</span></h1>
+                <p>{UI.subtitle}</p>
               </div>
+            </header>
 
-              <button className="close-button" type="button" onClick={() => setSettingsOpen(false)}>
-                {UI.close}
-              </button>
+            <div className="provider-strip" aria-label="Providers disponíveis">
+              {providers.slice(0, 6).map((item) => {
+                const active = item.name === provider;
+                const status = !item.real_provider ? "Mock local" : item.configured ? "Config." : "Sem chave";
+
+                return (
+                  <button
+                    key={item.name}
+                    type="button"
+                    className={`provider-tile ${active ? "active" : ""} ${!item.configured && item.real_provider ? "provider-warning" : ""}`}
+                    onClick={() => handleProviderChange(item.name)}
+                    disabled={loading}
+                  >
+                    <span>
+                      {PROVIDER_LOGOS[item.name] ? (
+                        <img src={PROVIDER_LOGOS[item.name]} alt={`${item.label} logo`} />
+                      ) : (
+                        item.label.slice(0, 2)
+                      )}
+                    </span>
+                    <strong>{item.label}</strong>
+                    <small>{status}</small>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="settings-section">
-              <label>
-                {UI.provider}
-                <select value={provider} onChange={(event) => handleProviderChange(event.target.value)}>
-                  {providers.map((item) => (
-                    <option key={item.name} value={item.name}>
-                      {item.label}{item.configured ? "" : " (sem chave)"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span className="field-help">{UI.providerHelp}</span>
-            </div>
+            <section className="chat-panel" aria-label="Conversa atual">
+              <div className="messages-list">
+                {messages.map((item) => (
+                  <MessageBubble
+                    key={item.id}
+                    message={item}
+                    assistantName={UI.assistantName}
+                    userName={UI.you}
+                    copied={copiedMessageId === item.id}
+                    retryDisabled={!lastUserMessage || loading}
+                    onCopy={handleCopy}
+                    onFeedback={handleFeedback}
+                    onRetry={handleRetry}
+                  />
+                ))}
 
-            <div className="settings-section">
-              <label>
-                {UI.model}
-                <input value={model} onChange={(event) => setModel(event.target.value)} />
-              </label>
-            </div>
+                {loading && <LoadingBubble />}
 
-            <div className="settings-section">
-              <label>
-                {UI.promptBase}
-                <textarea value={systemPrompt} onChange={(event) => setSystemPrompt(event.target.value)} />
-              </label>
-              <span className="field-help">{UI.promptHelp}</span>
-            </div>
+                {errorMessage && (
+                  <ErrorBanner
+                    message={errorMessage}
+                    retryDisabled={!lastUserMessage || loading}
+                    onRetry={handleRetry}
+                    onDismiss={() => setErrorMessage("")}
+                  />
+                )}
 
-            <div className="settings-actions">
-              <button className="secondary-button" type="button" onClick={() => setSettingsOpen(false)}>
-                {UI.cancel}
-              </button>
+                <div ref={messagesEndRef} />
+              </div>
+            </section>
 
-              <button className="primary-button" type="button" onClick={() => setSettingsOpen(false)}>
-                {UI.saveAndClose}
-              </button>
-            </div>
-          </div>
-        </aside>
-      )}
+            <ChatComposer
+              value={message}
+              loading={loading}
+              placeholder={UI.inputPlaceholder}
+              onChange={setMessage}
+              onSend={() => void handleSend()}
+            />
+          </section>
+
+          <ProviderSettingsPanel
+            panelRef={providerDockRef}
+            providers={providers}
+            provider={provider}
+            model={model}
+            mode={mode}
+            systemPrompt={systemPrompt}
+            defaultSystemPrompt={UI.defaultPrompt}
+            loading={loading}
+            onProviderChange={handleProviderChange}
+            onModelChange={setModel}
+            onModeChange={setMode}
+            onSystemPromptChange={setSystemPrompt}
+            onResetModel={handleResetModel}
+            onResetPrompt={handleResetPrompt}
+            onClose={handleSaveSettings}
+            onSave={handleSaveSettings}
+          />
+        </div>
+      </section>
     </main>
   );
 }
