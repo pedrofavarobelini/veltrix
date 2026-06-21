@@ -1,4 +1,4 @@
-﻿
+
 # Ambiente Python
 .venv/
 __pycache__/
@@ -32,3 +32,6 @@ Thumbs.db
 *.bak*
 *_backup_*
 *.zip
+
+# Obsidian local config
+docs/.obsidian/

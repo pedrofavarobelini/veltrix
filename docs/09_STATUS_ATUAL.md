@@ -1,67 +1,78 @@
-﻿# PedroCore IA — Status Atual
+# PedroCore IA — Status Atual
 
-Atualizado em: 20/06/2026 23:51:27
+Atualizado em: 21/06/2026
 
 ## Versão atual
 
-V2 — Multi-provider com Gemini real
+V3.0.0 — Histórico local e feedback simples
 
 ## Status
 
-APROVADA
+IMPLEMENTADA PARA TESTES — aguardando aprovação final pela interface.
 
 ## Local oficial
 
+```txt
 C:\Projetos\pedrocore-ia
+```
 
 ## Estado do projeto
 
-A V2 está funcional e validada no backend e frontend.
+A V3 mantém a base da V2 e adiciona histórico local no frontend com feedback básico por resposta.
+
+## Funcionalidades disponíveis
+
+- Backend FastAPI funcionando.
+- Frontend React/Vite/TypeScript funcionando.
+- Endpoint `/health` funcionando.
+- Endpoint `/api/providers` funcionando.
+- Endpoint `/api/chat` funcionando.
+- MockProvider funcionando.
+- GeminiProvider funcionando com chave real local.
+- Estrutura multi-provider mantida.
+- Fallback para MockProvider preservado.
+- Histórico de mensagens salvo no navegador com `localStorage`.
+- Feedback `Gostei` e `Não gostei` salvo por resposta da IA.
+- Botão para limpar histórico local.
+- Contador simples de mensagens salvas no histórico local.
 
 ## Providers validados
 
-- MockProvider
-- GeminiProvider
+- MockProvider.
+- GeminiProvider.
 
 ## Providers preparados estruturalmente
 
-- OpenAIProvider
-- ClaudeProvider
-- DeepSeekProvider
-- GrokProvider
+- OpenAIProvider.
+- ClaudeProvider.
+- DeepSeekProvider.
+- GrokProvider.
 
-## Validações concluídas
+## Decisão técnica da V3
 
-- Backend FastAPI funcionando.
-- Frontend React funcionando.
-- Endpoint /health funcionando.
-- Endpoint /api/providers funcionando.
-- Endpoint /api/chat funcionando.
-- MockProvider funcionando.
-- GeminiProvider funcionando com chave real.
-- Fallback preservado.
-- Interface web abriu.
-- Acentuação correta no navegador.
-- Botões principais funcionando.
+A persistência foi feita no frontend usando `localStorage` porque a V3 não deve introduzir banco de dados, login ou sincronização entre dispositivos.
 
-## Problemas resolvidos na V2
+## Limitações atuais
 
-- JSON do PowerShell com parsing inválido.
-- Encoding quebrado no PowerShell.
-- MockProvider incompatível com arquitetura V2.
-- MockProvider retornando string em vez de objeto.
-- npm tentando usar registry interno incorreto.
+- Histórico disponível apenas no navegador atual.
+- Feedback não influencia respostas futuras.
+- Sem banco de dados.
+- Sem login.
+- Sem RAG.
+- Sem deploy.
+- Sem integração com FinGuard.
+- GitHub remoto ainda não utilizado.
 
 ## Próxima versão
 
-V3 — Histórico simples + gostei/não gostei salvo.
+V4 — Melhorias de interface do chat e experiência de uso.
 
 ## Próximas versões
 
-- V3 — Histórico simples + gostei/não gostei salvo.
-- V4 — Prompts por modo/projeto.
-- V5 — API interna para conexão com FinGuard.
-- V6 — PostgreSQL + logs.
-- V7 — RAG/memória com documentos.
-- V8 — Multi-provider avançado/refinado.
-- V9 — Deploy/documentação final.
+- V4 — Melhorias de interface do chat.
+- V5 — Configurações de provider pela interface.
+- V6 — Persistência real com banco de dados.
+- V7 — Sessões/conversas separadas.
+- V8 — RAG inicial com documentos.
+- V9 — Integração futura com FinGuard.
+- V10 — GitHub profissional, deploy e documentação final.

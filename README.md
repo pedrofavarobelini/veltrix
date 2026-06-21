@@ -1,19 +1,17 @@
 # PedroCore IA
 
-API pessoal de IA para testar qualidade de resposta, comportamento, contexto e integração com múltiplos provedores.
+API pessoal de IA para testar qualidade de resposta, comportamento, contexto, histórico, feedback e integração com múltiplos provedores.
 
 ## Versão atual
 
-**V2 — Multi-provider completo inicial**
+**V3.0.0 — Histórico local e feedback simples**
 
-A V2 mantém a base aprovada da V1.0.4 e adiciona uma arquitetura multi-provider preparada para:
+A V3 mantém a base aprovada da V2 e adiciona:
 
-- Mock
-- Gemini
-- OpenAI
-- Claude
-- DeepSeek
-- Grok/xAI
+- Histórico simples de mensagens no frontend.
+- Persistência local usando `localStorage`.
+- Feedback `Gostei` e `Não gostei` por resposta da IA.
+- Botão para limpar histórico local.
 
 ## Local correto
 
@@ -38,6 +36,10 @@ COMANDOS_POWERSHELL.md
 
 ## Observação importante
 
-A V2 já possui a estrutura para todos os provedores, mas cada provedor real só responde se sua respectiva API key estiver configurada no `.env`.
+O arquivo `.env` contém chaves reais e não deve ser versionado nem enviado para o GitHub.
 
-Sem chave configurada, o sistema usa fallback para MockProvider e não quebra a interface.
+Use `.env.example` como modelo seguro de configuração.
+
+## Limitação da V3
+
+O histórico e os feedbacks ficam apenas no navegador atual. Eles ainda não são salvos em banco de dados e não treinam o modelo.

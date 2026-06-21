@@ -9,7 +9,7 @@ cd C:\Projetos\pedrocore-ia
 ## Terminal 1 — Backend
 
 ```powershell
-cd C:\Projetos\pedrocore-iappspi
+cd C:\Projetos\pedrocore-ia\apps\api
 ```
 
 ```powershell
@@ -38,7 +38,7 @@ http://localhost:3333/api/providers
 ## Terminal 2 — Frontend
 
 ```powershell
-cd C:\Projetos\pedrocore-iapps\web
+cd C:\Projetos\pedrocore-ia\apps\web
 ```
 
 ```powershell

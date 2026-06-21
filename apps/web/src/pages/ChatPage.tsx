@@ -1,18 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getProviders, ProviderInfo, sendChatMessage } from "../services/api";
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-  meta?: {
-    provider: string;
-    model: string;
-    fallbackUsed: boolean;
-    error?: string | null;
-  };
-};
-
-type FeedbackType = "like" | "dislike";
+import type { ChatMessage, FeedbackType } from "../types/chat";
+import {
+  createChatMessageId,
+  limitChatHistory,
+  loadChatHistory,
+  saveChatHistory,
+  updateMessageFeedback,
+} from "../utils/chatStorage";
 
 const UI = {
   welcome:
@@ -26,8 +21,11 @@ const UI = {
   summarized: "Resumido",
   code: "Código",
   config: "Config",
+  clearHistory: "Limpar histórico",
   assistant: "Assistente",
   helper: "Como posso ajudar hoje?",
+  historyTitle: "Histórico local",
+  historyHelp: "As conversas e feedbacks desta V3 ficam salvos apenas neste navegador.",
   you: "Você",
   copy: "Copiar",
   copied: "Copiado",
@@ -57,6 +55,8 @@ const UI = {
   copyError: "Não foi possível copiar a resposta.",
   feedbackLike: "Feedback registrado: gostei.",
   feedbackDislike: "Feedback registrado: não gostei.",
+  clearConfirm: "Tem certeza que deseja limpar o histórico local desta conversa?",
+  historyCleared: "Histórico local limpo.",
   close: "×",
 };
 
@@ -69,13 +69,46 @@ const DEFAULT_PROVIDERS: ProviderInfo[] = [
   { name: "grok", label: "Grok/xAI", default_model: "grok-4.3", configured: false, real_provider: true },
 ];
 
+function createWelcomeMessage(): ChatMessage {
+  return {
+    id: "pedrocore-welcome-message",
+    role: "assistant",
+    content: UI.welcome,
+    createdAt: new Date().toISOString(),
+    feedback: null,
+    isSystem: true,
+  };
+}
+
+function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
+  return {
+    id: createChatMessageId(),
+    role,
+    content,
+    createdAt: new Date().toISOString(),
+    feedback: null,
+  };
+}
+
+function formatMessageTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: UI.welcome,
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    loadChatHistory([createWelcomeMessage()]),
+  );
 
   const [message, setMessage] = useState("");
   const [mode, setMode] = useState("tecnico");
@@ -86,15 +119,18 @@ export function ChatPage() {
 
   const [loading, setLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [lastMessage, setLastMessage] = useState("");
   const [toast, setToast] = useState("");
-  const [feedback, setFeedback] = useState<FeedbackType | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
 
   const toastTimeoutRef = useRef<number | null>(null);
   const copiedTimeoutRef = useRef<number | null>(null);
 
   const selectedProvider = providers.find((item) => item.name === provider);
+  const lastUserMessage = useMemo(
+    () => [...messages].reverse().find((item) => item.role === "user")?.content ?? "",
+    [messages],
+  );
+  const storedMessagesCount = messages.filter((item) => !item.isSystem).length;
 
   useEffect(() => {
     getProviders()
@@ -110,6 +146,10 @@ export function ChatPage() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    saveChatHistory(messages);
+  }, [messages]);
 
   function showToast(text: string, duration = 2600) {
     if (toastTimeoutRef.current) {
@@ -133,24 +173,16 @@ export function ChatPage() {
   }
 
   async function handleSend(customMessage?: string) {
-    const text = customMessage ?? message;
+    const text = (customMessage ?? message).trim();
 
-    if (!text.trim()) {
+    if (!text) {
       showToast(UI.typeBeforeSend);
       return;
     }
 
-    setLastMessage(text);
-    setFeedback(null);
+    const userMessage = createMessage("user", text);
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: text,
-      },
-    ]);
-
+    setMessages((prev) => limitChatHistory([...prev, userMessage]));
     setMessage("");
     setLoading(true);
 
@@ -167,39 +199,32 @@ export function ChatPage() {
         system_prompt: systemPrompt,
       });
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: response.answer,
-          meta: {
-            provider: response.provider,
-            model: response.model,
-            fallbackUsed: response.fallback_used,
-            error: response.error,
-          },
+      const assistantMessage: ChatMessage = {
+        ...createMessage("assistant", response.answer),
+        meta: {
+          provider: response.provider,
+          model: response.model,
+          fallbackUsed: response.fallback_used,
+          error: response.error,
         },
-      ]);
+      };
+
+      setMessages((prev) => limitChatHistory([...prev, assistantMessage]));
 
       if (response.fallback_used) {
         showToast("Fallback para MockProvider acionado.");
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: UI.apiError,
-        },
-      ]);
+      const errorMessage = createMessage("assistant", UI.apiError);
 
+      setMessages((prev) => limitChatHistory([...prev, errorMessage]));
       showToast("Erro ao conectar com a API.");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleCopy(content: string, index: number) {
+  async function handleCopy(content: string, messageId: string) {
     try {
       await navigator.clipboard.writeText(content);
 
@@ -207,11 +232,11 @@ export function ChatPage() {
         window.clearTimeout(copiedTimeoutRef.current);
       }
 
-      setCopiedIndex(index);
+      setCopiedMessageId(messageId);
       showToast(UI.copySuccess);
 
       copiedTimeoutRef.current = window.setTimeout(() => {
-        setCopiedIndex(null);
+        setCopiedMessageId(null);
         copiedTimeoutRef.current = null;
       }, 1800);
     } catch {
@@ -219,9 +244,19 @@ export function ChatPage() {
     }
   }
 
-  function handleFeedback(type: FeedbackType) {
-    setFeedback(type);
+  function handleFeedback(messageId: string, type: FeedbackType) {
+    setMessages((prev) => updateMessageFeedback(prev, messageId, type));
     showToast(type === "like" ? UI.feedbackLike : UI.feedbackDislike);
+  }
+
+  function handleClearHistory() {
+    if (!window.confirm(UI.clearConfirm)) {
+      return;
+    }
+
+    setMessages([createWelcomeMessage()]);
+    setCopiedMessageId(null);
+    showToast(UI.historyCleared);
   }
 
   return (
@@ -254,6 +289,9 @@ export function ChatPage() {
           </select>
 
           <button onClick={() => setSettingsOpen(true)}>{UI.config}</button>
+          <button onClick={handleClearHistory} disabled={storedMessagesCount === 0 || loading}>
+            {UI.clearHistory}
+          </button>
         </div>
       </header>
 
@@ -263,60 +301,70 @@ export function ChatPage() {
         <div className="provider-status">
           <span>Provider: {selectedProvider?.label ?? provider}</span>
           <span>Modelo: {model}</span>
+          <span>{UI.historyTitle}: {storedMessagesCount} mensagem(ns)</span>
           {selectedProvider && !selectedProvider.configured && selectedProvider.real_provider && (
             <span className="warning-pill">sem chave — fallback ativo</span>
           )}
         </div>
+        <p className="history-help">{UI.historyHelp}</p>
       </section>
 
       <section className="chat">
-        {messages.map((item, index) => (
-          <article
-            key={`${item.role}-${index}`}
-            className={`message ${item.role === "user" ? "user" : "assistant"}`}
-          >
-            <div className="avatar">{item.role === "user" ? "P" : "IA"}</div>
+        {messages.map((item) => {
+          const showAssistantActions = item.role === "assistant" && !item.isSystem;
 
-            <div className="message-content">
-              <strong>{item.role === "user" ? UI.you : UI.assistantName}</strong>
-              <p>{item.content}</p>
+          return (
+            <article
+              key={item.id}
+              className={`message ${item.role === "user" ? "user" : "assistant"}`}
+            >
+              <div className="avatar">{item.role === "user" ? "P" : "IA"}</div>
 
-              {item.meta && (
-                <div className="response-meta">
-                  <span>{item.meta.provider}</span>
-                  <span>{item.meta.model}</span>
-                  {item.meta.fallbackUsed && <span className="warning-pill">fallback usado</span>}
+              <div className="message-content">
+                <div className="message-heading">
+                  <strong>{item.role === "user" ? UI.you : UI.assistantName}</strong>
+                  <span>{formatMessageTime(item.createdAt)}</span>
                 </div>
-              )}
 
-              {item.role === "assistant" && (
-                <div className="actions">
-                  <button onClick={() => handleCopy(item.content, index)}>
-                    {copiedIndex === index ? UI.copied : UI.copy}
-                  </button>
+                <p>{item.content}</p>
 
-                  <button disabled={!lastMessage || loading} onClick={() => handleSend(lastMessage)}>
-                    {UI.redo}
-                  </button>
+                {item.meta && (
+                  <div className="response-meta">
+                    <span>{item.meta.provider}</span>
+                    <span>{item.meta.model}</span>
+                    {item.meta.fallbackUsed && <span className="warning-pill">fallback usado</span>}
+                  </div>
+                )}
 
-                  <button
-                    className={feedback === "like" ? "active-feedback" : ""}
-                    onClick={() => handleFeedback("like")}
-                  >
-                    {UI.liked}
-                  </button>
+                {showAssistantActions && (
+                  <div className="actions">
+                    <button onClick={() => handleCopy(item.content, item.id)}>
+                      {copiedMessageId === item.id ? UI.copied : UI.copy}
+                    </button>
 
-                  <button
-                    className={feedback === "dislike" ? "active-feedback" : ""}
-                    onClick={() => handleFeedback("dislike")}
-                  >
-                    {UI.disliked}
-                  </button>
-                </div>
-              )}
-            </div>
-          </article>
-        ))}
+                    <button disabled={!lastUserMessage || loading} onClick={() => handleSend(lastUserMessage)}>
+                      {UI.redo}
+                    </button>
+
+                    <button
+                      className={item.feedback === "like" ? "active-feedback" : ""}
+                      onClick={() => handleFeedback(item.id, "like")}
+                    >
+                      {UI.liked}
+                    </button>
+
+                    <button
+                      className={item.feedback === "dislike" ? "active-feedback" : ""}
+                      onClick={() => handleFeedback(item.id, "dislike")}
+                    >
+                      {UI.disliked}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </article>
+          );
+        })}
 
         {loading && (
           <article className="message assistant">

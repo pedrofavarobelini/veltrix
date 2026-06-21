@@ -382,3 +382,60 @@ button {
   background: rgba(15, 23, 42, 0.86);
   border: 1px solid rgba(148, 163, 184, 0.28);
 }
+
+.history-help {
+  width: min(720px, calc(100% - 32px));
+  margin: 14px auto 0;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.message-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.message-heading strong {
+  margin-bottom: 0;
+}
+
+.message-heading span {
+  color: #94a3b8;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.controls button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .header {
+    height: auto;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+    padding: 18px;
+  }
+
+  .controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .controls select,
+  .controls button {
+    flex: 1 1 160px;
+  }
+
+  .message-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
