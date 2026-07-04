@@ -83,3 +83,27 @@ Para tarefas críticas, uma resposta gerada via fallback (`MockProvider`) nunca 
 ## Decisão 021 — QA Intelligence será planejada como caso de uso do PedroCore, não como substituição do QA Automation
 
 A futura QA Intelligence do PedroCore (delegada de `QA-AUTOMATION-01G`) é um caso de uso de análise exploratória/visual assistida por IA, complementar ao QA Automation do FinGuard — nunca uma substituição da validação técnica (API, backend, frontend, rotas, banco de teste, Prisma, Playwright, smoke tests, E2E) que continua sendo responsabilidade do próprio FinGuard.
+
+## Decisão 022 — Task Router será responsável por classificar tarefas antes de chamar providers
+
+Toda solicitação de orquestração deve ser classificada por `task_type`/`origin_system` antes de qualquer chamada a provider. O Task Router é o módulo planejado para essa responsabilidade; providers não devem decidir estratégia de tarefa.
+
+## Decisão 023 — Prompt Builder será responsável por montar prompts; providers apenas executam chamadas
+
+A montagem do prompt final (combinando `system_prompt`, `task_type`, contexto de projeto, artefatos e formato de resposta esperado) é responsabilidade do Prompt Builder planejado, não dos providers individuais. Providers executam a chamada ao modelo com o prompt já pronto.
+
+## Decisão 024 — Project Context será a camada conceitual de configuração por sistema externo
+
+Cada sistema externo (ex.: FinGuard) é representado, na arquitetura-alvo, por um Project Context com metadados e limites próprios (tarefas permitidas, somente leitura, proibição de executar comandos ou escrever arquivos), sem acoplamento direto ao código do sistema externo.
+
+## Decisão 025 — `/api/chat` deve permanecer compatível durante a evolução arquitetural
+
+Qualquer novo endpoint de orquestração deve coexistir com `POST /api/chat`, sem quebrar o uso conversacional atual nem exigir mudança no frontend existente.
+
+## Decisão 026 — Artifact Reader futuro deve ser somente leitura e não pode executar comandos em projetos externos
+
+Quando implementado, o Artifact Reader nunca escreve, nunca comita e nunca executa comandos em projetos externos (incluindo o FinGuard). Nesta fase, artefatos só são recebidos via payload, nunca por leitura automática de pasta/repositório.
+
+## Decisão 027 — Audit/logs devem ser planejados antes de integrações reais com sistemas externos
+
+Os campos de auditoria (origem, tarefa, provider, fallback, erro, latência, timestamp, criticidade) devem estar definidos e implementados antes de qualquer integração real com sistemas externos, para garantir rastreabilidade desde o primeiro uso em produção. Nenhum dado sensível ou chave de API deve ser armazenado em log.

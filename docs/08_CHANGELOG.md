@@ -2,6 +2,39 @@
 
 Atualizado em: 04/07/2026
 
+## PEDROCORE-REPLAN-01C — Arquitetura-alvo: Task Router, Prompt Builder e Project Context
+
+Status: iniciada.
+
+### Motivação
+
+Com os contratos técnicos documentados em `PEDROCORE-REPLAN-01B` (commit `6e7badd`), a frente `01C` documenta a arquitetura-alvo que permitiria implementar esses contratos no futuro: como uma requisição de orquestração seria classificada, contextualizada, transformada em prompt, executada por um provider e registrada em auditoria.
+
+### Criado
+
+- `docs/11-arquitetura-alvo/ARQUITETURA_ALVO_PEDROCORE.md` — arquitetura atual (FastAPI, `ChatService`, `ProviderRegistry`, `BaseAIProvider`, providers, fallback) vs. arquitetura-alvo (fluxo completo Task Router → Project Context → Artifact Reader → Prompt Builder → Provider Orchestration → Structured Responses → Audit/logs), além de Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e relação com o FinGuard.
+- `docs/11-arquitetura-alvo/TASK_ROUTER.md` — responsabilidade futura do Task Router e exemplos de roteamento planejados por `task_type`.
+- `docs/11-arquitetura-alvo/PROMPT_BUILDER.md` — responsabilidade futura do Prompt Builder e a regra "Task Router decide, Prompt Builder monta, Provider executa".
+- `docs/11-arquitetura-alvo/PROJECT_CONTEXT.md` — conceito planejado de representação de sistemas externos (ex.: FinGuard), com exemplo ilustrativo de campos conceituais.
+
+### Alterado (documentação)
+
+- `docs/03-versoes/ROADMAP.md` — `PEDROCORE-REPLAN-01A` e `01B` marcadas como concluídas (commits `1e5a8cb` e `6e7badd`); `01C` marcada como em andamento; `01D` e `01E` mantidas como planejadas; adicionada referência aos documentos de `docs/11-arquitetura-alvo/`.
+- `docs/09_STATUS_ATUAL.md` — frente atual atualizada para `PEDROCORE-REPLAN-01C`; registrado que `01A` e `01B` estão concluídas/commitadas; reforçado que Task Router, Prompt Builder, Project Context, Artifact Reader, Provider Orchestration avançada, Structured Responses e Audit/logs continuam sem implementação em código.
+- `docs/07-decisoes/DECISOES_TECNICAS.md` — adicionadas decisões 022 a 027, preservando as decisões 001 a 021.
+- `docs/08_CHANGELOG.md` — esta entrada.
+
+### Não alterado nesta etapa
+
+- Sem alterações de código-fonte (`apps/api`, `apps/web`).
+- Sem criação de endpoint, schema Pydantic, service, migration, banco de dados ou artifact reader real.
+- Sem alterações de frontend, componentes, estilos, layout ou design.
+- Sem instalação de dependências, sem execução de servidor ou testes.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Sem alterações no `.env`.
+- Sem leitura ou escrita no repositório do FinGuard.
+- Sem commit e sem criação de tag.
+
 ## PEDROCORE-REPLAN-01B — Planejamento técnico e contratos
 
 Status: iniciada.

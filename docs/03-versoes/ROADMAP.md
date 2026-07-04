@@ -39,8 +39,8 @@ Status: CONCLUÍDA.
 Frente aberta para reposicionar o PedroCore como orquestrador central de IA do ecossistema Pedro, antes de qualquer nova implementação de código. Sem datas prometidas.
 
 - **01A — Consolidação documental e visão oficial.** *(concluída)* Reformulou a documentação principal (README, VERSION, visão geral, objetivo, roadmap, status, decisões técnicas, changelog) para refletir a nova visão estratégica, sem alterar código. Commitada em `1e5a8cb`.
-- **01B — Planejamento técnico e contratos.** *(em andamento)* Especifica, em `docs/10-contratos/`, os contratos de request/response para consumo por sistemas externos (`origin_system`, `task_type`, `context`, `artifacts`), tipos de tarefa, resposta estruturada, contrato de artefatos, roteamento de provider e regras de fallback — ainda sem implementar código.
-- **01C — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.** *(planejado)* Desenhar os módulos responsáveis por classificar a solicitação, montar o prompt final e resolver contexto por projeto/sistema de origem.
+- **01B — Planejamento técnico e contratos.** *(concluída)* Especificou, em `docs/10-contratos/`, os contratos de request/response para consumo por sistemas externos (`origin_system`, `task_type`, `context`, `artifacts`), tipos de tarefa, resposta estruturada, contrato de artefatos, roteamento de provider e regras de fallback — sem implementar código. Commitada em `6e7badd`.
+- **01C — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.** *(em andamento)* Documenta, em `docs/11-arquitetura-alvo/`, a arquitetura-alvo que sustentaria os contratos da 01B: Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader e Audit/logs. A arquitetura-alvo está sendo documentada; nenhum módulo foi implementado em código.
 - **01D — Planejamento de QA Intelligence.** *(planejado)* Desenhar, sem implementar, o caso de uso de leitura e análise de relatórios de QA (Markdown livre) de projetos externos como o FinGuard, sempre em modo somente leitura.
 - **01E — Fechamento documental da reformulação.** *(planejado)* Consolidar/remover documentação duplicada ou obsoleta identificada nas fases anteriores.
 
@@ -61,10 +61,21 @@ Nenhum desses itens está implementado. Nenhuma integração com o FinGuard exis
 
 ## Documentação de contratos (01B)
 
-Os contratos técnicos planejados nesta fase estão detalhados em `docs/10-contratos/`:
+Os contratos técnicos planejados na fase `01B` estão detalhados em `docs/10-contratos/`:
 
 - `docs/10-contratos/CONTRATOS_TECNICOS_PEDROCORE.md` — índice e princípios gerais.
 - `docs/10-contratos/CONTRATO_ORQUESTRACAO.md` — contrato de entrada/saída, tipos de tarefa, artefatos, provider preference e fallback.
 - `docs/10-contratos/CONTRATO_QA_INTELLIGENCE.md` — resposta estruturada de QA e limites com o FinGuard.
 
 Esses documentos são especificação/planejamento. Nenhum contrato neles descrito está implementado no código.
+
+## Documentação de arquitetura-alvo (01C)
+
+A arquitetura-alvo que sustentaria os contratos da `01B` está detalhada em `docs/11-arquitetura-alvo/`:
+
+- `docs/11-arquitetura-alvo/ARQUITETURA_ALVO_PEDROCORE.md` — arquitetura atual vs. arquitetura-alvo, Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e com o FinGuard.
+- `docs/11-arquitetura-alvo/TASK_ROUTER.md` — responsabilidade e exemplos de roteamento planejados.
+- `docs/11-arquitetura-alvo/PROMPT_BUILDER.md` — responsabilidade planejada de montagem de prompt.
+- `docs/11-arquitetura-alvo/PROJECT_CONTEXT.md` — conceito planejado de representação de sistemas externos.
+
+Esses documentos são especificação/planejamento de arquitetura. Nenhum módulo neles descrito (Task Router, Prompt Builder, Project Context, Artifact Reader, Audit/logs) está implementado no código.
