@@ -2,6 +2,49 @@
 
 Atualizado em: 04/07/2026
 
+## PEDROCORE-IMPLEMENT-01A/01B — Task Router mínimo + metadados de resposta
+
+Status: implementada, validada.
+
+### Motivação
+
+Com `PEDROCORE-REPLAN-01` concluída no escopo documental (commit `cc808a7`), esta é a primeira implementação de código pós-reformulação: uma base mínima e segura de orquestração por `task_type`, operando dentro do endpoint `/api/chat` já existente, sem quebrar compatibilidade e sem chamar provider real nos testes.
+
+### Backend — Criado
+
+- `apps/api/app/modules/task_router/__init__.py`
+- `apps/api/app/modules/task_router/schemas.py` — `TaskStrategy` (task_type, response_style, requires_structured_response, criticality, allow_mock, warnings).
+- `apps/api/app/modules/task_router/service.py` — `TaskRouter.resolve()`, normaliza `task_type`, reconhece `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary` e `unknown`.
+
+### Backend — Alterado
+
+- `apps/api/app/modules/chat/schemas.py` — `ChatRequest` ganhou `task_type` (default `"general_chat"`), `origin_system` (default `"pedrocore"`), `context` e `metadata` (opcionais); `ChatResponse` ganhou `task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`.
+- `apps/api/app/modules/chat/service.py` — `ChatService.send_message` chama `task_router.resolve()` antes de resolver o provider; resposta (sucesso e fallback) inclui os novos metadados; warning forte adicionado quando `fallback_used=True` em tarefa crítica (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`) ou quando Mock é usado em tarefa com `allow_mock=False`.
+
+### Testes
+
+- `apps/api/tests/test_task_router.py` — 8 testes novos: requisição antiga sem `task_type` continua funcionando; `general_chat` retorna `task_type` correto; `qa_report_analysis` retorna `requires_structured_response=true`/`criticality="high"`/warning; `release_gate_review` com provider desconhecido cai para Mock com `fallback_used=true` e warning forte; `task_type` desconhecido normaliza para `unknown` com warning sem quebrar; normalização de case/espaço no Task Router; defaults do Task Router; `/api/providers` continua funcionando.
+- **Comando rodado:** `./.venv/Scripts/python.exe -m pytest -v` (dentro de `apps/api`).
+- **Resultado:** `15 passed, 2 warnings` (7 testes antigos + 8 novos; warnings pré-existentes de deprecação do Starlette/Pydantic, não introduzidos por esta mudança).
+
+### Compatibilidade
+
+- `POST /api/chat` continua aceitando requisições antigas sem `task_type`/`origin_system`/`context`/`metadata`, com defaults seguros.
+- `GET /api/providers` inalterado.
+- Fallback para `MockProvider` preservado.
+- Nenhum endpoint `/api/orchestrate` foi criado — o Task Router opera internamente dentro de `/api/chat` (Decisão Técnica 039).
+
+### Não alterado nesta etapa
+
+- Sem alterações de frontend, componentes, estilos, layout ou design (`apps/web` limpo).
+- Sem alterações no `.env`.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok) — testes usam apenas Mock e provider inexistente.
+- Sem leitura ou escrita no repositório do FinGuard.
+- Sem instalação de dependências.
+- Sem Prompt Builder real, Project Context real, Artifact Reader, QA Intelligence real ou Audit/logs.
+- Sem alteração de versão de produto (V5.1.9) ou versão de pacote backend (0.2.0).
+- Sem criação de tag.
+
 ## PEDROCORE-REPLAN-01E — Fechamento documental da reformulação
 
 Status: em fechamento.

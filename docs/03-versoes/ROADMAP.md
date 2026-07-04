@@ -46,9 +46,32 @@ Frente aberta para reposicionar o PedroCore como orquestrador central de IA do e
 - **01D — Planejamento de QA Intelligence.** *(concluída)* Documentou, em `docs/12-qa-intelligence/`, a camada futura de QA Intelligence: análise de relatórios de QA (Markdown livre), diagnóstico de falhas, release gate assistido, resposta estruturada, severidade/risco e limites de atuação — sempre em modo somente leitura e sem implementar código. Commitada em `8c68b67`.
 - **01E — Fechamento documental da reformulação.** *(em fechamento documental)* Consolida o que foi entregue em 01A–01D em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, registra pendências e riscos remanescentes, e recomenda a próxima fase. Documentação duplicada/legada tratada como pendência planejada (ver `docs/13-fechamento/`), não removida nesta etapa. Commit da 01E ainda pendente de aprovação.
 
-## PEDROCORE-IMPLEMENT-01 — Base inicial de orquestração por task_type (fase futura sugerida)
+## PEDROCORE-IMPLEMENT-01 — Base inicial de orquestração por task_type
 
-*(planejado, ainda não iniciado)* Primeira frente de implementação recomendada após o fechamento de `PEDROCORE-REPLAN-01`, detalhada em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12. A implementação **ainda não começou** — nenhum código de Task Router, Prompt Builder, Project Context, Artifact Reader, QA Intelligence ou Audit/logs existe hoje.
+Primeira frente de implementação de código pós-reformulação, detalhada em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12.
+
+- **01A/01B — Task Router mínimo + metadados de resposta.** *(implementada, em validação)* Testes backend passando (15/15).
+
+  Implementado:
+  - `task_type` opcional no `ChatRequest` (default `"general_chat"`).
+  - `origin_system` opcional no `ChatRequest` (default `"pedrocore"`).
+  - `context` e `metadata` opcionais no `ChatRequest` (passthrough, sem uso na lógica ainda).
+  - Task Router mínimo em `apps/api/app/modules/task_router/` (normaliza `task_type`, reconhece `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary` e `unknown`, sem bloqueio duro).
+  - Metadados de tarefa no `ChatResponse`: `task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`.
+  - Warning forte quando fallback Mock é usado em tarefa crítica (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`).
+  - Testes backend seguros em `apps/api/tests/test_task_router.py` (8 testes novos, cobrindo compatibilidade retroativa, task_types conhecidos, fallback crítico e task_type desconhecido).
+
+  Não implementado nesta etapa:
+  - Prompt Builder real (o prompt continua montado por `BaseAIProvider.build_prompt`, sem usar `task_type`/`context`/`metadata`).
+  - Project Context real (nenhuma representação de sistema externo configurada).
+  - Artifact Reader.
+  - QA Intelligence real (nenhuma análise de relatório, apenas metadados de tarefa).
+  - Audit/logs.
+  - Endpoint `/api/orchestrate` (o Task Router opera internamente dentro de `POST /api/chat`, conforme Decisão Técnica 039).
+  - Integração real com o FinGuard.
+  - Qualquer mudança de frontend/design.
+
+- **01C em diante** — planejamento de fases futuras (Prompt Builder real, Project Context real, Artifact Reader, QA Intelligence real, Audit/logs, endpoint de orquestração) permanece **não iniciado**, sujeito a aprovação futura.
 
 ## Fases futuras (planejadas, sem ordem de data fixa)
 

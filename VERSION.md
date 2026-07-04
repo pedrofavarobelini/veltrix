@@ -12,11 +12,11 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-REPLAN-01E — Fechamento documental da reformulação.
+PEDROCORE-IMPLEMENT-01A/01B — Task Router mínimo + metadados de resposta.
 
 ## Status atual
 
-Fechamento documental da reformulação `PEDROCORE-REPLAN-01`. `01A`, `01B`, `01C` e `01D` estão concluídas e commitadas (`1e5a8cb`, `6e7badd`, `c1e7816`, `8c68b67`); `01E` consolida o fechamento em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`. Sem alterações de código, frontend, design, providers reais ou `.env` nesta etapa.
+`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental (commits `1e5a8cb`, `6e7badd`, `c1e7816`, `8c68b67`, `cc808a7`). Primeira implementação de código pós-reformulação: Task Router mínimo integrado a `POST /api/chat`, com metadados de tarefa no `ChatResponse` e warnings de fallback crítico. Testes backend passando (15/15). Sem alterações de frontend, design, providers reais ou `.env`.
 
 ## Observação sobre versionamento
 
@@ -27,6 +27,9 @@ Existem duas numerações distintas no projeto, que não devem ser confundidas:
 
 Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
-## Próxima fase sugerida
+## Próximos passos técnicos
 
-- `PEDROCORE-IMPLEMENT-01` — Base inicial de orquestração por `task_type` (planejada, ainda não iniciada; ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12).
+- Prompt Builder real consumindo `task_type`/`context`/`metadata` (ainda não implementado).
+- Project Context real por sistema externo (ainda não implementado).
+- Audit/logs básico (ainda não implementado).
+- Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12, para o escopo completo de `PEDROCORE-IMPLEMENT-01`.

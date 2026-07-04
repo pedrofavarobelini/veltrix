@@ -151,3 +151,11 @@ Ao implementar o Task Router, a primeira versão deve ser validável com `MockPr
 ## Decisão 038 — Integração real com sistemas externos só deve ocorrer após contratos, autenticação e audit/log mínimos
 
 Nenhuma integração real (ex.: recebendo chamadas do FinGuard) deve ser habilitada antes de existirem, no mínimo: o contrato de orquestração implementado, um mecanismo de autenticação entre sistemas e um audit/log básico registrando as chamadas.
+
+## Decisão 039 — Task Router inicial deve começar como camada interna do /api/chat antes de novo endpoint público
+
+A primeira implementação do Task Router deve operar dentro do fluxo já existente de `POST /api/chat`, preservando compatibilidade com clientes atuais e permitindo validação segura com Mock antes da criação de qualquer endpoint novo de orquestração.
+
+## Decisão 040 — Warnings de fallback crítico devem ser expostos na resposta antes de qualquer bloqueio automático
+
+Na primeira implementação, o fallback Mock em tarefa crítica não bloqueia a resposta — apenas adiciona um warning explícito em `task_warnings`. Bloqueio automático (ex.: `status: "blocked"`) é uma evolução futura, a ser decidida somente depois que sistemas externos reais consumirem e validarem esses warnings.
