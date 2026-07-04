@@ -2,6 +2,38 @@
 
 Atualizado em: 04/07/2026
 
+## PEDROCORE-REPLAN-01B — Planejamento técnico e contratos
+
+Status: iniciada.
+
+### Motivação
+
+Com a visão oficial consolidada em `PEDROCORE-REPLAN-01A` (commit `1e5a8cb`), a frente `01B` documenta os contratos técnicos que guiarão a evolução do PedroCore como orquestrador central: como sistemas externos poderiam futuramente enviar mensagem/contexto/tipo de tarefa e como o PedroCore devolveria uma resposta padronizada, incluindo o caso específico de análise de QA.
+
+### Criado
+
+- `docs/10-contratos/CONTRATOS_TECNICOS_PEDROCORE.md` — índice geral, estado atual vs. planejado e princípios de segurança/limites com o FinGuard.
+- `docs/10-contratos/CONTRATO_ORQUESTRACAO.md` — contrato de entrada/saída planejado, campos obrigatórios/opcionais, tipos de tarefa (`task_type`), resposta padronizada, contrato de artefatos, `provider_preference`/roteamento e regras de fallback.
+- `docs/10-contratos/CONTRATO_QA_INTELLIGENCE.md` — resposta estruturada planejada para tarefas de QA e relação de limites com o FinGuard.
+
+### Alterado (documentação)
+
+- `docs/03-versoes/ROADMAP.md` — `PEDROCORE-REPLAN-01A` marcada como concluída (commit `1e5a8cb`); `PEDROCORE-REPLAN-01B` marcada como em andamento; `01C`, `01D` e `01E` mantidas como planejadas; adicionada referência aos documentos de `docs/10-contratos/`.
+- `docs/09_STATUS_ATUAL.md` — frente atual atualizada para `PEDROCORE-REPLAN-01B`; registrado que `01A` foi concluída/commitada; registrado que `01B` está em planejamento técnico/contratos; reforçado que Task Router, Prompt Builder, Artifact Reader e QA Intelligence continuam sem implementação em código.
+- `docs/07-decisoes/DECISOES_TECNICAS.md` — adicionadas decisões 016 a 021, preservando as decisões 001 a 015.
+- `docs/08_CHANGELOG.md` — esta entrada.
+
+### Não alterado nesta etapa
+
+- Sem alterações de código-fonte (`apps/api`, `apps/web`).
+- Sem criação de endpoint, schema Pydantic, service, migration, banco de dados ou artifact reader real.
+- Sem alterações de frontend, componentes, estilos, layout ou design.
+- Sem instalação de dependências, sem execução de servidor ou testes.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Sem alterações no `.env`.
+- Sem leitura ou escrita no repositório do FinGuard.
+- Sem commit e sem criação de tag.
+
 ## PEDROCORE-REPLAN-01A — Consolidação documental e visão oficial
 
 Status: iniciada.

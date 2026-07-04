@@ -12,7 +12,9 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-REPLAN-01A — Consolidação documental e visão oficial.
+PEDROCORE-REPLAN-01B — Planejamento técnico e contratos.
+
+`PEDROCORE-REPLAN-01A` (Consolidação documental e visão oficial) foi concluída e commitada em `1e5a8cb — docs: iniciar PEDROCORE-REPLAN-01A`.
 
 ## Local oficial
 
@@ -27,19 +29,20 @@ C:\Projetos\pedrocore-ia
 - Fallback automático para `MockProvider` quando um provider real falha ou não está configurado.
 - Frontend React/Vite/TypeScript com histórico local (`localStorage`), feedback gostei/não gostei, painel de configuração de providers e identidade visual aplicada (V5.1.9).
 - Testes de backend cobrindo chat mock, fallback por provider desconhecido, validação de payload e listagem de providers.
+- `PEDROCORE-REPLAN-01A` — visão oficial, objetivo, roadmap, status, decisões técnicas e changelog reformulados (commit `1e5a8cb`).
 
 ## Em andamento
 
-- Reformulação da documentação principal para refletir a visão de orquestrador central de IA (`PEDROCORE-REPLAN-01A`).
-- Identificação e sinalização de documentos duplicados/desatualizados para consolidação futura (`PEDROCORE-REPLAN-01E`).
+- `PEDROCORE-REPLAN-01B` — planejamento técnico e contratos, documentado em `docs/10-contratos/` (contrato de orquestração, tipos de tarefa, resposta estruturada, contrato de artefatos, provider preference, fallback e relação com QA Intelligence). **Apenas documentação/planejamento — nenhum código foi criado.**
 
 ## Ainda não existe
 
-- Task Router, Prompt Builder e Project Context (arquitetura-alvo, `PEDROCORE-REPLAN-01C`).
+- Task Router, Prompt Builder e Project Context implementados em código (arquitetura-alvo, `PEDROCORE-REPLAN-01C`) — nesta fase (`01B`) apenas o contrato de entrada/saída que esses módulos consumiriam foi especificado em documentação.
+- Endpoint novo de orquestração (`origin_system`/`task_type`/`artifacts`) — apenas especificado em `docs/10-contratos/`, não implementado.
 - Resposta estruturada por tipo de tarefa (hoje a resposta é texto livre em `answer: str`).
 - Auditoria/log persistente de chamadas.
-- Leitura de artefatos externos (relatórios de QA do FinGuard, documentação Obsidian) — planejada como somente leitura, ainda não implementada.
-- QA Intelligence como caso de uso concreto.
+- Artifact Reader real (leitura automática de pastas/arquivos externos, incluindo relatórios de QA do FinGuard) — planejado apenas como recebimento de conteúdo via payload nesta fase; leitura automática de caminho/pasta é fase futura.
+- QA Intelligence como caso de uso concreto (apenas o contrato de resposta foi especificado em `docs/10-contratos/CONTRATO_QA_INTELLIGENCE.md`).
 - Persistência em banco de dados (histórico hoje só existe no navegador).
 - Qualquer integração real com o FinGuard ou outro sistema externo.
 
@@ -62,7 +65,7 @@ C:\Projetos\pedrocore-ia
 
 ## Próximos passos
 
-- Executar `PEDROCORE-REPLAN-01B` — planejamento técnico e contratos de request/response para sistemas externos.
+- Concluir e revisar `PEDROCORE-REPLAN-01B` (contratos em `docs/10-contratos/`).
 - Executar `PEDROCORE-REPLAN-01C` — arquitetura-alvo de Task Router, Prompt Builder e Project Context.
-- Executar `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence.
+- Executar `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence (aprofundando o contrato já esboçado em `CONTRATO_QA_INTELLIGENCE.md`).
 - Consolidar/remover documentação duplicada em `PEDROCORE-REPLAN-01E`.

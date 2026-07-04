@@ -38,8 +38,8 @@ Status: CONCLUÍDA.
 
 Frente aberta para reposicionar o PedroCore como orquestrador central de IA do ecossistema Pedro, antes de qualquer nova implementação de código. Sem datas prometidas.
 
-- **01A — Consolidação documental e visão oficial.** *(em andamento)* Reformular documentação principal (README, VERSION, visão geral, objetivo, roadmap, status, decisões técnicas, changelog) para refletir a nova visão estratégica, sem alterar código.
-- **01B — Planejamento técnico e contratos.** *(planejado)* Especificar contratos de request/response para consumo por sistemas externos (`origin_system`, `task_type`, `context`) e contrato de leitura de artefatos Markdown, sem implementar.
+- **01A — Consolidação documental e visão oficial.** *(concluída)* Reformulou a documentação principal (README, VERSION, visão geral, objetivo, roadmap, status, decisões técnicas, changelog) para refletir a nova visão estratégica, sem alterar código. Commitada em `1e5a8cb`.
+- **01B — Planejamento técnico e contratos.** *(em andamento)* Especifica, em `docs/10-contratos/`, os contratos de request/response para consumo por sistemas externos (`origin_system`, `task_type`, `context`, `artifacts`), tipos de tarefa, resposta estruturada, contrato de artefatos, roteamento de provider e regras de fallback — ainda sem implementar código.
 - **01C — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.** *(planejado)* Desenhar os módulos responsáveis por classificar a solicitação, montar o prompt final e resolver contexto por projeto/sistema de origem.
 - **01D — Planejamento de QA Intelligence.** *(planejado)* Desenhar, sem implementar, o caso de uso de leitura e análise de relatórios de QA (Markdown livre) de projetos externos como o FinGuard, sempre em modo somente leitura.
 - **01E — Fechamento documental da reformulação.** *(planejado)* Consolidar/remover documentação duplicada ou obsoleta identificada nas fases anteriores.
@@ -58,3 +58,13 @@ Dependentes da conclusão de `PEDROCORE-REPLAN-01` e sujeitas a repriorização:
 - Integração controlada com sistemas externos, incluindo autenticação e identificação do sistema chamador.
 
 Nenhum desses itens está implementado. Nenhuma integração com o FinGuard existe hoje — toda menção acima é planejamento futuro.
+
+## Documentação de contratos (01B)
+
+Os contratos técnicos planejados nesta fase estão detalhados em `docs/10-contratos/`:
+
+- `docs/10-contratos/CONTRATOS_TECNICOS_PEDROCORE.md` — índice e princípios gerais.
+- `docs/10-contratos/CONTRATO_ORQUESTRACAO.md` — contrato de entrada/saída, tipos de tarefa, artefatos, provider preference e fallback.
+- `docs/10-contratos/CONTRATO_QA_INTELLIGENCE.md` — resposta estruturada de QA e limites com o FinGuard.
+
+Esses documentos são especificação/planejamento. Nenhum contrato neles descrito está implementado no código.

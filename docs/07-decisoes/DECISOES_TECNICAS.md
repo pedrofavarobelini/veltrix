@@ -59,3 +59,27 @@ O fallback automático para `MockProvider` é aceitável para preservar a experi
 ## Decisão 015 — Frontend/design ficam congelados durante a reformulação arquitetural
 
 Durante a frente `PEDROCORE-REPLAN-01` (consolidação documental, planejamento técnico e arquitetura-alvo), nenhuma mudança de frontend, layout, tema, identidade visual ou componente é realizada. O frontend permanece na V5.1.9 até que a reformulação documental/arquitetural seja concluída.
+
+## Decisão 016 — Contratos técnicos devem ser documentados antes da implementação
+
+Qualquer contrato de entrada/saída, tipo de tarefa ou resposta estruturada do PedroCore deve ser especificado em documentação (`docs/10-contratos/`) antes de virar código. Isso reduz retrabalho e garante que decisões de segurança e escopo (ex.: limites com o FinGuard) sejam fixadas antes da implementação.
+
+## Decisão 017 — Sistemas externos devem enviar `origin_system` e `task_type` em contratos futuros
+
+Todo contrato futuro de orquestração exige, no mínimo, `origin_system` (quem está chamando) e `task_type` (o que está sendo pedido), para permitir roteamento, auditoria e aplicação de regras específicas por tipo de tarefa.
+
+## Decisão 018 — Respostas críticas devem ter formato estruturado
+
+Tarefas classificadas como críticas (ex.: `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `visual_qa_analysis`) devem exigir `response_format: "structured"`, nunca apenas texto livre, para permitir que o sistema de origem processe a resposta de forma confiável.
+
+## Decisão 019 — Artefatos externos devem ser recebidos inicialmente por payload, não por leitura automática de pastas
+
+Nesta fase de planejamento, qualquer artefato (relatório, log, documento) só é considerado recebido pelo PedroCore se enviado no corpo da requisição (`artifacts[].content`). Leitura automática de diretórios ou arquivos de outros projetos (incluindo o FinGuard) é explicitamente fora de escopo até uma decisão arquitetural futura e específica.
+
+## Decisão 020 — Tarefas críticas não podem depender silenciosamente de fallback Mock
+
+Para tarefas críticas, uma resposta gerada via fallback (`MockProvider`) nunca deve ser apresentada como análise real. `fallback_used: true` nessas tarefas deve gerar warning forte e, dependendo do desenho futuro, bloquear a conclusão da tarefa (`status: "blocked"`), em vez de devolver um resultado simulado como se fosse confiável.
+
+## Decisão 021 — QA Intelligence será planejada como caso de uso do PedroCore, não como substituição do QA Automation
+
+A futura QA Intelligence do PedroCore (delegada de `QA-AUTOMATION-01G`) é um caso de uso de análise exploratória/visual assistida por IA, complementar ao QA Automation do FinGuard — nunca uma substituição da validação técnica (API, backend, frontend, rotas, banco de teste, Prisma, Playwright, smoke tests, E2E) que continua sendo responsabilidade do próprio FinGuard.
