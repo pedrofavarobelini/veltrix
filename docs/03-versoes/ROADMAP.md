@@ -1,56 +1,60 @@
 # PedroCore IA — Roadmap
 
-## V1 — Chat simples + API mock
+> Documento oficial de roadmap. Substitui a leitura anterior deste arquivo e a versão paralela em `docs/03_ROADMAP.md` (a ser consolidada/tratada em etapa futura). Nenhuma data é prometida; status refletem apenas conclusão ou planejamento.
 
-Status: APROVADA.
+## Entregas concluídas
 
-## V1.0.4 — Correção definitiva dos textos da interface
+### V1 — Chat/API mock
 
-Status: APROVADA.
+Status: CONCLUÍDA.
 
-## V2 — Multi-provider completo inicial
+### V2 — Multi-provider inicial / Gemini real
 
-Status: ATUAL.
+Status: CONCLUÍDA.
 
-Entregas:
+Entregas: `BaseAIProvider`, `ProviderRegistry`, `MockProvider`, `GeminiProvider`, `OpenAIProvider`, `ClaudeProvider`, `DeepSeekProvider`, `GrokProvider`, fallback automático para Mock, endpoint `/api/providers`, seletor de provider no frontend.
 
-- BaseAIProvider.
-- Provider Registry.
-- MockProvider.
-- GeminiProvider.
-- OpenAIProvider.
-- ClaudeProvider.
-- DeepSeekProvider.
-- GrokProvider.
-- Fallback automático para MockProvider.
-- Endpoint `/api/providers`.
-- Frontend com seletor de provider.
-- Documentação atualizada.
+### V3 — Histórico local / feedback
 
-## V3 — Histórico simples + gostei/não gostei salvo
+Status: CONCLUÍDA.
 
-Status: pendente.
+Histórico de mensagens em `localStorage`, feedback "gostei"/"não gostei" por resposta.
 
-## V4 — Prompts por modo/projeto
+### V4 — Componentização / interface
 
-Status: pendente.
+Status: CONCLUÍDA.
 
-## V5 — API interna para conexão com FinGuard
+Separação da interface em componentes React (`ChatSidebar`, `MessageBubble`, `ChatComposer`, `LoadingBubble`, `ErrorBanner`).
 
-Status: pendente.
+### V5.1.9 — Interface sem ícones internos / topo limpo
 
-## V6 — PostgreSQL + logs
+Status: CONCLUÍDA.
 
-Status: pendente.
+Última entrega visual: remoção definitiva de ícones residuais do topo interno, preservando layout, responsividade e painel de providers.
 
-## V7 — RAG/memória com documentos
+---
 
-Status: pendente.
+## PEDROCORE-REPLAN-01 — Reformulação documental, estratégica e arquitetural
 
-## V8 — Multi-provider avançado/refinado
+Frente aberta para reposicionar o PedroCore como orquestrador central de IA do ecossistema Pedro, antes de qualquer nova implementação de código. Sem datas prometidas.
 
-Status: pendente.
+- **01A — Consolidação documental e visão oficial.** *(em andamento)* Reformular documentação principal (README, VERSION, visão geral, objetivo, roadmap, status, decisões técnicas, changelog) para refletir a nova visão estratégica, sem alterar código.
+- **01B — Planejamento técnico e contratos.** *(planejado)* Especificar contratos de request/response para consumo por sistemas externos (`origin_system`, `task_type`, `context`) e contrato de leitura de artefatos Markdown, sem implementar.
+- **01C — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.** *(planejado)* Desenhar os módulos responsáveis por classificar a solicitação, montar o prompt final e resolver contexto por projeto/sistema de origem.
+- **01D — Planejamento de QA Intelligence.** *(planejado)* Desenhar, sem implementar, o caso de uso de leitura e análise de relatórios de QA (Markdown livre) de projetos externos como o FinGuard, sempre em modo somente leitura.
+- **01E — Fechamento documental da reformulação.** *(planejado)* Consolidar/remover documentação duplicada ou obsoleta identificada nas fases anteriores.
 
-## V9 — Deploy/documentação final
+## Fases futuras (planejadas, sem ordem de data fixa)
 
-Status: pendente.
+Dependentes da conclusão de `PEDROCORE-REPLAN-01` e sujeitas a repriorização:
+
+- Task Router.
+- Prompt Builder.
+- Resposta estruturada (schemas por tipo de tarefa, além de texto livre).
+- Auditoria/logs de chamadas (origem, provider usado, fallback, latência).
+- Leitura controlada de artefatos Markdown (relatórios de QA, documentação Obsidian de projetos externos), sempre somente leitura.
+- QA Intelligence (caso de uso concreto de análise de relatórios de QA do FinGuard).
+- Persistência/histórico no backend (hoje o histórico existe apenas no `localStorage` do navegador).
+- Integração controlada com sistemas externos, incluindo autenticação e identificação do sistema chamador.
+
+Nenhum desses itens está implementado. Nenhuma integração com o FinGuard existe hoje — toda menção acima é planejamento futuro.

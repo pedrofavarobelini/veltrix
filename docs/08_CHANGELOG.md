@@ -1,6 +1,35 @@
 # PedroCore IA — Changelog
 
-Atualizado em: 21/06/2026
+Atualizado em: 04/07/2026
+
+## PEDROCORE-REPLAN-01A — Consolidação documental e visão oficial
+
+Status: iniciada.
+
+### Motivação
+
+Uma auditoria somente leitura do repositório apontou duplicidade documental significativa (pares de arquivos conflitantes em `docs/`), uma visão de projeto desatualizada (PedroCore descrito apenas como chat pessoal multi-provider) e a necessidade de reposicionar o projeto como orquestrador central de IA do ecossistema Pedro, incluindo apoio futuro a inteligência operacional/QA de projetos externos como o FinGuard.
+
+### Alterado (documentação)
+
+- `README.md` — reescrito para apresentar o PedroCore como orquestrador central de IA, multi-provider, API para sistemas externos.
+- `VERSION.md` — atualizado com a frente `PEDROCORE-REPLAN-01A` e status de reformulação documental.
+- `docs/00-visao-geral/README.md` — reescrito como visão oficial consolidada.
+- `docs/00-visao-geral/OBJETIVO.md` — objetivos atualizados (principal, secundário, futuro, fora de escopo).
+- `docs/03-versoes/ROADMAP.md` — roadmap atualizado com entregas concluídas (V1 a V5.1.9) e a frente `PEDROCORE-REPLAN-01` (01A a 01E) e fases futuras.
+- `docs/09_STATUS_ATUAL.md` — reescrito como status único, consolidando as seções repetidas anteriores.
+- `docs/07-decisoes/DECISOES_TECNICAS.md` — adicionadas decisões 007 a 015, preservando as decisões 001 a 006.
+- `docs/08_CHANGELOG.md` — esta entrada.
+
+### Não alterado nesta etapa
+
+- Sem alterações de código-fonte (`apps/api`, `apps/web`).
+- Sem alterações de frontend, componentes, estilos, layout ou design.
+- Sem instalação de dependências, sem execução de servidor ou testes.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Sem alterações no `.env`.
+- Sem leitura ou escrita no repositório do FinGuard.
+- Documentação antiga/duplicada em `docs/` não foi removida nesta etapa — apenas sinalizada para consolidação em `PEDROCORE-REPLAN-01E`.
 
 ## V5.0.0 — Configurações de provider pela interface
 

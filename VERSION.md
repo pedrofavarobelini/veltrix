@@ -1,34 +1,35 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 21/06/2026
+Atualizado em: 04/07/2026
 
-## Versão atual
+## Versão atual de produto
 
-V5.1.9 — Remoção definitiva dos ícones do topo interno
+V5.1.9
 
-## Status
+## Versão técnica do backend
 
-IMPLEMENTADA PARA TESTES — aguardando aprovação visual local.
+0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Resumo
+## Frente atual
 
-A V5.1.9 remove de forma definitiva os ícones/círculos residuais do topo interno da interface. A correção preserva a responsividade da versão anterior, o design aprovado, a sidebar, o painel direito e o backend.
+PEDROCORE-REPLAN-01A — Consolidação documental e visão oficial.
 
-## Alterações
+## Status atual
 
-- Removidos os blocos `window-dots` e `window-actions` do JSX.
-- Adicionado CSS defensivo para ocultar qualquer resíduo desses blocos.
-- Mantida a estrutura visual aprovada.
-- Mantida a responsividade.
-- Mantido backend sem alteração funcional.
+Reformulação documental/estratégica. Sem alterações de código, frontend, design, providers reais ou `.env` nesta etapa.
 
-## Git sugerido
+## Observação sobre versionamento
 
-```txt
-commit: fix: remover definitivamente icones do topo interno
-tag: v5.1.9
-```
+Existem duas numerações distintas no projeto, que não devem ser confundidas:
 
-## Próxima versão
+- **Versão de produto** (V5.1.9): marca entregas visuais/funcionais de frontend.
+- **Versão técnica do backend** (`0.2.0`): versão do pacote Python da API.
 
-V6 — Persistência real com banco de dados.
+Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01A`.
+
+## Próximas frentes planejadas
+
+- `PEDROCORE-REPLAN-01B` — Planejamento técnico e contratos.
+- `PEDROCORE-REPLAN-01C` — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.
+- `PEDROCORE-REPLAN-01D` — Planejamento de QA Intelligence.
+- `PEDROCORE-REPLAN-01E` — Fechamento documental da reformulação.

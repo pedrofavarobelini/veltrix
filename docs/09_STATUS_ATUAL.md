@@ -1,14 +1,18 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 21/06/2026
+Atualizado em: 04/07/2026
 
-## Versão atual
+## Status oficial
 
-V5.0.0 — Configurações de provider pela interface e logo oficial
+Em reformulação documental e estratégica. Este é o único documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
 
-## Status
+## Versão atual de produto
 
-IMPLEMENTADA PARA TESTES — aguardando aprovação local.
+V5.1.9
+
+## Frente atual
+
+PEDROCORE-REPLAN-01A — Consolidação documental e visão oficial.
 
 ## Local oficial
 
@@ -16,167 +20,49 @@ IMPLEMENTADA PARA TESTES — aguardando aprovação local.
 C:\Projetos\pedrocore-ia
 ```
 
-## Estado do projeto
+## Concluído
 
-A V5 mantém a base da V4, adiciona uma experiência mais completa para configurar providers pela interface React, preserva o histórico local da V3/V4 e aplica a logo oficial escolhida para o PedroCore IA.
+- Backend FastAPI com estrutura multi-provider (`BaseAIProvider`, `ProviderRegistry`, 6 providers: Mock, Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Endpoints `/`, `/health`, `POST /api/chat`, `GET /api/providers`.
+- Fallback automático para `MockProvider` quando um provider real falha ou não está configurado.
+- Frontend React/Vite/TypeScript com histórico local (`localStorage`), feedback gostei/não gostei, painel de configuração de providers e identidade visual aplicada (V5.1.9).
+- Testes de backend cobrindo chat mock, fallback por provider desconhecido, validação de payload e listagem de providers.
 
-## Funcionalidades disponíveis
+## Em andamento
 
-- Backend FastAPI funcionando.
-- Frontend React/Vite/TypeScript funcionando.
-- Endpoint `/health` funcionando.
-- Endpoint `/api/providers` funcionando.
-- Endpoint `/api/chat` funcionando.
-- MockProvider funcionando.
-- GeminiProvider funcionando com chave real local.
-- Estrutura multi-provider mantida.
-- Fallback para MockProvider preservado.
-- Histórico de mensagens salvo no navegador com `localStorage`.
-- Feedback `Gostei` e `Não gostei` salvo por resposta da IA.
-- Interface com sidebar de histórico local.
-- Bolhas modernas de mensagem.
-- Botão copiar resposta.
-- Timestamp simples nas mensagens.
-- Loading visual `PedroCore está pensando...`.
-- Erro visual com opção de tentar novamente.
-- Métricas simples da conversa.
-- Layout responsivo.
-- Painel dedicado de configuração de providers.
-- Cards visuais de provider.
-- Status por provider: mock local, configurado ou sem chave.
-- Seleção de provider, modelo, modo e prompt base pela interface.
-- Preferências de provider salvas localmente em `pedrocore:v5:provider-settings`.
-- Logo oficial aplicada na sidebar.
-- Logo oficial aplicada no avatar das respostas da IA.
-- Favicon atualizado com a identidade visual oficial.
+- Reformulação da documentação principal para refletir a visão de orquestrador central de IA (`PEDROCORE-REPLAN-01A`).
+- Identificação e sinalização de documentos duplicados/desatualizados para consolidação futura (`PEDROCORE-REPLAN-01E`).
 
-## Providers validados
+## Ainda não existe
 
-- MockProvider.
-- GeminiProvider.
+- Task Router, Prompt Builder e Project Context (arquitetura-alvo, `PEDROCORE-REPLAN-01C`).
+- Resposta estruturada por tipo de tarefa (hoje a resposta é texto livre em `answer: str`).
+- Auditoria/log persistente de chamadas.
+- Leitura de artefatos externos (relatórios de QA do FinGuard, documentação Obsidian) — planejada como somente leitura, ainda não implementada.
+- QA Intelligence como caso de uso concreto.
+- Persistência em banco de dados (histórico hoje só existe no navegador).
+- Qualquer integração real com o FinGuard ou outro sistema externo.
 
-## Providers preparados estruturalmente
+## Proibido nesta fase
 
-- OpenAIProvider.
-- ClaudeProvider.
-- DeepSeekProvider.
-- GrokProvider.
+- Alterar código-fonte (`apps/api`, `apps/web`).
+- Alterar frontend, componentes, estilos, layout ou design.
+- Instalar dependências ou rodar servidor/testes.
+- Chamar providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Alterar `.env`.
+- Ler ou escrever no repositório do FinGuard.
+- Fazer commit ou remover documentação antiga nesta etapa.
 
-## Decisão técnica da V5
+## Riscos atuais
 
-A V5 adiciona um painel React dedicado para configuração de providers, mantém CSS próprio, usa persistência local via `localStorage` e aplica a logo oficial como asset estático do frontend. Nenhuma chave de API é exposta no frontend.
+- **Documentação duplicada:** ainda existem pares de arquivos conflitantes em `docs/` (ex.: `docs/03_ROADMAP.md` vs `docs/03-versoes/ROADMAP.md`, `docs/09-status/STATUS_ATUAL.md` desatualizado) que não foram removidos nesta etapa, apenas sinalizados.
+- **`GEMINI_API_KEY` configurada localmente:** o `.env` real do backend tem a chave do Gemini preenchida; qualquer execução do servidor com `provider=gemini` gera uma chamada real. Isso não foi alterado e deve ser tratado com cuidado em qualquer teste manual futuro.
+- **Fallback Mock silencioso:** o fallback automático para `MockProvider` evita quebrar a interface, mas pode mascarar falhas reais de provider se o consumidor não checar explicitamente o campo `fallback_used` — especialmente relevante para futuros consumidores externos e para qualquer caso de uso de QA (ver Decisão Técnica 014).
+- **Ausência de `task_type`/resposta estruturada:** a API atual não distingue tipos de tarefa nem devolve respostas estruturadas, o que limita o uso por sistemas externos além do chat conversacional atual.
 
-## Limitações atuais
+## Próximos passos
 
-- Histórico disponível apenas no navegador atual.
-- Preferências de provider disponíveis apenas no navegador atual.
-- Feedback não influencia respostas futuras.
-- Sem cadastro de chaves pela interface.
-- A logo foi extraída a partir da imagem enviada; uma versão SVG/PNG transparente original pode melhorar nitidez futuramente.
-- Sem banco de dados.
-- Sem login.
-- Sem RAG.
-- Sem deploy.
-- Sem integração com FinGuard.
-- GitHub remoto ainda não utilizado.
-- Botão `Nova conversa` limpa o histórico atual, mas ainda não cria sessões independentes.
-
-## Versionamento Git da V5
-
-Após os testes locais, a V5 deve ser salva no Git local com commit e tag próprios:
-
-```txt
-commit: feat: adicionar configuracoes de provider e logo oficial
-tag: v5.0.0
-```
-
-As tags `v2.0.0`, `v3.0.0` e `v4.0.0` devem continuar existindo como marcos das versões anteriores aprovadas.
-
-## Documentação Obsidian atualizada
-
-A documentação da V5 foi registrada em Markdown dentro da pasta `docs`, compatível com Obsidian.
-
-Arquivos principais:
-
-```txt
-docs/04-comandos/V5_COMANDOS.md
-docs/06_ERROS_E_CORRECOES.md
-docs/08_CHANGELOG.md
-docs/12_V5_CONFIG_PROVIDER.md
-docs/13_V5_IDENTIDADE_VISUAL.md
-```
-
-## Próxima versão
-
-V6 — Persistência real com banco de dados.
-
-## Próximas versões
-
-- V6 — Persistência real com banco de dados.
-- V7 — Sessões/conversas separadas.
-- V8 — RAG inicial com documentos.
-- V9 — Integração futura com FinGuard.
-- V10 — GitHub profissional, deploy e documentação final.
-
-## Atualização — V5.1.9
-
-Versão atual do pacote: V5.1.1 — Redesign real do front-end com logo oficial.
-
-### Estado
-
-Implementada para testes locais.
-
-### Funcionalidades disponíveis
-
-- Chat com histórico local.
-- Feedback gostei/não gostei.
-- Interface redesenhada com sidebar, chat central e painel direito.
-- Configuração de provider pela interface.
-- Logo oficial aplicada.
-- Providers estruturais mantidos.
-
-### Ainda não implementado
-
-- Banco de dados.
-- Login.
-- RAG.
-- Deploy.
-- GitHub.
-- Integração com FinGuard.
-
-
----
-
-## V5.1.9 — Ajuste de CSS e logos dos providers
-
-Status: implementada para testes.
-
-A V5.1.9 corrige problemas visuais restantes no topo e no bloco de conversas recentes. Também cadastra ícones SVG internos para Mock, Gemini, OpenAI/GPT, Claude, DeepSeek e Grok/xAI nos cards de provider.
-
-
----
-
-## V5.1.9 — Responsividade estrutural e configurações
-
-Status: implementada para testes. Corrige scroll geral em notebook, altura dos painéis e foco do botão Configurações.
-
-
----
-
-## V5.1.9 — Responsividade preservada e topo limpo
-
-Status: implementada para testes. Corrige o erro da V5.1.5, preservando a responsividade da V5.1.4 e mantendo apenas as correções de topo/sidebar.
-
-
----
-
-## V5.1.9 — Topo e Histórico limpos
-
-Status: implementada para testes. Remove o botão Histórico da sidebar e a duplicação do topo interno, preservando a responsividade da V5.1.6.
-
-
----
-
-## V5.1.9 — Remoção definitiva dos ícones do topo interno
-
-Status: implementada para testes. Remove `window-dots` e `window-actions` sem alterar o layout.
+- Executar `PEDROCORE-REPLAN-01B` — planejamento técnico e contratos de request/response para sistemas externos.
+- Executar `PEDROCORE-REPLAN-01C` — arquitetura-alvo de Task Router, Prompt Builder e Project Context.
+- Executar `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence.
+- Consolidar/remover documentação duplicada em `PEDROCORE-REPLAN-01E`.
