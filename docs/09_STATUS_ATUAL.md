@@ -12,12 +12,13 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-REPLAN-01C — Arquitetura-alvo: Task Router, Prompt Builder e Project Context.
+PEDROCORE-REPLAN-01D — Planejamento de QA Intelligence.
 
-`PEDROCORE-REPLAN-01A` (Consolidação documental e visão oficial) e `PEDROCORE-REPLAN-01B` (Planejamento técnico e contratos) estão concluídas e commitadas:
+`PEDROCORE-REPLAN-01A` (Consolidação documental e visão oficial), `PEDROCORE-REPLAN-01B` (Planejamento técnico e contratos) e `PEDROCORE-REPLAN-01C` (Arquitetura-alvo) estão concluídas e commitadas:
 
 - `1e5a8cb — docs: iniciar PEDROCORE-REPLAN-01A`
 - `6e7badd — docs: planejar contratos PEDROCORE-REPLAN-01B`
+- `c1e7816 — docs: definir arquitetura-alvo PEDROCORE-REPLAN-01C`
 
 ## Local oficial
 
@@ -34,20 +35,23 @@ C:\Projetos\pedrocore-ia
 - Testes de backend cobrindo chat mock, fallback por provider desconhecido, validação de payload e listagem de providers.
 - `PEDROCORE-REPLAN-01A` — visão oficial, objetivo, roadmap, status, decisões técnicas e changelog reformulados (commit `1e5a8cb`).
 - `PEDROCORE-REPLAN-01B` — contratos técnicos planejados (`docs/10-contratos/`): contrato de orquestração, tipos de tarefa, resposta estruturada, contrato de artefatos, provider preference, fallback e relação com QA Intelligence (commit `6e7badd`).
+- `PEDROCORE-REPLAN-01C` — arquitetura-alvo documentada (`docs/11-arquitetura-alvo/`): Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e com o FinGuard (commit `c1e7816`).
 
 ## Em andamento
 
-- `PEDROCORE-REPLAN-01C` — arquitetura-alvo documentada em `docs/11-arquitetura-alvo/` (Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e com o FinGuard). **Apenas documentação/planejamento — nenhum código foi criado.**
+- `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence documentado em `docs/12-qa-intelligence/` (definição, relação com o QA Automation do FinGuard, artefatos analisáveis, relatórios Markdown, casos de uso, resposta estruturada, severidade/risco, regra de avanço/bloqueio, fallback Mock, análise visual futura e limites/proibições). **Apenas documentação/planejamento — nenhum código foi criado.**
 
 ## Ainda não existe
 
-- Task Router, Prompt Builder e Project Context implementados em código — nesta fase (`01C`) apenas a arquitetura-alvo desses módulos foi documentada em `docs/11-arquitetura-alvo/`.
+- Task Router, Prompt Builder e Project Context implementados em código — apenas a arquitetura-alvo desses módulos foi documentada em `docs/11-arquitetura-alvo/` (`01C`).
 - Endpoint novo de orquestração (`origin_system`/`task_type`/`artifacts`) — apenas especificado em `docs/10-contratos/`, não implementado.
 - Resposta estruturada por tipo de tarefa (hoje a resposta é texto livre em `answer: str`).
 - Provider Orchestration avançada (seleção por task_type/custo/qualidade) — apenas documentada como planejamento.
 - Auditoria/log persistente de chamadas — apenas os campos planejados foram documentados; nenhum banco ou mecanismo de log foi criado.
-- Artifact Reader real (leitura automática de pastas/arquivos externos, incluindo relatórios de QA do FinGuard) — planejado apenas como recebimento de conteúdo via payload nesta fase; leitura automática de caminho/pasta é fase futura.
-- QA Intelligence como caso de uso concreto (apenas o contrato de resposta foi especificado em `docs/10-contratos/CONTRATO_QA_INTELLIGENCE.md`).
+- Artifact Reader real (leitura automática de pastas/arquivos externos, incluindo relatórios de QA do FinGuard) — planejado apenas como recebimento de conteúdo via payload; leitura automática de caminho/pasta é fase futura.
+- QA Intelligence implementada em código — nesta fase (`01D`) apenas a camada foi documentada em `docs/12-qa-intelligence/`: não há parser de relatório, classificador de risco, endpoint de QA ou lógica de diagnóstico no código.
+- Leitura real de arquivos do FinGuard — nenhuma leitura automática de repositório ou pasta do FinGuard existe; apenas o recebimento de conteúdo via payload é planejado.
+- Análise visual real (`visual_qa_analysis`) — não há suporte multimodal implementado nem testado; é planejamento de fase futura.
 - Persistência em banco de dados (histórico hoje só existe no navegador).
 - Qualquer integração real com o FinGuard ou outro sistema externo.
 
@@ -70,6 +74,5 @@ C:\Projetos\pedrocore-ia
 
 ## Próximos passos
 
-- Concluir e revisar `PEDROCORE-REPLAN-01C` (arquitetura-alvo em `docs/11-arquitetura-alvo/`).
-- Executar `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence (aprofundando o contrato já esboçado em `CONTRATO_QA_INTELLIGENCE.md`).
+- Concluir e revisar `PEDROCORE-REPLAN-01D` (QA Intelligence em `docs/12-qa-intelligence/`).
 - Consolidar/remover documentação duplicada em `PEDROCORE-REPLAN-01E`.

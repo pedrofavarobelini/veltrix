@@ -107,3 +107,27 @@ Quando implementado, o Artifact Reader nunca escreve, nunca comita e nunca execu
 ## Decisão 027 — Audit/logs devem ser planejados antes de integrações reais com sistemas externos
 
 Os campos de auditoria (origem, tarefa, provider, fallback, erro, latência, timestamp, criticidade) devem estar definidos e implementados antes de qualquer integração real com sistemas externos, para garantir rastreabilidade desde o primeiro uso em produção. Nenhum dado sensível ou chave de API deve ser armazenado em log.
+
+## Decisão 028 — QA Intelligence será camada de análise, não executor de testes
+
+QA Intelligence interpreta artefatos e relatórios já produzidos por processos de QA externos e devolve diagnóstico estruturado. Ela nunca executa testes, scripts, migrations, seed/reset ou qualquer comando dentro de um sistema externo, incluindo o FinGuard.
+
+## Decisão 029 — Relatórios QA Markdown devem ser aceitos inicialmente como texto/payload
+
+Como os relatórios de QA do FinGuard hoje são Markdown livre, o PedroCore deve planejar a extração de informações por interpretação textual tolerante a variação, sem depender inicialmente de um schema JSON estruturado do lado do sistema externo. JSON estruturado pode ser uma evolução futura, não um pré-requisito.
+
+## Decisão 030 — Fallback Mock em tarefa crítica de QA deve bloquear ou reduzir confiança
+
+Uma resposta de QA gerada via fallback (`MockProvider`) nunca pode ser tratada como análise real. Em tarefas críticas (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `visual_qa_analysis`), `fallback_used: true` deve resultar em `status: "warning"` ou `"blocked"` e `confidence` baixo, nunca em `can_advance: true`.
+
+## Decisão 031 — `can_advance` é recomendação assistida, não autorização automática
+
+A decisão de avançar uma frente de trabalho (ex.: para release) permanece sempre humana. O campo `can_advance` de QA Intelligence é uma sugestão baseada em evidências analisadas, nunca uma aprovação vinculante ou uma ação de release disparada automaticamente.
+
+## Decisão 032 — Análise visual/exploratória deve ser planejada separadamente antes de qualquer automação
+
+`visual_qa_analysis` e qualquer exploração visual autônoma (navegação, cliques, ações automáticas) dependem de uma fase própria de planejamento, posterior à maturação da base textual/estruturada de QA Intelligence. Nenhuma automação visual é implementada ou planejada em detalhe nesta etapa.
+
+## Decisão 033 — QA Intelligence não pode alterar projetos externos nem aplicar correções automaticamente
+
+QA Intelligence nunca altera arquivos, nunca faz commit, nunca aplica `suggested_fixes` automaticamente e nunca executa `suggested_commands`. Toda ação corretiva permanece de responsabilidade do sistema de origem ou de um humano.

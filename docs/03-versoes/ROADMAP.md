@@ -40,8 +40,8 @@ Frente aberta para reposicionar o PedroCore como orquestrador central de IA do e
 
 - **01A — Consolidação documental e visão oficial.** *(concluída)* Reformulou a documentação principal (README, VERSION, visão geral, objetivo, roadmap, status, decisões técnicas, changelog) para refletir a nova visão estratégica, sem alterar código. Commitada em `1e5a8cb`.
 - **01B — Planejamento técnico e contratos.** *(concluída)* Especificou, em `docs/10-contratos/`, os contratos de request/response para consumo por sistemas externos (`origin_system`, `task_type`, `context`, `artifacts`), tipos de tarefa, resposta estruturada, contrato de artefatos, roteamento de provider e regras de fallback — sem implementar código. Commitada em `6e7badd`.
-- **01C — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.** *(em andamento)* Documenta, em `docs/11-arquitetura-alvo/`, a arquitetura-alvo que sustentaria os contratos da 01B: Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader e Audit/logs. A arquitetura-alvo está sendo documentada; nenhum módulo foi implementado em código.
-- **01D — Planejamento de QA Intelligence.** *(planejado)* Desenhar, sem implementar, o caso de uso de leitura e análise de relatórios de QA (Markdown livre) de projetos externos como o FinGuard, sempre em modo somente leitura.
+- **01C — Arquitetura-alvo: Task Router, Prompt Builder, Project Context.** *(concluída)* Documentou, em `docs/11-arquitetura-alvo/`, a arquitetura-alvo que sustentaria os contratos da 01B: Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader e Audit/logs — sem implementar código. Commitada em `c1e7816`.
+- **01D — Planejamento de QA Intelligence.** *(em andamento)* Documenta, em `docs/12-qa-intelligence/`, a camada futura de QA Intelligence: análise de relatórios de QA (Markdown livre), diagnóstico de falhas, release gate assistido, resposta estruturada, severidade/risco e limites de atuação — sempre em modo somente leitura e sem implementar código.
 - **01E — Fechamento documental da reformulação.** *(planejado)* Consolidar/remover documentação duplicada ou obsoleta identificada nas fases anteriores.
 
 ## Fases futuras (planejadas, sem ordem de data fixa)
@@ -79,3 +79,14 @@ A arquitetura-alvo que sustentaria os contratos da `01B` está detalhada em `doc
 - `docs/11-arquitetura-alvo/PROJECT_CONTEXT.md` — conceito planejado de representação de sistemas externos.
 
 Esses documentos são especificação/planejamento de arquitetura. Nenhum módulo neles descrito (Task Router, Prompt Builder, Project Context, Artifact Reader, Audit/logs) está implementado no código.
+
+## Documentação de QA Intelligence (01D)
+
+A camada futura de QA Intelligence está detalhada em `docs/12-qa-intelligence/`:
+
+- `docs/12-qa-intelligence/QA_INTELLIGENCE_OVERVIEW.md` — definição, relação com o QA Automation do FinGuard, artefatos analisáveis, relatórios Markdown, resposta estruturada, severidade/risco, regra de avanço/bloqueio, fallback Mock, análise visual futura, limites/proibições e relação com a arquitetura-alvo (01C).
+- `docs/12-qa-intelligence/QA_REPORT_ANALYSIS.md` — caso de uso `qa_report_analysis`.
+- `docs/12-qa-intelligence/QA_FAILURE_DIAGNOSIS.md` — caso de uso `qa_failure_diagnosis`.
+- `docs/12-qa-intelligence/QA_RELEASE_GATE.md` — caso de uso `release_gate_review`.
+
+Esses documentos são especificação/planejamento. QA Intelligence **não está implementada** — não há leitura real de arquivos do FinGuard, não há análise visual real e não há endpoint de QA no código hoje.

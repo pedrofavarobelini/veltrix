@@ -2,6 +2,39 @@
 
 Atualizado em: 04/07/2026
 
+## PEDROCORE-REPLAN-01D — Planejamento de QA Intelligence
+
+Status: iniciada.
+
+### Motivação
+
+Com a arquitetura-alvo documentada em `PEDROCORE-REPLAN-01C` (commit `c1e7816`), a frente `01D` documenta especificamente a camada futura de QA Intelligence: como o PedroCore poderia apoiar sistemas externos, especialmente o QA Automation do FinGuard, na análise inteligente de relatórios, logs, evidências e falhas, e na recomendação assistida de avanço/bloqueio de release.
+
+### Criado
+
+- `docs/12-qa-intelligence/QA_INTELLIGENCE_OVERVIEW.md` — definição de QA Intelligence, relação com o QA Automation do FinGuard, artefatos analisáveis (12 tipos), planejamento de relatórios QA Markdown, tabela de casos de uso, resposta estruturada de QA, severidade/risco, regra de avanço/bloqueio, fallback Mock em QA, análise visual/exploratória futura, limites/proibições e relação com a arquitetura-alvo (01C).
+- `docs/12-qa-intelligence/QA_REPORT_ANALYSIS.md` — caso de uso `qa_report_analysis`.
+- `docs/12-qa-intelligence/QA_FAILURE_DIAGNOSIS.md` — caso de uso `qa_failure_diagnosis`, com reforço da diferença entre diagnóstico e correção.
+- `docs/12-qa-intelligence/QA_RELEASE_GATE.md` — caso de uso `release_gate_review`, incluindo a regra de avanço/bloqueio assistido (`can_advance`).
+
+### Alterado (documentação)
+
+- `docs/03-versoes/ROADMAP.md` — `PEDROCORE-REPLAN-01A`, `01B` e `01C` marcadas como concluídas (commits `1e5a8cb`, `6e7badd` e `c1e7816`); `01D` marcada como em andamento; `01E` mantida como planejada; adicionada referência aos documentos de `docs/12-qa-intelligence/`.
+- `docs/09_STATUS_ATUAL.md` — frente atual atualizada para `PEDROCORE-REPLAN-01D`; registrado que `01A`, `01B` e `01C` estão concluídas/commitadas; reforçado que QA Intelligence, leitura real de arquivos do FinGuard e análise visual real continuam sem implementação em código.
+- `docs/07-decisoes/DECISOES_TECNICAS.md` — adicionadas decisões 028 a 033, preservando as decisões 001 a 027.
+- `docs/08_CHANGELOG.md` — esta entrada.
+
+### Não alterado nesta etapa
+
+- Sem alterações de código-fonte (`apps/api`, `apps/web`).
+- Sem criação de endpoint, schema Pydantic, parser de relatório, classificador de risco ou lógica de diagnóstico.
+- Sem alterações de frontend, componentes, estilos, layout ou design.
+- Sem instalação de dependências, sem execução de servidor ou testes.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Sem alterações no `.env`.
+- Sem leitura ou escrita no repositório do FinGuard, e sem execução de comandos dentro dele.
+- Sem commit e sem criação de tag.
+
 ## PEDROCORE-REPLAN-01C — Arquitetura-alvo: Task Router, Prompt Builder e Project Context
 
 Status: iniciada.
