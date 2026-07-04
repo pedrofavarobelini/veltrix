@@ -1,7 +1,16 @@
 # PedroCore IA
 
 Versão atual de produto: V5.1.9
-Frente atual: PEDROCORE-REPLAN-01A — Consolidação documental e visão oficial
+Frente atual: PEDROCORE-REPLAN-01E — Fechamento documental da reformulação
+
+## Estado atual da reformulação
+
+- `01A` a `01D` concluídas e commitadas: visão oficial, contratos técnicos, arquitetura-alvo e planejamento de QA Intelligence.
+- `01E` em fechamento: consolidação documental de toda a frente `PEDROCORE-REPLAN-01` (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).
+- Documentação de contratos, arquitetura-alvo e QA Intelligence já criada (`docs/10-contratos/`, `docs/11-arquitetura-alvo/`, `docs/12-qa-intelligence/`).
+- **Implementação ainda não iniciada** — nenhum código de Task Router, Prompt Builder, Project Context, Artifact Reader, QA Intelligence ou Audit/logs existe hoje.
+- Frontend e design preservados sem alteração durante toda a reformulação.
+- FinGuard não foi alterado, lido ou acessado em nenhuma etapa.
 
 ## O que é o PedroCore IA
 

@@ -2,6 +2,42 @@
 
 Atualizado em: 04/07/2026
 
+## PEDROCORE-REPLAN-01E — Fechamento documental da reformulação
+
+Status: em fechamento.
+
+### Motivação
+
+Com `01A` (visão oficial), `01B` (contratos técnicos), `01C` (arquitetura-alvo) e `01D` (QA Intelligence) concluídas e commitadas, a frente `01E` fecha documentalmente `PEDROCORE-REPLAN-01` inteira: consolida o que foi entregue, registra o que existe e o que ainda não existe no código, registra riscos remanescentes e pendências pós-reformulação, e recomenda a próxima fase de implementação.
+
+### Criado
+
+- `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md` — documento de fechamento: objetivo da frente, escopo executado (01A–01E), commits da frente, transição de visão (antes/agora), o que existe hoje no código, o que ainda não existe, documentos oficiais criados/consolidados, relação com o FinGuard, decisões arquiteturais consolidadas, riscos remanescentes, pendências pós-reformulação e próxima fase recomendada (`PEDROCORE-IMPLEMENT-01`).
+
+### Alterado (documentação)
+
+- `README.md` — adicionada seção "Estado atual da reformulação" (01A–01D concluídas, 01E em fechamento, implementação ainda não iniciada, frontend/design preservados, FinGuard não alterado).
+- `VERSION.md` — frente atual atualizada para `PEDROCORE-REPLAN-01E`; status de fechamento documental; próxima fase sugerida (`PEDROCORE-IMPLEMENT-01`); versão de produto (V5.1.9) e versão backend (0.2.0) mantidas sem alteração.
+- `docs/03-versoes/ROADMAP.md` — `01A`, `01B`, `01C` e `01D` marcadas como concluídas (commits `1e5a8cb`, `6e7badd`, `c1e7816`, `8c68b67`); `01E` marcada como concluída/em fechamento documental; `PEDROCORE-REPLAN-01` registrada como concluída no escopo documental; adicionada fase futura sugerida `PEDROCORE-IMPLEMENT-01` (ainda não iniciada).
+- `docs/09_STATUS_ATUAL.md` — frente atual atualizada para `PEDROCORE-REPLAN-01E`; registrado que `01A`, `01B`, `01C` e `01D` estão concluídas/commitadas; registrado que, após commit da 01E, `PEDROCORE-REPLAN-01` fica concluída no escopo documental; próximo passo apontado para planejamento de `PEDROCORE-IMPLEMENT-01`.
+- `docs/07-decisoes/DECISOES_TECNICAS.md` — adicionadas decisões 034 a 038, preservando as decisões 001 a 033.
+- `docs/08_CHANGELOG.md` — esta entrada.
+
+### Documentação legada/duplicada
+
+Documentos antigos e duplicados em `docs/` (pares `0X_NOME.md`/`0X-nome/`, pastas vazias, arquivos `.bak-*` versionados) **não foram removidos** nesta etapa. Ficam registrados como pendência pós-reformulação, a ser tratada em frente futura específica de saneamento documental (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 11, e Decisão Técnica 035).
+
+### Não alterado nesta etapa
+
+- Sem alterações de código-fonte (`apps/api`, `apps/web`).
+- Sem alterações de frontend, componentes, estilos, layout ou design.
+- Sem instalação de dependências, sem execução de servidor ou testes.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Sem alterações no `.env`.
+- Sem leitura ou escrita no repositório do FinGuard, e sem execução de comandos dentro dele.
+- Sem remoção de documentos antigos/duplicados.
+- Sem commit e sem criação de tag.
+
 ## PEDROCORE-REPLAN-01D — Planejamento de QA Intelligence
 
 Status: iniciada.

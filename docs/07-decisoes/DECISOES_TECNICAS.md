@@ -131,3 +131,23 @@ A decisão de avançar uma frente de trabalho (ex.: para release) permanece semp
 ## Decisão 033 — QA Intelligence não pode alterar projetos externos nem aplicar correções automaticamente
 
 QA Intelligence nunca altera arquivos, nunca faz commit, nunca aplica `suggested_fixes` automaticamente e nunca executa `suggested_commands`. Toda ação corretiva permanece de responsabilidade do sistema de origem ou de um humano.
+
+## Decisão 034 — PEDROCORE-REPLAN-01 fecha apenas documentação e arquitetura, não implementação
+
+O fechamento da frente `PEDROCORE-REPLAN-01` (etapa `01E`) consolida visão, contratos, arquitetura-alvo e planejamento de QA Intelligence em documentação. Nenhum código foi implementado durante toda a frente; a implementação é escopo de uma fase futura e separada.
+
+## Decisão 035 — Documentação legada/duplicada não será removida sem frente específica de saneamento
+
+Documentos antigos e duplicados identificados em `docs/` (ex.: pares `0X_NOME.md`/`0X-nome/`) permanecem no repositório após o fechamento de `PEDROCORE-REPLAN-01`. A remoção/consolidação desses documentos exige uma frente própria de saneamento documental, não incluída no escopo desta reformulação.
+
+## Decisão 036 — Primeira implementação pós-replan deve preservar compatibilidade de `/api/chat`
+
+Qualquer implementação futura decorrente desta reformulação (ex.: `PEDROCORE-IMPLEMENT-01`) deve manter `POST /api/chat` funcionando exatamente como hoje, sem exigir mudança no frontend existente.
+
+## Decisão 037 — Implementação de Task Router deve ser incremental e testável com Mock antes de provider real
+
+Ao implementar o Task Router, a primeira versão deve ser validável com `MockProvider`, permitindo testar o roteamento por `task_type` sem custo ou risco de chamada real, antes de habilitar providers reais nesse fluxo.
+
+## Decisão 038 — Integração real com sistemas externos só deve ocorrer após contratos, autenticação e audit/log mínimos
+
+Nenhuma integração real (ex.: recebendo chamadas do FinGuard) deve ser habilitada antes de existirem, no mínimo: o contrato de orquestração implementado, um mecanismo de autenticação entre sistemas e um audit/log básico registrando as chamadas.
