@@ -42,11 +42,11 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-REPLAN-01C` — arquitetura-alvo documentada (`docs/11-arquitetura-alvo/`): Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e com o FinGuard (commit `c1e7816`).
 - `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence documentado em `docs/12-qa-intelligence/` (definição, relação com o QA Automation do FinGuard, artefatos analisáveis, relatórios Markdown, casos de uso, resposta estruturada, severidade/risco, regra de avanço/bloqueio, fallback Mock, análise visual futura e limites/proibições) (commit `8c68b67`).
 - `PEDROCORE-REPLAN-01E` — fechamento documental da reformulação, consolidado em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md` (commit `cc808a7`).
-- `PEDROCORE-IMPLEMENT-01A/01B` — Task Router mínimo implementado em código: `task_type`, `origin_system`, `context` e `metadata` opcionais no `ChatRequest`; Task Router mínimo em `apps/api/app/modules/task_router/` reconhecendo 7 task_types + `unknown`, sem bloqueio duro; metadados de tarefa (`task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`) no `ChatResponse`; warning forte quando fallback Mock ocorre em tarefa crítica; testes backend em `apps/api/tests/test_task_router.py` (8 testes, 15/15 passando no total).
+- `PEDROCORE-IMPLEMENT-01A/01B` — Task Router mínimo implementado em código: `task_type`, `origin_system`, `context` e `metadata` opcionais no `ChatRequest`; Task Router mínimo em `apps/api/app/modules/task_router/` reconhecendo 7 task_types + `unknown`, sem bloqueio duro; metadados de tarefa (`task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`) no `ChatResponse`; warning forte quando fallback Mock ocorre em tarefa crítica; testes backend em `apps/api/tests/test_task_router.py` (8 testes, `15 passed, 2 warnings` no total). Commitada em `577bc88`. Working tree limpo após o commit.
 
 ## Em andamento
 
-Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-01A/01B` está implementada e validada, aguardando commit/documentação final desta etapa.
+Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-01A/01B` está implementada, validada e commitada. Próxima etapa (`PEDROCORE-IMPLEMENT-01C/01D`) ainda não iniciada.
 
 ## Ainda não existe
 
@@ -86,8 +86,6 @@ Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-01A/01B` está i
 
 ## Próximos passos
 
-- Commitar `PEDROCORE-IMPLEMENT-01A/01B` (Task Router mínimo + metadados de resposta).
-- Planejar a próxima etapa de `PEDROCORE-IMPLEMENT-01`: Prompt Builder real consumindo `task_type`/`context`/`metadata`.
-- Planejar Project Context real (configuração por sistema externo).
+- `PEDROCORE-IMPLEMENT-01C/01D` — Prompt Builder mínimo + Project Context mínimo (ainda não iniciado). Prompt Builder e Project Context reais ainda não existem no código; Artifact Reader e QA Intelligence real também não existem; nenhuma integração real com o FinGuard existe.
 - Planejar Audit/logs básico antes de qualquer integração real com sistemas externos.
 - Saneamento de documentação duplicada/legada permanece como pendência futura, a ser tratada em frente específica (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).
