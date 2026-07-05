@@ -4,6 +4,7 @@ export type ChatRequest = {
   provider: string;
   model?: string;
   system_prompt?: string;
+  allow_real_provider?: boolean;
 };
 
 export type ChatResponse = {
@@ -13,6 +14,9 @@ export type ChatResponse = {
   mode: string;
   requested_provider: string;
   fallback_used: boolean;
+  safe_mode_blocked?: boolean;
+  warning_codes?: string[];
+  status?: string;
   error?: string | null;
 };
 

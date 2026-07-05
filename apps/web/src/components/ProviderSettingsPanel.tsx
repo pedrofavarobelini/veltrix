@@ -32,10 +32,12 @@ type ProviderSettingsPanelProps = {
   systemPrompt: string;
   defaultSystemPrompt: string;
   loading: boolean;
+  allowRealProvider: boolean;
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
   onModeChange: (value: string) => void;
   onSystemPromptChange: (value: string) => void;
+  onAllowRealProviderChange: (value: boolean) => void;
   onResetModel: () => void;
   onResetPrompt: () => void;
   onClose: () => void;
@@ -75,10 +77,12 @@ export function ProviderSettingsPanel({
   systemPrompt,
   defaultSystemPrompt,
   loading,
+  allowRealProvider,
   onProviderChange,
   onModelChange,
   onModeChange,
   onSystemPromptChange,
+  onAllowRealProviderChange,
   onResetModel,
   onResetPrompt,
   onClose,
@@ -136,6 +140,25 @@ export function ProviderSettingsPanel({
         </label>
         {selectedStatus && <span className={`provider-status ${selectedStatus.className}`}>{selectedStatus.label}</span>}
       </section>
+
+      {selectedProvider?.real_provider && (
+        <section className="dock-section real-provider-authorization">
+          <label className="real-provider-toggle">
+            <input
+              type="checkbox"
+              checked={allowRealProvider}
+              onChange={(event) => onAllowRealProviderChange(event.target.checked)}
+              disabled={loading}
+            />
+            <span>Permitir uso de provider real nesta mensagem</span>
+          </label>
+          {!allowRealProvider && (
+            <p className="safe-mode-copy">
+              Provider real selecionado, mas Safe Mode está ativo. A resposta usará fallback Mock até você permitir provider real.
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="dock-section">
         <span className="dock-label">Modo de resposta</span>

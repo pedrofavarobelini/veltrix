@@ -128,6 +128,7 @@ export function ChatPage() {
   const [model, setModel] = useState(initialProviderSettings.model);
   const [providers, setProviders] = useState<ProviderInfo[]>(DEFAULT_PROVIDERS);
   const [systemPrompt, setSystemPrompt] = useState(initialProviderSettings.systemPrompt);
+  const [allowRealProvider, setAllowRealProvider] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
@@ -140,6 +141,7 @@ export function ChatPage() {
   const providerDockRef = useRef<HTMLElement | null>(null);
 
   const selectedProvider = providers.find((item) => item.name === provider);
+  const selectedProviderIsReal = Boolean(selectedProvider?.real_provider);
   const lastUserMessage = useMemo(
     () => [...messages].reverse().find((item) => item.role === "user")?.content ?? "",
     [messages],
@@ -170,6 +172,12 @@ export function ChatPage() {
   }, [provider, model, mode, systemPrompt]);
 
   useEffect(() => {
+    if (!selectedProviderIsReal) {
+      setAllowRealProvider(false);
+    }
+  }, [selectedProviderIsReal]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, errorMessage]);
 
@@ -188,6 +196,7 @@ export function ChatPage() {
 
   function handleProviderChange(value: string) {
     setProvider(value);
+    setAllowRealProvider(false);
     const next = providers.find((item) => item.name === value);
     if (next) {
       setModel(next.default_model);
@@ -240,6 +249,7 @@ export function ChatPage() {
         provider,
         model,
         system_prompt: systemPrompt,
+        allow_real_provider: selectedProviderIsReal && allowRealProvider,
       });
 
       const assistantMessage: ChatMessage = {
@@ -261,6 +271,7 @@ export function ChatPage() {
       setErrorMessage(UI.apiError);
       showToast("Erro ao conectar com a API.");
     } finally {
+      setAllowRealProvider(false);
       setLoading(false);
     }
   }
@@ -426,10 +437,12 @@ export function ChatPage() {
             systemPrompt={systemPrompt}
             defaultSystemPrompt={UI.defaultPrompt}
             loading={loading}
+            allowRealProvider={allowRealProvider}
             onProviderChange={handleProviderChange}
             onModelChange={setModel}
             onModeChange={setMode}
             onSystemPromptChange={setSystemPrompt}
+            onAllowRealProviderChange={setAllowRealProvider}
             onResetModel={handleResetModel}
             onResetPrompt={handleResetPrompt}
             onClose={handleSaveSettings}

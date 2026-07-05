@@ -839,6 +839,32 @@ textarea:disabled {
   font-weight: 850;
 }
 
+.real-provider-authorization {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: rgba(120, 53, 15, 0.18);
+}
+
+.real-provider-toggle {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px !important;
+}
+
+.real-provider-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #38bdf8;
+  flex: 0 0 auto;
+}
+
+.safe-mode-copy {
+  margin: 8px 0 0;
+  color: #fde68a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .inline-field-action {
   display: flex;
   gap: 8px;
