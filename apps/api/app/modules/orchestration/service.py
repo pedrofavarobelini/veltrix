@@ -199,7 +199,9 @@ class OrchestrationService:
                 if not release_gate.can_advance:
                     qa_skeleton.status = "blocked"
 
-        visual_qa = visual_qa_service.analyze(artifacts_result)
+        visual_qa = visual_qa_service.analyze(
+            artifacts_result, allow_real_provider=payload.allow_real_provider
+        )
 
         exploration = exploration_service.build(
             task_type=strategy.task_type,
