@@ -152,3 +152,65 @@ Header: X-PedroCore-Api-Key: <valor-configurado-no-ambiente>
 ```
 
 A chave em si nunca é retornada em nenhuma resposta da API.
+
+## 6. Payload fake FinGuard → PedroCore (Bloco 8)
+
+Ver contrato completo em `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`.
+
+```json
+POST /api/orchestrate
+{
+  "origin_system": "finguard",
+  "task_type": "qa_report_analysis",
+  "message": "Analisar relatório QA fake do FinGuard.",
+  "provider": "local_qa",
+  "allow_real_provider": false,
+  "artifacts": [
+    { "type": "text", "name": "finguard-qa-fake.txt", "content": "125 passed, 0 failed. Build successful." }
+  ],
+  "metadata": { "environment": "fake", "source": "contract-test" }
+}
+```
+
+Origem FinGuard nunca usa o Artifact Reader e nunca tem caminhos lidos — path em metadata gera `ARTIFACT_PATH_REJECTED` + `ARTIFACT_READER_PATH_NOT_ALLOWED`.
+
+## 7. Artifact Reader controlado (Bloco 9)
+
+Desabilitado por padrão (`PEDROCORE_ARTIFACT_READER_ENABLED=false`) — path em metadata continua rejeitado, com warning adicional `ARTIFACT_READER_DISABLED`.
+
+Quando habilitado com allowlist (`PEDROCORE_ARTIFACT_ALLOWED_DIRS`), um artefato com `metadata.path` dentro da allowlist (extensões `.txt,.md,.log,.json,.csv`) é lido e convertido em artefato textual, com `ARTIFACT_READER_USED` na resposta. Bloqueios sempre ativos: path traversal, `.env`, binário, segredo identificável, arquivo grande, caminho contendo "finguard".
+
+## 8. QA visual stub (Bloco 10)
+
+Artefato `screenshot`/`image`/`pdf`/`playwright_trace` gera `visual_qa_analysis` conservador:
+
+```json
+{
+  "visual_qa_analysis": {
+    "status": "not_analyzed",
+    "supported": false,
+    "mode": "stub",
+    "requires_human_review": true,
+    "can_advance": false,
+    "ocr_attempted": false,
+    "provider_attempted": false,
+    "playwright_attempted": false
+  }
+}
+```
+
+Release gate **nunca** avança apenas com evidência visual (`VISUAL_QA_BLOCKED_FOR_RELEASE_GATE`).
+
+## 9. Agente exploratório assistido (Bloco 11)
+
+```json
+POST /api/orchestrate
+{
+  "message": "Planejar exploração manual do fluxo de login.",
+  "provider": "mock",
+  "task_type": "exploratory_test_plan",
+  "context": { "routes": ["/login", "/dashboard"] }
+}
+```
+
+Resposta inclui `exploration` com `exploration_plan`, `manual_steps`, `risk_areas`, `required_evidence`, `human_confirmations`, `blocked_actions` e sempre `can_execute_actions=false`, `can_advance=false`, `requires_human_review=true`. Task types: `exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`.

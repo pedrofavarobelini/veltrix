@@ -219,3 +219,23 @@ Limites: 10 artefatos, 20.000 caracteres por artefato, 100.000 no total (exceden
 ## Decisão 055 — Contrato padronizado de warnings/errors, auth interna opcional e audit não persistente completo
 
 Respostas expõem `warning_codes`, `warnings` com severidade (`info`/`warning`/`error`/`critical`), `error_code`, `blocked_reason` e `status`, mantendo `task_warnings` textual por compatibilidade. `/api/orchestrate` aceita autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + header `X-PedroCore-Api-Key`; sem chave configurada, modo dev/local com `INTERNAL_AUTH_NOT_CONFIGURED`); `/api/chat` permanece livre. O audit (`audit_id`, `timestamp`, `origin_system`, `task_type`, `provider_requested`, `provider_used`, `fallback_used`, `safe_mode_blocked`, `status`, `latency_ms`, `risk_level`, `can_advance`) permanece não persistente e nunca contém segredos ou conteúdo de artefatos.
+
+## Decisão 056 — Integração FinGuard começa por contrato e payload fake, nunca pelo repositório real
+
+A integração FinGuard → PedroCore (Bloco 8) é implementada exclusivamente do lado do PedroCore: `origin_system` `finguard`/`finguard-local` com Project Context read-only, policy própria e contrato documentado (`docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`). Nenhum arquivo do FinGuard é lido, nenhum comando é executado nele e o Artifact Reader é indisponível para origem FinGuard — inclusive por bloqueio de qualquer caminho contendo "finguard". A integração real (cliente HTTP no FinGuard) é frente separada.
+
+## Decisão 057 — Artifact Reader real só existe atrás de allowlist e desabilitado por padrão
+
+O único módulo autorizado a ler disco é `apps/api/app/modules/artifact_reader/`, controlado por `PEDROCORE_ARTIFACT_READER_ENABLED` (default `false`) e `PEDROCORE_ARTIFACT_ALLOWED_DIRS`. Bloqueios inegociáveis: path traversal, `.env`, extensão fora da lista, binário, segredo identificável, arquivo acima do limite, total acima do limite e qualquer caminho do FinGuard. O reader nunca escreve, nunca deleta, nunca executa. Com o reader desabilitado, o comportamento pré-existente permanece: path em payload é rejeitado (`ARTIFACT_PATH_REJECTED`).
+
+## Decisão 058 — QA visual nesta fase é stub por contrato, sem OCR/provider multimodal/Playwright
+
+Artefatos visuais (`screenshot`, `image`, `pdf`, `playwright_trace`) geram `visual_qa_analysis` conservador (`status=not_analyzed`, `supported=false`, `mode=stub`, `requires_human_review=true`, `can_advance=false`) com `ocr_attempted=false`, `provider_attempted=false`, `playwright_attempted=false` explícitos. Release gate nunca é liberado apenas com evidência visual não analisada (`VISUAL_QA_BLOCKED_FOR_RELEASE_GATE`).
+
+## Decisão 059 — Agente exploratório é assistido (plano/manual), nunca autônomo
+
+As tasks `exploratory_test_plan`, `manual_exploration_report` e `assisted_exploration_review` geram plano/checklist determinístico local (`exploration`) com `can_execute_actions=false` sempre. O agente não abre navegador, não clica, não executa Playwright, não roda comandos, não altera dados e não aprova release; pedidos destrutivos geram `EXPLORATION_ACTION_BLOCKED`. Confirmação humana é obrigatória (`HUMAN_CONFIRMATION_REQUIRED`).
+
+## Decisão 060 — Bloco 12 (dashboard/logs/admin) cancelado por decisão de produto
+
+O Bloco 12 do planejamento maior foi cancelado e não deve ser implementado nem listado como pendência obrigatória. Audit permanece não persistente.

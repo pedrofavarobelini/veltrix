@@ -21,6 +21,23 @@ UNKNOWN_PROJECT_POLICY_WARNING = (
     "Sistema de origem desconhecido; task_type não validado contra política de projeto."
 )
 
+_FINGUARD_ALLOWED_TASKS = [
+    "qa_report_analysis",
+    "qa_failure_diagnosis",
+    "release_gate_review",
+    "exploratory_test_plan",
+    "manual_exploration_report",
+    "assisted_exploration_review",
+    "artifact_summary",
+    "technical_explanation",
+]
+
+_FINGUARD_NOTES = (
+    "Projeto externo; QA Automation pertence ao FinGuard; "
+    "o PedroCore recebe apenas artefatos por payload (contrato fake nesta fase), "
+    "sem leitura direta de repositório, sem execução de comandos e sem escrita."
+)
+
 _PROJECTS: dict[str, dict[str, object]] = {
     "pedrocore": {
         "display_name": "PedroCore IA",
@@ -29,24 +46,26 @@ _PROJECTS: dict[str, dict[str, object]] = {
             "technical_explanation",
             "code_help",
             "artifact_summary",
+            "exploratory_test_plan",
+            "manual_exploration_report",
+            "assisted_exploration_review",
         ],
         "notes": "Sistema local/default do próprio PedroCore.",
     },
     "finguard": {
         "display_name": "FinGuard",
-        "allowed_tasks": [
-            "qa_report_analysis",
-            "qa_failure_diagnosis",
-            "release_gate_review",
-            "artifact_summary",
-            "technical_explanation",
-        ],
-        "notes": (
-            "Projeto externo; QA Automation pertence ao FinGuard; "
-            "o PedroCore só pode receber/analisar artefatos enviados por payload no futuro."
-        ),
+        "allowed_tasks": list(_FINGUARD_ALLOWED_TASKS),
+        "notes": _FINGUARD_NOTES,
+    },
+    "finguard-local": {
+        "display_name": "FinGuard (ambiente local)",
+        "allowed_tasks": list(_FINGUARD_ALLOWED_TASKS),
+        "notes": _FINGUARD_NOTES,
     },
 }
+
+# Origens tratadas como FinGuard: sempre read-only, sem reader, sem execução.
+FINGUARD_ORIGIN_SYSTEMS = {"finguard", "finguard-local"}
 
 
 class ProjectContextResolver:

@@ -112,6 +112,19 @@ Tag anotada: `v6.0.0`, apontando para `ee2ac68679feea6ac108abba8726d11da101576c`
 
 A tag `v6.0.0` representa o fechamento do MVP backend. Ela não representa conclusão do projeto inteiro: Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais permanecem planejados para frentes posteriores.
 
+## PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11)
+
+Status: **implementada, em validação (nesta frente)**. Ver `docs/08_CHANGELOG.md` e `docs/13-fechamento/FECHAMENTO_PEDROCORE_IMPLEMENT_04.md` para detalhes.
+
+- **Bloco 8 — Contrato FinGuard → PedroCore (payload fake).** `origin_system` `finguard`/`finguard-local` com Project Context read-only e policy própria (inclui tasks exploratórias); contrato documentado em `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`; testes com payloads fake. Nenhum acesso ao repositório real do FinGuard; Artifact Reader indisponível para origem FinGuard.
+- **Bloco 9 — Artifact Reader real controlado.** Módulo `apps/api/app/modules/artifact_reader/`: leitura de arquivos reais **somente** com `PEDROCORE_ARTIFACT_READER_ENABLED=true` e dentro de `PEDROCORE_ARTIFACT_ALLOWED_DIRS`; bloqueia path traversal, `.env`, binários, segredos identificáveis, extensões fora da lista, arquivos grandes e qualquer caminho contendo "finguard". Desabilitado por padrão — path em payload continua rejeitado. Integrado ao `/api/orchestrate` (arquivo lido vira artefato textual com `ARTIFACT_READER_USED`).
+- **Bloco 10 — QA visual stub.** `visual_qa_analysis` conservador para `screenshot`/`image`/`pdf`/`playwright_trace`: `not_analyzed`, `requires_human_review=true`, `can_advance=false`, `ocr_attempted=false`, `provider_attempted=false`, `playwright_attempted=false`. Release gate nunca avança só com evidência visual (`VISUAL_QA_BLOCKED_FOR_RELEASE_GATE`). Sem OCR, sem provider multimodal, sem Playwright.
+- **Bloco 11 — Agente exploratório assistido.** Tasks `exploratory_test_plan`/`manual_exploration_report`/`assisted_exploration_review` geram `exploration` (plano, passos manuais, riscos, evidências, confirmações humanas, ações bloqueadas) com `can_execute_actions=false` sempre. Pedidos destrutivos geram `EXPLORATION_ACTION_BLOCKED`.
+
+Bloco 12 (dashboard/logs/admin): **cancelado por decisão de produto** (Decisão 060) — não é pendência.
+
+Testes backend: `166 passed, 2 warnings` (125 anteriores + 41 novos).
+
 ## Fases futuras (planejadas, sem ordem de data fixa)
 
 Dependentes da conclusão de `PEDROCORE-REPLAN-01` e sujeitas a repriorização:

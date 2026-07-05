@@ -2,7 +2,7 @@
 
 Versão atual de produto: V5.1.9
 Tag técnica atual: `v6.0.0` — tag anotada criada em `ee2ac68` com a mensagem `v6.0.0 - MVP backend PedroCore IA`.
-Frente técnica fechada: PEDROCORE-FINALIZE-04 — consolidação documental pós-MVP backend. A tag `v6.0.0` representa o fechamento do MVP backend, não o projeto completo.
+Frente atual: PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11). A tag `v6.0.0` representa o fechamento do MVP backend, não o projeto completo.
 
 ## Estado atual
 
@@ -12,10 +12,13 @@ Frente técnica fechada: PEDROCORE-FINALIZE-04 — consolidação documental pó
 - **Release gate conservador**: `release_gate_review` só libera avanço com evidência textual limpa via análise local; mock/fallback/safe-mode/risco alto sempre bloqueiam, com `blocked_reason` e `RELEASE_GATE_BLOCKED`.
 - **`POST /api/orchestrate`** existe: API operacional para sistemas externos (warnings com severidade, `warning_codes`, `error_code`, `blocked_reason`, `qa`, `release_gate`, `audit` completo), com autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + header `X-PedroCore-Api-Key`).
 - **Safe mode**: `allow_real_provider=false` por padrão — Gemini/OpenAI/Claude/DeepSeek/Grok nunca são chamados sem autorização explícita (`PROVIDER_REAL_BLOCKED` + fallback Mock).
-- Artefatos com campos de caminho (`path`, `file_path`, `absolute_path`, etc.) são **rejeitados sem leitura** (`ARTIFACT_PATH_REJECTED`).
+- Artefatos com campos de caminho (`path`, `file_path`, `absolute_path`, etc.) são **rejeitados sem leitura** (`ARTIFACT_PATH_REJECTED`) — exceto quando o **Artifact Reader controlado** (Bloco 9) está explicitamente habilitado (`PEDROCORE_ARTIFACT_READER_ENABLED=true`, desabilitado por padrão) e o caminho está dentro da allowlist; nunca para origem FinGuard, nunca `.env`, nunca binário, nunca segredo, nunca path traversal.
+- **Contrato FinGuard → PedroCore** (Bloco 8) definido por payload fake: `origin_system` `finguard`/`finguard-local` read-only, sem qualquer acesso ao repositório real (ver `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`).
+- **QA visual stub** (Bloco 10): artefatos visuais geram `visual_qa_analysis` conservador exigindo revisão humana — sem OCR, sem provider multimodal, sem Playwright; release gate nunca avança só com evidência visual.
+- **Agente exploratório assistido** (Bloco 11): tasks exploratórias geram plano/checklist manual (`exploration`) com `can_execute_actions=false` sempre — nada é executado automaticamente.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
-- Integração real com o FinGuard, leitura real de arquivos, execução de comandos, QA visual, log persistente, dashboard, Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais ainda não existem.
+- Integração real executando no FinGuard, OCR real, QA visual real com provider multimodal, Playwright real, log persistente e Blocos 13–15 finais ainda não existem. Bloco 12 (dashboard) foi cancelado por decisão de produto.
 
 ## O que é o PedroCore IA
 

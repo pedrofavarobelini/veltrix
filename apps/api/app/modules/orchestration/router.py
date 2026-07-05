@@ -82,5 +82,7 @@ async def orchestrate(payload: ChatRequest, request: Request):
         artifact_warnings=outcome.artifact_warnings,
         qa=outcome.qa_skeleton,
         release_gate=outcome.release_gate,
+        visual_qa_analysis=outcome.visual_qa_analysis,
+        exploration=outcome.exploration,
         audit=outcome.audit,
     )

@@ -12,7 +12,7 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-DOCFIX-05 — correção documental pós-tag `v6.0.0`, sem alteração funcional. A última frente técnica fechada é `PEDROCORE-FINALIZE-04`, consolidada em `ee2ac68`.
+PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11): contrato FinGuard fake, Artifact Reader allowlisted, QA visual stub e agente exploratório assistido. A tag `v6.0.0` (MVP backend) permanece intocada em `ee2ac68`.
 
 `PEDROCORE-REPLAN-01` (01A a 01E) está **concluída no escopo documental** e commitada:
 
@@ -54,21 +54,21 @@ C:\Projetos\pedrocore-ia
 
 ## Em andamento
 
-Nenhuma frente de implementação em andamento no momento — `PEDROCORE-IMPLEMENT-03` está implementada, validada e commitada em `6ed4c41`; `PEDROCORE-FINALIZE-04` está consolidada e tagueada em `v6.0.0` sobre `ee2ac68`. Em curso nesta microfrente: `PEDROCORE-DOCFIX-05`, somente correção documental pós-tag e limpeza local.
+- `PEDROCORE-IMPLEMENT-04` — Expansão operacional segura (Blocos 8–11): contrato FinGuard → PedroCore por payload fake (`finguard`/`finguard-local`, `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`); Artifact Reader real controlado por allowlist (`apps/api/app/modules/artifact_reader/`, **desabilitado por padrão**, nunca para FinGuard, nunca `.env`/binário/segredo/traversal); QA visual stub (`visual_qa_analysis` conservador, sem OCR/provider multimodal/Playwright); agente exploratório assistido (`exploration` com `can_execute_actions=false` sempre). Testes backend: `166 passed, 2 warnings`. Implementada e validada localmente nesta frente.
 
 ## Ainda não existe
 
-- Artifact Reader real — artefatos só são recebidos via payload; campos de path são **rejeitados** (`ARTIFACT_PATH_REJECTED`) e nenhum arquivo é lido do disco.
+- Artifact Reader em uso real — o módulo existe mas fica **desabilitado por padrão** (`PEDROCORE_ARTIFACT_READER_ENABLED=false`); sem allowlist configurada, path em payload continua rejeitado (`ARTIFACT_PATH_REJECTED`); leitura de caminhos do FinGuard é bloqueada em qualquer configuração.
 - QA Intelligence com IA real — a análise QA atual é heurística textual local determinística (`local_text_heuristic`); não usa provider real, não substitui validação humana e não executa testes.
-- Execução de comandos pelo PedroCore — `suggested_commands` são apenas strings seguras, nada é executado.
-- Análise visual real / OCR / Playwright / agente exploratório — artefatos visuais só geram warning de "não suportado".
+- Execução de comandos pelo PedroCore — `suggested_commands` são apenas strings seguras, nada é executado; o agente exploratório é assistido (plano/manual) e nunca executa ações.
+- QA visual real / OCR / Playwright — artefatos visuais geram apenas stub conservador com exigência de revisão humana (`ocr_attempted=false`, `provider_attempted=false`, `playwright_attempted=false`).
+- Integração real executando no FinGuard — o contrato existe do lado do PedroCore com payload fake; o cliente HTTP no repositório do FinGuard é frente separada; nenhuma leitura de repositório/pasta do FinGuard existe.
 - Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim mock/fallback nunca aprovam release gate.
 - Bloqueio duro por policy de `allowed_tasks` — `task_allowed_for_project=False` apenas sinaliza.
 - Provider Orchestration avançada (seleção por task_type/custo/qualidade).
-- Persistência em banco de dados / log persistente / dashboard (audit é não persistente, devolvido só na resposta).
-- Qualquer integração real com o FinGuard ou outro sistema externo — nenhuma leitura de repositório/pasta do FinGuard existe.
+- Persistência em banco de dados / log persistente (audit é não persistente, devolvido só na resposta). Dashboard (Bloco 12): **cancelado por decisão de produto**, não é pendência.
 - Qualquer mudança de frontend/design — preservados sem alteração.
-- Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais.
+- Blocos 13–15 finais (documentação final, testes finais completos, fechamento Git/tag futuro).
 
 ## Proibido nesta fase
 
@@ -77,7 +77,7 @@ Nenhuma frente de implementação em andamento no momento — `PEDROCORE-IMPLEME
 - Chamar providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok) — inclusive em testes.
 - Alterar `.env`.
 - Ler, escrever ou executar comandos no repositório do FinGuard.
-- Implementar leitura real de arquivos por path recebido em payload.
+- Leitura de arquivo fora do Artifact Reader allowlisted (que permanece desabilitado por padrão e proibido para FinGuard).
 - Implementar execução de comandos recebidos por payload.
 - Remover documentação antiga/duplicada nesta etapa.
 - Criar, mover, deletar ou recriar tag; alterar versão de produto/backend.
@@ -91,8 +91,10 @@ Nenhuma frente de implementação em andamento no momento — `PEDROCORE-IMPLEME
 
 ## Próximos passos
 
-- Avançar para `PEDROCORE-IMPLEMENT-04 — Expansão operacional segura — Blocos 7 a 11` somente após esta correção documental, sem mover/recriar a tag `v6.0.0`.
+- Validar e commitar `PEDROCORE-IMPLEMENT-04` (Blocos 8–11), sem mover/recriar a tag `v6.0.0`.
+- Bloco 13 — Documentação final; Bloco 14 — Testes finais completos; Bloco 15 — Fechamento Git/tag futuro.
+- Integração real no repositório FinGuard (cliente HTTP consumindo o contrato) em frente separada.
+- OCR real, QA visual real com provider multimodal e Playwright real em frentes futuras, com aprovação explícita.
 - Planejar enforcement real da policy de `allowed_tasks` (hoje só sinaliza via warning, não bloqueia).
-- Manter Artifact Reader real, análise visual real, OCR, Playwright, agente exploratório, dashboard, log persistente e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
 - Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.
 - Saneamento de documentação duplicada/legada permanece como pendência futura, a ser tratada em frente específica (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).

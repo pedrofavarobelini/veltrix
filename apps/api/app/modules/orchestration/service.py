@@ -1,19 +1,23 @@
 import time
 
 from app.core.config import settings
-from app.modules.artifacts.schemas import ArtifactProcessingResult
-from app.modules.artifacts.service import artifact_service
+from app.modules.artifact_reader.service import artifact_reader_service
+from app.modules.artifacts.schemas import ArtifactInput, ArtifactProcessingResult
+from app.modules.artifacts.service import PATH_LIKE_METADATA_KEYS, artifact_service
 from app.modules.audit.service import audit_service
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
+from app.modules.exploration.service import exploration_service
 from app.modules.orchestration.schemas import OrchestrationOutcome
 from app.modules.project_context.service import (
     EMPTY_ALLOWED_TASKS_WARNING,
+    FINGUARD_ORIGIN_SYSTEMS,
     TASK_NOT_ALLOWED_WARNING,
     UNKNOWN_PROJECT_POLICY_WARNING,
     project_context_resolver,
 )
+from app.modules.visual_qa.service import visual_qa_service
 from app.modules.prompt_builder.schemas import PromptBuildInput
 from app.modules.prompt_builder.service import prompt_builder
 from app.modules.providers.registry import provider_registry
@@ -40,6 +44,16 @@ PROVIDER_REAL_BLOCKED_WARNING = (
     "fallback seguro aplicado."
 )
 
+READER_FINGUARD_ORIGIN_WARNING = (
+    "Artifact Reader não está disponível para origem FinGuard nesta frente; "
+    "artefatos devem ser enviados por payload."
+)
+
+VISUAL_ONLY_RELEASE_GATE_WARNING = (
+    "Release gate não pode ser liberado apenas com evidência visual não analisada; "
+    "envie evidência textual."
+)
+
 
 class OrchestrationService:
     """Pipeline central: Task Router → Project Context → Policy → Artifacts →
@@ -51,7 +65,8 @@ class OrchestrationService:
         strategy = task_router.resolve(payload.task_type)
         project = project_context_resolver.resolve(payload.origin_system)
         policy = project_context_resolver.evaluate_task_policy(project, strategy.task_type)
-        artifacts_result = artifact_service.process(payload.artifacts)
+        effective_artifacts, reader_items = self._apply_artifact_reader(payload)
+        artifacts_result = artifact_service.process(effective_artifacts)
         requested_provider = (payload.provider or settings.default_provider).lower()
 
         audit = audit_service.create(
@@ -161,6 +176,15 @@ class OrchestrationService:
                 if not release_gate.can_advance:
                     qa_skeleton.status = "blocked"
 
+        visual_qa = visual_qa_service.analyze(artifacts_result)
+
+        exploration = exploration_service.build(
+            task_type=strategy.task_type,
+            message=payload.message,
+            payload_context=payload.context,
+            payload_metadata=payload.metadata,
+        )
+
         warning_items = self._collect_warnings(
             strategy=strategy,
             project_warnings=project.warnings,
@@ -171,6 +195,9 @@ class OrchestrationService:
             provider_used=provider_used,
             fallback_used=fallback_used,
             safe_mode_blocked=safe_mode_blocked,
+            reader_items=reader_items,
+            visual_qa=visual_qa,
+            exploration=exploration,
         )
 
         blocked_reason: str | None = None
@@ -220,11 +247,87 @@ class OrchestrationService:
             artifact_warnings=artifacts_result.warnings,
             qa_skeleton=qa_skeleton,
             release_gate=release_gate,
+            visual_qa_analysis=visual_qa,
+            exploration=exploration,
             warning_items=warning_items,
             audit=audit,
             status=status,
             blocked_reason=blocked_reason,
         )
+
+    def _apply_artifact_reader(
+        self, payload: ChatRequest
+    ) -> tuple[list[ArtifactInput] | None, list[WarningItem]]:
+        """Converte artefatos com path allowlisted em artefatos textuais (Bloco 9).
+
+        Regras: nunca para origem FinGuard; nunca com o reader desabilitado.
+        Em qualquer falha, o artefato original segue para o ArtifactService,
+        que o rejeita com ARTIFACT_PATH_REJECTED (comportamento pré-existente).
+        """
+        if not payload.artifacts:
+            return payload.artifacts, []
+
+        path_requests = []
+        for artifact in payload.artifacts:
+            metadata_keys = (
+                {str(key).strip().lower() for key in artifact.metadata}
+                if artifact.metadata
+                else set()
+            )
+            path_keys = metadata_keys & PATH_LIKE_METADATA_KEYS
+            path_requests.append(sorted(path_keys)[0] if path_keys else None)
+
+        if not any(path_requests):
+            return payload.artifacts, []
+
+        origin = (payload.origin_system or "").strip().lower()
+        if origin in FINGUARD_ORIGIN_SYSTEMS:
+            return payload.artifacts, [
+                make_warning(
+                    codes.ARTIFACT_READER_PATH_NOT_ALLOWED,
+                    READER_FINGUARD_ORIGIN_WARNING,
+                )
+            ]
+
+        if not artifact_reader_service.is_enabled():
+            return payload.artifacts, [
+                make_warning(
+                    codes.ARTIFACT_READER_DISABLED,
+                    "Artifact Reader desabilitado; leitura por path não realizada.",
+                )
+            ]
+
+        items: list[WarningItem] = []
+        effective: list[ArtifactInput] = []
+        remaining_budget = artifact_reader_service.max_total_chars()
+
+        for artifact, path_key in zip(payload.artifacts, path_requests):
+            if path_key is None:
+                effective.append(artifact)
+                continue
+
+            requested_path = str(artifact.metadata.get(path_key, ""))
+            result = artifact_reader_service.read(
+                requested_path, remaining_budget=remaining_budget
+            )
+
+            for code, message in zip(result.warning_codes, result.warnings):
+                items.append(make_warning(code, message))
+
+            if result.allowed and result.content is not None:
+                remaining_budget -= result.chars_read
+                effective.append(
+                    ArtifactInput(
+                        type="text",
+                        name=result.file_name or artifact.name,
+                        content=result.content,
+                        metadata=None,
+                    )
+                )
+            else:
+                effective.append(artifact)
+
+        return effective, items
 
     async def _mock_fallback(
         self,
@@ -259,6 +362,9 @@ class OrchestrationService:
         provider_used: str,
         fallback_used: bool,
         safe_mode_blocked: bool,
+        reader_items: list[WarningItem] | None = None,
+        visual_qa=None,
+        exploration=None,
     ) -> list[WarningItem]:
         items: list[WarningItem] = []
         seen: set[tuple[str, str]] = set()
@@ -320,6 +426,27 @@ class OrchestrationService:
                     )
                 else:
                     add(code, release_gate.blocked_reason or "Release gate: ver detalhes.")
+
+        if reader_items:
+            for item in reader_items:
+                add(item.code, item.message, item.severity)
+
+        if visual_qa is not None:
+            for code, message in zip(visual_qa.warning_codes, visual_qa.warnings):
+                add(code, message)
+            if (
+                release_gate is not None
+                and not release_gate.can_advance
+                and (analysis is None or not analysis.analyzed)
+            ):
+                add(
+                    codes.VISUAL_QA_BLOCKED_FOR_RELEASE_GATE,
+                    VISUAL_ONLY_RELEASE_GATE_WARNING,
+                )
+
+        if exploration is not None:
+            for code, message in zip(exploration.warning_codes, exploration.warnings):
+                add(code, message)
 
         return items
 

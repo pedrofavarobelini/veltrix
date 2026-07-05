@@ -2,7 +2,9 @@ from pydantic import BaseModel, Field
 
 from app.modules.audit.schemas import AuditMetadata
 from app.modules.contracts.codes import WarningItem
+from app.modules.exploration.schemas import ExplorationPlan
 from app.modules.qa_response.schemas import QAResponseSkeleton, ReleaseGateResult
+from app.modules.visual_qa.schemas import VisualQAAnalysis
 
 
 class OrchestrationOutcome(BaseModel):
@@ -31,6 +33,8 @@ class OrchestrationOutcome(BaseModel):
     artifact_warnings: list[str] = Field(default_factory=list)
     qa_skeleton: QAResponseSkeleton | None = None
     release_gate: ReleaseGateResult | None = None
+    visual_qa_analysis: VisualQAAnalysis | None = None
+    exploration: ExplorationPlan | None = None
     warning_items: list[WarningItem] = Field(default_factory=list)
     audit: AuditMetadata
     status: str = "ok"
@@ -72,4 +76,6 @@ class OrchestrateResponse(BaseModel):
     artifact_warnings: list[str] = Field(default_factory=list)
     qa: QAResponseSkeleton | None = None
     release_gate: ReleaseGateResult | None = None
+    visual_qa_analysis: VisualQAAnalysis | None = None
+    exploration: ExplorationPlan | None = None
     audit: AuditMetadata

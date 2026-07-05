@@ -62,6 +62,24 @@ _STRATEGIES: dict[str, dict[str, object]] = {
         "criticality": "medium",
         "allow_mock": True,
     },
+    "exploratory_test_plan": {
+        "response_style": "exploration_plan_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "manual_exploration_report": {
+        "response_style": "exploration_plan_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "assisted_exploration_review": {
+        "response_style": "exploration_plan_structured",
+        "requires_structured_response": True,
+        "criticality": "high",
+        "allow_mock": True,
+    },
     UNKNOWN_TASK_TYPE: {
         "response_style": "free_text",
         "requires_structured_response": False,

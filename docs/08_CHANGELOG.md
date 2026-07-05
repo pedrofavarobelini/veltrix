@@ -2,6 +2,45 @@
 
 Atualizado em: 05/07/2026
 
+## PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11)
+
+Status: implementada, em validação nesta frente.
+
+### Bloco 8 — Contrato FinGuard → PedroCore (payload fake)
+
+- `project_context/service.py` — `finguard-local` adicionado; `allowed_tasks` do FinGuard e do PedroCore ganharam as tasks exploratórias; notas atualizadas; novo conjunto `FINGUARD_ORIGIN_SYSTEMS`.
+- `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md` — contrato completo (payloads fake, resposta, segurança, limitações, integração real futura, confirmações explícitas de não-acesso ao FinGuard).
+- Origem FinGuard nunca usa o Artifact Reader (bloqueio na orquestração + bloqueio de caminhos contendo "finguard" no próprio reader).
+
+### Bloco 9 — Artifact Reader real controlado por allowlist
+
+- Novo módulo `apps/api/app/modules/artifact_reader/` (`ArtifactReadResult`, `ArtifactReaderService.read`): desabilitado por padrão (`PEDROCORE_ARTIFACT_READER_ENABLED=false`), allowlist de diretórios, extensões `.txt,.md,.log,.json,.csv`, limites 20k/100k chars; bloqueia path traversal, `.env`, binário (byte nulo/decode), segredo identificável (regex de atribuição senha/token/chave e chaves privadas), arquivo grande e caminho FinGuard. Nunca escreve/deleta/executa.
+- `orchestration/service.py` — `_apply_artifact_reader`: com reader habilitado e path allowlisted, o arquivo lido vira artefato textual (`ARTIFACT_READER_USED`) e passa pelos limites/QA normais; qualquer falha mantém a rejeição pré-existente (`ARTIFACT_PATH_REJECTED`). Audit continua sem conteúdo.
+- `.env.example` — 5 variáveis novas do reader, sem valor real.
+- Novos códigos `ARTIFACT_READER_*` (10) em `contracts/codes.py` com severidades (env/secret = `critical`).
+
+### Bloco 10 — QA visual stub (sem OCR, sem provider multimodal, sem Playwright)
+
+- Novo módulo `apps/api/app/modules/visual_qa/` (`VisualQAAnalysis`, `VisualQAService.analyze`): para artefatos visuais gera análise conservadora `not_analyzed`/`stub` com `requires_human_review=true`, `can_advance=false`, `suggested_manual_checks` e flags explícitas `ocr_attempted=false`, `provider_attempted=false`, `playwright_attempted=false`.
+- `/api/orchestrate` ganhou campo `visual_qa_analysis`; release gate nunca avança apenas com evidência visual (`VISUAL_QA_BLOCKED_FOR_RELEASE_GATE`).
+- Novos códigos `VISUAL_QA_*` (4).
+
+### Bloco 11 — Agente exploratório assistido (plano/manual)
+
+- Novo módulo `apps/api/app/modules/exploration/` (`ExplorationPlan`, `ExplorationService.build`): plano determinístico local com `exploration_plan`, `manual_steps` (a partir de `context.routes`), `risk_areas` (heurística de keywords), `required_evidence`, `human_confirmations`, `blocked_actions` e sempre `can_execute_actions=false`, `can_advance=false`, `requires_human_review=true`; pedidos destrutivos geram `EXPLORATION_ACTION_BLOCKED`.
+- `task_router/service.py` — 3 novas strategies (`exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`, response_style `exploration_plan_structured`).
+- `/api/orchestrate` ganhou campo `exploration`. `/api/chat` permanece com contrato inalterado.
+- Novos códigos `EXPLORATION_*`/`HUMAN_CONFIRMATION_REQUIRED` (6).
+
+### Testes
+
+- Novos: `tests/test_finguard_contract.py` (10), `tests/test_artifact_reader.py` (13), `tests/test_visual_qa.py` (7), `tests/test_exploration.py` (10); `tests/test_project_context.py` atualizado (finguard allowed_tasks/notes + finguard-local, +1 teste).
+- **Comando:** `./.venv/Scripts/python.exe -m pytest -q` (em `apps/api`). **Resultado:** `166 passed, 2 warnings` (warnings pré-existentes Starlette/Pydantic). Testes de reader usam apenas `tmp_path`; nenhum teste chama provider real, faz request externo, executa OCR ou Playwright.
+
+### Não alterado / bloqueado por decisão
+
+- `apps/web`, `.env` e `apps/api/.env` intocados. FinGuard real não acessado. Bloco 12 cancelado (Decisão 060). Sem tag, sem push.
+
 ## PEDROCORE-DOCFIX-05 — Correção documental pós-tag v6.0.0
 
 Status: correção documental pós-auditoria.

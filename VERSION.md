@@ -12,7 +12,7 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-DOCFIX-05 — correção documental pós-tag `v6.0.0`, sem alteração funcional.
+PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11): contrato FinGuard fake, Artifact Reader allowlisted, QA visual stub e agente exploratório assistido.
 
 ## Status atual
 
@@ -33,6 +33,8 @@ Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
 ## Próximos passos técnicos
 
-- `PEDROCORE-IMPLEMENT-04` — expansão operacional segura — Blocos 7 a 11, sem mover/recriar a tag `v6.0.0`.
-- Artifact Reader real (leitura automática de arquivo) e análise visual real continuam não implementados, por decisão.
+- Bloco 13 — Documentação final; Bloco 14 — Testes finais completos; Bloco 15 — Fechamento Git/tag futuro.
+- Integração real no repositório FinGuard (cliente HTTP) em frente separada.
+- OCR real, QA visual real com provider multimodal e Playwright real em frentes futuras.
 - Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.
+- Bloco 12 (dashboard/logs/admin): cancelado por decisão de produto — não é pendência.

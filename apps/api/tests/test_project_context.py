@@ -65,15 +65,30 @@ def test_resolver_only_returns_data():
             "qa_report_analysis",
             "qa_failure_diagnosis",
             "release_gate_review",
+            "exploratory_test_plan",
+            "manual_exploration_report",
+            "assisted_exploration_review",
             "artifact_summary",
             "technical_explanation",
         ],
         "warnings": [],
         "notes": (
             "Projeto externo; QA Automation pertence ao FinGuard; "
-            "o PedroCore só pode receber/analisar artefatos enviados por payload no futuro."
+            "o PedroCore recebe apenas artefatos por payload (contrato fake nesta fase), "
+            "sem leitura direta de repositório, sem execução de comandos e sem escrita."
         ),
     }
+
+
+def test_resolves_finguard_local_with_same_restrictions():
+    project = project_context_resolver.resolve("finguard-local")
+
+    assert project.project_id == "finguard-local"
+    assert project.read_only is True
+    assert project.can_execute_commands is False
+    assert project.can_write_files is False
+    assert "qa_report_analysis" in project.allowed_tasks
+    assert "exploratory_test_plan" in project.allowed_tasks
 
 
 def test_policy_allows_listed_task():
