@@ -26,7 +26,7 @@ Implementação inicial de código:
 
 - `PEDROCORE-IMPLEMENT-01A/01B` (Task Router mínimo + metadados de resposta) commitada em `577bc88`; correção documental commitada em `20e6cff`.
 - `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` (Project Context, Prompt Builder, metadados estruturais, audit não persistente) commitada em `95cbfab`; correção documental commitada em `1ff1758`.
-- `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — Policy de `allowed_tasks`, artefatos textuais por payload, Prompt Builder com artefatos, QA response skeleton seguro, warnings específicos de QA textual e testes de contrato — implementada, validada nesta etapa (em processo de commit). Testes backend: `66 passed, 2 warnings`. `apps/web` limpo, `.env` intocado, nenhum provider real chamado, FinGuard não acessado, nenhum endpoint novo criado.
+- `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — Policy de `allowed_tasks`, artefatos textuais por payload, Prompt Builder com artefatos, QA response skeleton seguro, warnings específicos de QA textual e testes de contrato — implementada, validada e commitada em `e115672`. Testes backend: `66 passed, 2 warnings`. `apps/web` limpo, `.env` intocado, nenhum provider real chamado, FinGuard não acessado, nenhum endpoint novo criado, QA skeleton sem análise real, `can_advance` nunca `true`.
 
 ## Local oficial
 
@@ -48,10 +48,11 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-REPLAN-01E` — fechamento documental da reformulação, consolidado em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md` (commit `cc808a7`).
 - `PEDROCORE-IMPLEMENT-01A/01B` — Task Router mínimo implementado em código: `task_type`, `origin_system`, `context` e `metadata` opcionais no `ChatRequest`; Task Router mínimo em `apps/api/app/modules/task_router/` reconhecendo 7 task_types + `unknown`, sem bloqueio duro; metadados de tarefa (`task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`) no `ChatResponse`; warning forte quando fallback Mock ocorre em tarefa crítica. Commitada em `577bc88`.
 - `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` — Project Context mínimo (`apps/api/app/modules/project_context/`, resolve `pedrocore`/`finguard`/`unknown`, somente configuração interna); Prompt Builder mínimo (`apps/api/app/modules/prompt_builder/`, monta `enriched_system_prompt` sem chamar provider); metadados estruturais novos no `ChatResponse` (`project_id`, `project_read_only`, `project_can_execute_commands`, `project_can_write_files`, `response_style`, `audit_id`, `audit_timestamp`); audit metadata não persistente (`apps/api/app/modules/audit/`, `audit_id`/`timestamp` gerados em memória, sem banco/arquivo/log); testes backend: `37 passed, 2 warnings`. Commitada em `95cbfab`.
+- `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — QA textual foundation: policy de `allowed_tasks` (`ChatResponse.task_allowed_for_project`), artefatos textuais por payload (`apps/api/app/modules/artifacts/`, `ChatRequest.artifacts`, `ChatResponse.artifact_count`/`artifact_types`/`artifact_warnings`), Prompt Builder com seção `[Artefatos enviados]`, QA response skeleton seguro (`apps/api/app/modules/qa_response/`, `ChatResponse.qa_skeleton`, sempre `status="not_analyzed"`/`can_advance=False`/`confidence=0.0`, sem análise real), warnings específicos de QA textual e testes de contrato. Testes backend: `66 passed, 2 warnings`. Commitada em `e115672`.
 
 ## Em andamento
 
-- `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — QA textual foundation: policy de `allowed_tasks` (`ChatResponse.task_allowed_for_project`), artefatos textuais por payload (`apps/api/app/modules/artifacts/`, `ChatRequest.artifacts`, `ChatResponse.artifact_count`/`artifact_types`/`artifact_warnings`), Prompt Builder com seção `[Artefatos enviados]`, QA response skeleton seguro (`apps/api/app/modules/qa_response/`, `ChatResponse.qa_skeleton`, sempre `status="not_analyzed"`/`can_advance=False`/`confidence=0.0`), warnings específicos de QA textual e testes de contrato. Testes backend: `66 passed, 2 warnings`. **Apenas documentação/validação — aguardando commit desta etapa.**
+Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` está implementada, validada e commitada em `e115672`.
 
 ## Ainda não existe
 
@@ -90,10 +91,9 @@ C:\Projetos\pedrocore-ia
 
 ## Próximos passos
 
-- Commitar `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` (QA textual foundation).
-- Planejar QA Intelligence real (parser de relatório, classificador de risco) para preencher o skeleton com achados reais, consumindo os artefatos textuais já recebidos.
-- Avaliar se/quando a policy de `allowed_tasks` deve evoluir de warning para bloqueio duro.
-- Planejar Artifact Reader real (leitura automática) e suporte a artefatos visuais, ambos ainda fora de escopo.
-- Planejar `/api/orchestrate` e/ou um Orchestration module somente futuramente, quando existir um segundo consumidor real do pipeline — adiado na etapa `01I`.
-- Manter Artifact Reader, QA Intelligence real, análise visual e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
+- Planejar a próxima etapa de `PEDROCORE-IMPLEMENT-02` ou abrir `PEDROCORE-IMPLEMENT-03`.
+- Avaliar limite de tamanho de artefatos (`ArtifactService`) antes de qualquer uso com provider real.
+- Planejar enforcement real da policy de `allowed_tasks` (hoje só sinaliza via warning, não bloqueia).
+- Planejar QA Intelligence textual real (parser de relatório, classificador de risco) para preencher o skeleton com achados reais, consumindo os artefatos textuais já recebidos.
+- Manter Artifact Reader real, análise visual real, endpoint `/api/orchestrate` e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
 - Saneamento de documentação duplicada/legada permanece como pendência futura, a ser tratada em frente específica (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).
