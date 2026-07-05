@@ -26,6 +26,15 @@ RELEASE_GATE_MOCK_WARNING = (
     "use análise local (provider local_qa) com artefatos textuais."
 )
 
+# FINALIZE-06A: somente a análise local determinística pode aprovar release gate.
+# Qualquer provider real/externo exige revisão humana — nunca decide sozinho.
+RELEASE_GATE_TRUSTED_PROVIDERS = {"local_qa"}
+
+RELEASE_GATE_REAL_PROVIDER_WARNING = (
+    "Provider real/externo não pode aprovar release gate sozinho; "
+    "revisão humana obrigatória (RELEASE_REQUIRES_HUMAN_REVIEW)."
+)
+
 RELEASE_GATE_LOCAL_DECISION_WARNING = (
     "Decisão de release gate baseada em análise textual local determinística; "
     "a resposta conversacional do provider não é evidência."
@@ -149,6 +158,10 @@ class QAResponseService:
             blocked_reason = RELEASE_GATE_MOCK_WARNING
             if codes.QA_FALLBACK_MOCK not in warning_codes:
                 warning_codes.append(codes.QA_FALLBACK_MOCK)
+        elif provider_used not in RELEASE_GATE_TRUSTED_PROVIDERS:
+            blocked_reason = RELEASE_GATE_REAL_PROVIDER_WARNING
+            if codes.RELEASE_REQUIRES_HUMAN_REVIEW not in warning_codes:
+                warning_codes.append(codes.RELEASE_REQUIRES_HUMAN_REVIEW)
         elif analysis.confidence < 0.6:
             blocked_reason = "Confiança insuficiente para liberar release gate."
         elif not analysis.can_advance:
