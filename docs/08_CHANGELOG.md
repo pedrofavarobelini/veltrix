@@ -2,6 +2,55 @@
 
 Atualizado em: 04/07/2026
 
+## PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H — Base interna de orquestração expandida
+
+Status: implementada, validada.
+
+### Motivação
+
+Com `PEDROCORE-IMPLEMENT-01A/01B` (Task Router mínimo) commitada em `577bc88`, esta etapa evolui o fluxo interno de `/api/chat` para uma primeira base real de orquestração: resolução de contexto por projeto, montagem de prompt enriquecido, metadados estruturais de resposta e auditoria não persistente — sempre operando dentro do endpoint já existente, sem endpoint novo e sem tocar em sistemas externos.
+
+### Backend — Criado
+
+- `apps/api/app/modules/project_context/__init__.py`, `schemas.py`, `service.py` — `ProjectContext` (project_id, display_name, read_only, can_execute_commands, can_write_files, allowed_tasks, warnings, notes) e `ProjectContextResolver.resolve(origin_system)`, resolvendo `pedrocore`, `finguard` e `unknown` a partir de configuração interna.
+- `apps/api/app/modules/prompt_builder/__init__.py`, `schemas.py`, `service.py` — `PromptBuildInput`/`PromptBuildResult` e `PromptBuilder.build(...)`, montando `enriched_system_prompt` com seções de instrução, tarefa, origem, limites do projeto, contexto, metadata e regras de segurança (incluindo regra específica para `origin_system=finguard`).
+- `apps/api/app/modules/audit/__init__.py`, `schemas.py`, `service.py` — `AuditMetadata` (audit_id, timestamp, origin_system, task_type, provider_requested, fallback_used, criticality) e `AuditService.create(...)`, gerando dados em memória via `uuid.uuid4()` e `datetime.now(timezone.utc)`.
+
+### Backend — Alterado
+
+- `apps/api/app/modules/chat/schemas.py` — `ChatResponse` ganhou `project_id`, `project_read_only`, `project_can_execute_commands`, `project_can_write_files`, `response_style`, `audit_id`, `audit_timestamp`, todos com defaults seguros.
+- `apps/api/app/modules/chat/service.py` — `ChatService.send_message` passou a resolver `ProjectContext` após o Task Router, gerar `AuditMetadata` no início da request, chamar o Prompt Builder e usar `enriched_system_prompt` na chamada ao provider (sucesso e fallback); `task_warnings` agora agrega os warnings do Task Router e do Project Context; `audit.fallback_used` é atualizado no fim de cada caminho.
+
+### Testes
+
+- `apps/api/tests/test_project_context.py` — 5 testes: resolve `pedrocore`, resolve `finguard` (somente leitura, sem execução/escrita), sistema desconhecido retorna `unknown` com warning, normalização de case/espaço e defaults, resolver só devolve dados.
+- `apps/api/tests/test_prompt_builder.py` — 9 testes: monta prompt sem chamar provider, inclui task_type/origin_system, inclui context/metadata quando enviados (e informa ausência quando não enviados), inclui criticidade para `qa_report_analysis`, inclui limites do projeto, inclui regra de segurança do FinGuard (presença e ausência), preserva `system_prompt` customizado.
+- `apps/api/tests/test_orchestration_flow.py` — 8 testes: request legada com defaults de orquestração, `origin_system=finguard` retorna metadados de projeto, origem desconhecida retorna warning, fallback crítico mantém warning forte e gera audit, tarefa crítica mantém `requires_structured_response`, `audit_id`/`audit_timestamp` presentes e únicos por request, `/api/providers` continua funcionando, guarda de que a suíte usa apenas providers seguros (`mock`/inexistente).
+- **Comando rodado:** `./.venv/Scripts/python.exe -m pytest -v` (dentro de `apps/api`).
+- **Resultado:** `37 passed, 2 warnings` (15 testes anteriores + 22 novos; warnings pré-existentes de deprecação do Starlette/Pydantic, não introduzidos por esta mudança).
+
+### PEDROCORE-IMPLEMENT-01I — avaliada, adiada
+
+Não foi criado `apps/api/app/modules/orchestration/`. Justificativa: `ChatService.send_message` já encapsula o pipeline completo (Task Router → Project Context → Audit → Prompt Builder → Provider → fallback) em um único ponto de entrada reutilizável; extrair um módulo de orquestração agora seria abstração prematura sem um segundo consumidor real (ex.: um futuro endpoint `/api/orchestrate`, que **não** foi criado nesta etapa). Registrado como pendência (Decisão Técnica 044).
+
+### Compatibilidade
+
+- `POST /api/chat` continua aceitando requisições antigas, com todos os campos novos tendo defaults seguros.
+- `GET /api/providers` inalterado.
+- Nenhum endpoint novo foi criado.
+- `BaseAIProvider.build_prompt` continua existindo; providers reais não foram reescritos.
+
+### Não alterado nesta etapa
+
+- Sem alterações de frontend, componentes, estilos, layout ou design (`apps/web` limpo).
+- Sem alterações no `.env`.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Sem leitura ou escrita no repositório do FinGuard.
+- Sem instalação de dependências.
+- Sem Artifact Reader real, QA Intelligence real, análise visual, banco de dados/persistência ou autenticação entre sistemas.
+- Sem alteração de versão de produto (V5.1.9) ou versão de pacote backend (0.2.0).
+- Sem commit e sem criação de tag.
+
 ## PEDROCORE-IMPLEMENT-01A/01B — Task Router mínimo + metadados de resposta
 
 Status: implementada, validada.

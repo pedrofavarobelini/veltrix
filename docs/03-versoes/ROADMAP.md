@@ -50,28 +50,25 @@ Frente aberta para reposicionar o PedroCore como orquestrador central de IA do e
 
 Primeira frente de implementação de código pós-reformulação, detalhada em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12.
 
-- **01A/01B — Task Router mínimo + metadados de resposta.** *(implementada, em validação)* Testes backend passando (15/15).
+- **01A/01B — Task Router mínimo + metadados de resposta.** *(implementada, commitada)* Commitada em `577bc88`; correção documental em `20e6cff`. Testes backend passando (15/15 na época; ver abaixo o total atual).
 
-  Implementado:
-  - `task_type` opcional no `ChatRequest` (default `"general_chat"`).
-  - `origin_system` opcional no `ChatRequest` (default `"pedrocore"`).
-  - `context` e `metadata` opcionais no `ChatRequest` (passthrough, sem uso na lógica ainda).
-  - Task Router mínimo em `apps/api/app/modules/task_router/` (normaliza `task_type`, reconhece `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary` e `unknown`, sem bloqueio duro).
-  - Metadados de tarefa no `ChatResponse`: `task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`.
-  - Warning forte quando fallback Mock é usado em tarefa crítica (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`).
-  - Testes backend seguros em `apps/api/tests/test_task_router.py` (8 testes novos, cobrindo compatibilidade retroativa, task_types conhecidos, fallback crítico e task_type desconhecido).
+  Implementado: `task_type` opcional no `ChatRequest` (default `"general_chat"`), `origin_system` opcional (default `"pedrocore"`), `context`/`metadata` opcionais, Task Router mínimo em `apps/api/app/modules/task_router/` (normaliza `task_type`, reconhece `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary` e `unknown`, sem bloqueio duro), metadados de tarefa no `ChatResponse` (`task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`), warning forte em fallback crítico.
 
-  Não implementado nesta etapa:
-  - Prompt Builder real (o prompt continua montado por `BaseAIProvider.build_prompt`, sem usar `task_type`/`context`/`metadata`).
-  - Project Context real (nenhuma representação de sistema externo configurada).
-  - Artifact Reader.
-  - QA Intelligence real (nenhuma análise de relatório, apenas metadados de tarefa).
-  - Audit/logs.
-  - Endpoint `/api/orchestrate` (o Task Router opera internamente dentro de `POST /api/chat`, conforme Decisão Técnica 039).
-  - Integração real com o FinGuard.
-  - Qualquer mudança de frontend/design.
+- **01C — Project Context mínimo.** *(implementada, em validação)* Módulo `apps/api/app/modules/project_context/`: `ProjectContextResolver.resolve(origin_system)` resolve configuração interna por sistema (`pedrocore`, `finguard`, `unknown`), com `read_only`, `can_execute_commands`, `can_write_files`, `allowed_tasks`, `warnings` e `notes`. Não lê arquivos externos, não acessa o FinGuard real — apenas devolve dados de configuração interna.
 
-- **01C em diante** — planejamento de fases futuras (Prompt Builder real, Project Context real, Artifact Reader, QA Intelligence real, Audit/logs, endpoint de orquestração) permanece **não iniciado**, sujeito a aprovação futura.
+- **01D — Prompt Builder mínimo.** *(implementada, em validação)* Módulo `apps/api/app/modules/prompt_builder/`: monta `enriched_system_prompt` com seções `[Instruções do sistema]`, `[Tarefa]`, `[Origem]`, `[Limites do projeto]`, `[Contexto enviado]`, `[Metadata]`, `[Regras de segurança]` (com regra adicional quando `origin_system=finguard`). Não chama provider, não decide provider. `BaseAIProvider.build_prompt` continua existindo e intacto; providers reais não foram reescritos.
+
+- **01E — Structured Response metadata.** *(implementada, em validação)* `ChatResponse` ganhou `project_id`, `project_read_only`, `project_can_execute_commands`, `project_can_write_files`, `response_style`, `audit_id`, `audit_timestamp`, todos com defaults seguros. Campos antigos (incluindo os da 01A/01B) preservados. Campos de QA Intelligence real (`findings`, `failures`, `risk_level`, `can_advance`, `suggested_commands`, `suggested_fixes`) **não** foram adicionados — pertencem a uma fase futura.
+
+- **01F — Audit metadata não persistente.** *(implementada, em validação)* Módulo `apps/api/app/modules/audit/`: `AuditService.create()` gera `audit_id` (uuid4) e `timestamp` (ISO, UTC) em memória por requisição, sem banco, arquivo, middleware ou endpoint. `fallback_used` é atualizado ao final do fluxo.
+
+- **01G — Testes de integração do fluxo orquestrado.** *(implementada, em validação)* Novos arquivos `apps/api/tests/test_project_context.py`, `test_prompt_builder.py` e `test_orchestration_flow.py`, cobrindo Project Context, Prompt Builder e o fluxo `/api/chat` de ponta a ponta (request antiga, `origin_system=finguard`, origem desconhecida, fallback crítico com audit, `requires_structured_response`, `/api/providers`).
+
+- **01H — Proteção contra provider real em testes.** *(implementada, em validação)* Teste dedicado garante que o provider default é `mock`, que ele não é `real_provider` e está sempre configurado; toda a suíte usa apenas `mock`/provider inexistente.
+
+- **01I — Orchestration module.** *(avaliada, adiada)* Não foi criado `apps/api/app/modules/orchestration/`. Justificativa: `ChatService.send_message` já encapsula o pipeline completo (Task Router → Project Context → Audit → Prompt Builder → Provider → fallback) em um ponto de entrada único e reutilizável; extrair um módulo de orquestração agora seria abstração prematura sem um segundo consumidor real. Fica registrado como pendência para quando um endpoint `/api/orchestrate` (ainda inexistente) vier a ser criado.
+
+Ainda não existe: Artifact Reader real, QA Intelligence real, análise visual, banco de dados/persistência, autenticação entre sistemas, endpoint `/api/orchestrate`, integração real com o FinGuard, ou qualquer alteração de frontend/design.
 
 ## Fases futuras (planejadas, sem ordem de data fixa)
 

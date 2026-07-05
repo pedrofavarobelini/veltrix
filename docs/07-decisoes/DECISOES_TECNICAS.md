@@ -159,3 +159,19 @@ A primeira implementação do Task Router deve operar dentro do fluxo já existe
 ## Decisão 040 — Warnings de fallback crítico devem ser expostos na resposta antes de qualquer bloqueio automático
 
 Na primeira implementação, o fallback Mock em tarefa crítica não bloqueia a resposta — apenas adiciona um warning explícito em `task_warnings`. Bloqueio automático (ex.: `status: "blocked"`) é uma evolução futura, a ser decidida somente depois que sistemas externos reais consumirem e validarem esses warnings.
+
+## Decisão 041 — Project Context mínimo deve ser configuração interna, não integração real com projetos externos
+
+O Project Context resolve metadados e limites (`read_only`, `can_execute_commands`, `can_write_files`, `allowed_tasks`) a partir de configuração interna do próprio PedroCore, por `origin_system`. Ele nunca lê arquivos externos, nunca acessa o FinGuard real e nunca executa comandos — é estritamente um mapa de configuração local.
+
+## Decisão 042 — Prompt Builder deve enriquecer system_prompt sem reescrever providers
+
+O Prompt Builder monta um `system_prompt` enriquecido (tarefa, origem, limites do projeto, contexto, metadata, regras de segurança) e o repassa ao provider como parâmetro já existente. Ele não chama provider, não decide provider e não exige reescrever `BaseAIProvider` ou os providers individuais.
+
+## Decisão 043 — Audit inicial deve ser não persistente até existir política de armazenamento e privacidade
+
+O audit metadata (`audit_id`, `timestamp`, `origin_system`, `task_type`, `provider_requested`, `fallback_used`, `criticality`) é gerado em memória e devolvido apenas na resposta. Nenhuma persistência em banco, arquivo ou log é criada até que existam decisões explícitas de retenção, privacidade e armazenamento seguro.
+
+## Decisão 044 — Orchestration module deve ser adiado até haver necessidade real de endpoint ou reuso fora do /api/chat
+
+Um módulo dedicado de orquestração (`apps/api/app/modules/orchestration/`) não deve ser criado enquanto `ChatService` for o único consumidor do pipeline (Task Router, Project Context, Prompt Builder, Provider, fallback, audit). Extrair esse módulo antes de existir um segundo consumidor real (ex.: um futuro endpoint `/api/orchestrate`) seria abstração prematura.

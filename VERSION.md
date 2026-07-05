@@ -12,11 +12,11 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-IMPLEMENT-01A/01B — Task Router mínimo + metadados de resposta.
+PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H — Base interna de orquestração expandida.
 
 ## Status atual
 
-`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental (commits `1e5a8cb`, `6e7badd`, `c1e7816`, `8c68b67`, `cc808a7`). Primeira implementação de código pós-reformulação: Task Router mínimo integrado a `POST /api/chat`, com metadados de tarefa no `ChatResponse` e warnings de fallback crítico. Testes backend passando (15/15). Sem alterações de frontend, design, providers reais ou `.env`.
+`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental (commits `1e5a8cb`, `6e7badd`, `c1e7816`, `8c68b67`, `cc808a7`). `PEDROCORE-IMPLEMENT-01A/01B` (Task Router mínimo) commitada em `577bc88`. Nesta etapa: Project Context mínimo, Prompt Builder mínimo, metadados estruturais no `ChatResponse` e audit metadata não persistente. Testes backend passando (`37 passed, 2 warnings`). `PEDROCORE-IMPLEMENT-01I` (Orchestration module) avaliada e adiada. Sem alterações de frontend, design, providers reais ou `.env`.
 
 ## Observação sobre versionamento
 
@@ -29,7 +29,7 @@ Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
 ## Próximos passos técnicos
 
-- Prompt Builder real consumindo `task_type`/`context`/`metadata` (ainda não implementado).
-- Project Context real por sistema externo (ainda não implementado).
-- Audit/logs básico (ainda não implementado).
+- QA Intelligence real (parser de relatório, classificador de risco), consumindo o Prompt Builder e o Project Context já existentes (ainda não implementada).
+- Artifact Reader real (ainda não implementado).
+- Orchestration module e/ou endpoint `/api/orchestrate` — avaliados e adiados nesta etapa (`01I`).
 - Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12, para o escopo completo de `PEDROCORE-IMPLEMENT-01`.

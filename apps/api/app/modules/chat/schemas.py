@@ -26,6 +26,13 @@ class ChatResponse(BaseModel):
     task_criticality: str = "low"
     requires_structured_response: bool = False
     task_warnings: list[str] = Field(default_factory=list)
+    project_id: str = "pedrocore"
+    project_read_only: bool = True
+    project_can_execute_commands: bool = False
+    project_can_write_files: bool = False
+    response_style: str = "free_text"
+    audit_id: str | None = None
+    audit_timestamp: str | None = None
 
 
 class ProviderInfo(BaseModel):
