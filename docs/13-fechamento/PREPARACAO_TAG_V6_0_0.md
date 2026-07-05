@@ -1,15 +1,18 @@
-# Preparação da tag v6.0.0 — PedroCore IA
+# Registro pós-tag v6.0.0 — PedroCore IA
 
 ## 1. Objetivo
 
-Preparar a decisão futura de criação da tag `v6.0.0`, consolidando o estado do MVP backend após `PEDROCORE-IMPLEMENT-01`, `02` e `03`. Este documento **não cria a tag** — apenas organiza a base de decisão para quando um humano decidir criá-la.
+Registrar o estado da tag anotada `v6.0.0` após sua criação, consolidando o fechamento do MVP backend após `PEDROCORE-IMPLEMENT-01`, `02`, `03` e `PEDROCORE-FINALIZE-04`. Este documento não move, recria nem substitui a tag; apenas registra o estado real pós-tag.
 
 ## 2. Base atual
 
-- Último commit no momento desta preparação: `6ed4c41 — feat: implementar MVP backend PEDROCORE-IMPLEMENT-03`.
+- Commit técnico do MVP backend: `6ed4c41 — feat: implementar MVP backend PEDROCORE-IMPLEMENT-03`.
+- Commit documental de consolidação: `ee2ac68 — docs: consolidar MVP e preparar tag v6`.
+- Tag anotada atual: `v6.0.0`, apontando para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`).
+- Mensagem da tag: `v6.0.0 - MVP backend PedroCore IA`.
 - Frente fechada: `PEDROCORE-IMPLEMENT-03` (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_IMPLEMENT_03.md`).
-- Working tree confirmado limpo antes do início da frente `PEDROCORE-FINALIZE-04`.
-- Tags existentes antes de uma eventual `v6.0.0`: `v2.0.0`, `v3.0.0`, `v4.0.0`, `v5.1.9` (todas de entregas de frontend/produto; nenhuma delas cobre o backend MVP atual).
+- Frente documental fechada: `PEDROCORE-FINALIZE-04`.
+- Tags existentes após o fechamento: `v2.0.0`, `v3.0.0`, `v4.0.0`, `v5.1.9`, `v6.0.0`.
 
 ## 3. Escopo consolidado do MVP
 
@@ -41,21 +44,20 @@ O que existe hoje no backend, de ponta a ponta:
 - Dashboard.
 - Log persistente (banco, arquivo, SQLite ou serviço externo).
 - Provider real liberado em fluxo crítico sem autorização explícita.
+- Blocos 7–11 do planejamento maior.
+- Bloco 12.
+- Blocos 13–15 finais.
 
-## 5. Checklist para criar tag futura
+## 5. Checklist de validação pós-tag
 
-- [ ] Working tree limpo.
-- [ ] `pytest` passando (125 passed, sem falhas).
-- [ ] `compileall` passando.
-- [ ] Smoke `/api/chat` passando.
-- [ ] Smoke `/api/orchestrate` passando.
-- [ ] `.env` intocado.
-- [ ] `apps/web` intocado.
-- [ ] Nenhuma tag duplicada (`v6.0.0` ainda não existe).
-- [ ] Documentação atualizada e coerente.
-- [ ] Decisão humana aprovada.
+- [x] Tag anotada `v6.0.0` existe.
+- [x] Tag `v6.0.0` aponta para `ee2ac68`.
+- [x] Mensagem da tag: `v6.0.0 - MVP backend PedroCore IA`.
+- [x] MVP backend consolidado documentalmente em `PEDROCORE-FINALIZE-04`.
+- [x] `.env` e `apps/web` não fazem parte do conteúdo da tag.
+- [x] A tag representa o fechamento do MVP backend, não o projeto completo.
 
-## 6. Comando futuro sugerido (não executar agora)
+## 6. Comando histórico de criação da tag
 
 ```powershell
 git tag -a v6.0.0 -m "v6.0.0 - MVP backend PedroCore IA"
@@ -65,6 +67,8 @@ git tag -a v6.0.0 -m "v6.0.0 - MVP backend PedroCore IA"
 git tag --list
 ```
 
+Não executar estes comandos nesta microfrente. Qualquer decisão futura de mover, recriar ou substituir a tag deve ser humana e separada.
+
 ## 7. Recomendação
 
-Ver seção "Recomendação sobre tag" no relatório da frente `PEDROCORE-FINALIZE-04`. Este documento serve apenas de checklist e base de decisão — a decisão final é humana.
+Manter `v6.0.0` apontando para `ee2ac68`. A próxima frente técnica pode avançar para `PEDROCORE-IMPLEMENT-04 — Expansão operacional segura — Blocos 7 a 11` sem criar, mover ou deletar tag nesta microfrente.

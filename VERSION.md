@@ -12,11 +12,15 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate conservador, `/api/orchestrate`, safe mode.
+PEDROCORE-DOCFIX-05 — correção documental pós-tag `v6.0.0`, sem alteração funcional.
 
 ## Status atual
 
-`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental. `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `01C–01H` commitada em `95cbfab`; `PEDROCORE-IMPLEMENT-02` commitada em `e115672`. `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7) commitada em `6ed4c41`: QA textual real por heurística local determinística, release gate conservador com `blocked_reason`, endpoint `POST /api/orchestrate` (pipeline centralizado, também usado por `/api/chat`), safe mode com `allow_real_provider=false` por padrão, autenticação interna opcional para `/api/orchestrate`, contrato padronizado de warnings/errors e audit não persistente completo. Testes backend passando (`125 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.
+`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental. `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `01C–01H` commitada em `95cbfab`; `PEDROCORE-IMPLEMENT-02` commitada em `e115672`. `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7) commitada em `6ed4c41`: QA textual real por heurística local determinística, release gate conservador com `blocked_reason`, endpoint `POST /api/orchestrate` (pipeline centralizado, também usado por `/api/chat`), safe mode com `allow_real_provider=false` por padrão, autenticação interna opcional para `/api/orchestrate`, contrato padronizado de warnings/errors e audit não persistente completo. `PEDROCORE-FINALIZE-04` foi consolidada em `ee2ac68`, commit para o qual aponta a tag anotada `v6.0.0` com a mensagem `v6.0.0 - MVP backend PedroCore IA`. Testes backend passando (`125 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.
+
+## Tag atual
+
+`v6.0.0` existe e aponta para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`). A tag representa o fechamento do MVP backend; ela não inclui Artifact Reader real, QA visual, integração real com FinGuard, dashboard, log persistente, Blocos 7–11 do planejamento maior, Bloco 12 ou Blocos 13–15 finais.
 
 ## Observação sobre versionamento
 
@@ -29,6 +33,6 @@ Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
 ## Próximos passos técnicos
 
-- Consolidação final do MVP (`PEDROCORE-FINALIZE-04`) e decisão humana sobre a tag `v6.0.0`.
+- `PEDROCORE-IMPLEMENT-04` — expansão operacional segura — Blocos 7 a 11, sem mover/recriar a tag `v6.0.0`.
 - Artifact Reader real (leitura automática de arquivo) e análise visual real continuam não implementados, por decisão.
 - Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.

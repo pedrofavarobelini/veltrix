@@ -1,7 +1,8 @@
 # PedroCore IA
 
 Versão atual de produto: V5.1.9
-Frente atual: PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate, /api/orchestrate, safe mode
+Tag técnica atual: `v6.0.0` — tag anotada criada em `ee2ac68` com a mensagem `v6.0.0 - MVP backend PedroCore IA`.
+Frente técnica fechada: PEDROCORE-FINALIZE-04 — consolidação documental pós-MVP backend. A tag `v6.0.0` representa o fechamento do MVP backend, não o projeto completo.
 
 ## Estado atual
 
@@ -14,7 +15,7 @@ Frente atual: PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual 
 - Artefatos com campos de caminho (`path`, `file_path`, `absolute_path`, etc.) são **rejeitados sem leitura** (`ARTIFACT_PATH_REJECTED`).
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
-- Integração real com o FinGuard, leitura real de arquivos, execução de comandos, QA visual, log persistente e dashboard ainda não existem.
+- Integração real com o FinGuard, leitura real de arquivos, execução de comandos, QA visual, log persistente, dashboard, Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais ainda não existem.
 
 ## O que é o PedroCore IA
 

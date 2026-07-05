@@ -100,7 +100,17 @@ Limites e artifacts: máx. 10 artefatos, 20k chars por artefato, 100k total; cam
 
 Testes backend: `125 passed, 2 warnings` (66 anteriores + 59 novos).
 
-Ainda não existe nesta frente: integração real com o FinGuard, leitura real de arquivos, execução de comandos pelo PedroCore, QA visual real, OCR, Playwright, agente exploratório, dashboard, log persistente, provider real liberado em fluxo crítico, tag final do MVP.
+Ainda não existe nesta frente: integração real com o FinGuard, leitura real de arquivos, execução de comandos pelo PedroCore, QA visual real, OCR, Playwright, agente exploratório, dashboard, log persistente, provider real liberado em fluxo crítico, Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais.
+
+## PEDROCORE-FINALIZE-04 — Consolidação documental e tag v6.0.0
+
+Status: **concluída e tagueada em `v6.0.0`**.
+
+Commit documental: `ee2ac68 — docs: consolidar MVP e preparar tag v6`.
+
+Tag anotada: `v6.0.0`, apontando para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`), com a mensagem `v6.0.0 - MVP backend PedroCore IA`.
+
+A tag `v6.0.0` representa o fechamento do MVP backend. Ela não representa conclusão do projeto inteiro: Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais permanecem planejados para frentes posteriores.
 
 ## Fases futuras (planejadas, sem ordem de data fixa)
 

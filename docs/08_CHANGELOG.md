@@ -2,6 +2,31 @@
 
 Atualizado em: 05/07/2026
 
+## PEDROCORE-DOCFIX-05 — Correção documental pós-tag v6.0.0
+
+Status: correção documental pós-auditoria.
+
+### Motivo
+
+A auditoria pós-tag classificou o MVP como `APROVADO COM RESSALVAS`: o backend estava correto, mas alguns documentos ainda tratavam `v6.0.0` como futura/inexistente.
+
+### Corrigido
+
+- Documentação ajustada para registrar que a tag anotada `v6.0.0` já existe.
+- Tag `v6.0.0` registrada como apontando para `ee2ac68`.
+- Mensagem da tag registrada: `v6.0.0 - MVP backend PedroCore IA`.
+- Status ajustado para deixar claro que `v6.0.0` fecha o MVP backend, não o projeto completo.
+- Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais permanecem não implementados.
+
+### Não alterado
+
+- Sem alteração funcional de backend.
+- Sem alteração de testes.
+- Sem alteração de frontend/design.
+- Sem alteração de `.env`.
+- Sem criação, movimentação ou exclusão de tag.
+- Sem push.
+
 ## PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate, /api/orchestrate, safe mode
 
 Status: implementada, validada e commitada em `6ed4c41`.
@@ -38,7 +63,7 @@ Evoluir o PedroCore de "QA skeleton sem análise real" para um MVP operacional: 
 
 ### Ainda não existe
 
-Integração real com FinGuard, leitura real de arquivos, execução de comandos pelo PedroCore, QA visual real, OCR, Playwright, agente exploratório, dashboard, log persistente, provider real liberado em fluxo crítico, tag final do MVP.
+Integração real com FinGuard, leitura real de arquivos, execução de comandos pelo PedroCore, QA visual real, OCR, Playwright, agente exploratório, dashboard, log persistente, provider real liberado em fluxo crítico, Blocos 7–11 do planejamento maior, Bloco 12 e Blocos 13–15 finais.
 
 ## PEDROCORE-IMPLEMENT-02 — QA textual foundation
 
