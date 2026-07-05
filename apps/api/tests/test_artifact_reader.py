@@ -208,3 +208,69 @@ def test_orchestrate_with_reader_enabled_converts_file_to_artifact(monkeypatch, 
     assert data["qa"]["status"] == "pass"
     audit_dump = json.dumps(data["audit"], ensure_ascii=False)
     assert "All tests passed" not in audit_dump
+
+
+def test_reader_blocks_env_inside_nested_structure(monkeypatch, tmp_path):
+    # Simula a estrutura apps/api/.env dentro de um diretório allowlisted:
+    # mesmo dentro da allowlist, qualquer .env é bloqueado.
+    enable_reader(monkeypatch, tmp_path)
+    nested = tmp_path / "apps" / "api"
+    nested.mkdir(parents=True)
+    env_file = nested / ".env"
+    env_file.write_text("GEMINI_API_KEY=segredo-fake", encoding="utf-8")
+
+    result = artifact_reader_service.read(str(env_file))
+
+    assert result.allowed is False
+    assert "ARTIFACT_READER_ENV_BLOCKED" in result.warning_codes
+    assert result.content is None
+
+
+def test_reader_blocks_env_prefixed_variants(monkeypatch, tmp_path):
+    enable_reader(monkeypatch, tmp_path)
+    for name in (".env.local", ".env.production"):
+        target = tmp_path / name
+        target.write_text("SECRET_KEY=fake", encoding="utf-8")
+
+        result = artifact_reader_service.read(str(target))
+
+        assert result.allowed is False, f"arquivo nao bloqueado: {name}"
+        assert "ARTIFACT_READER_ENV_BLOCKED" in result.warning_codes
+
+
+def test_reader_total_budget_enforced(monkeypatch, tmp_path):
+    enable_reader(monkeypatch, tmp_path)
+    target = tmp_path / "relatorio.txt"
+    target.write_text("a" * 500, encoding="utf-8")
+
+    result = artifact_reader_service.read(str(target), remaining_budget=100)
+
+    assert result.allowed is False
+    assert "ARTIFACT_READER_TOTAL_LIMIT_EXCEEDED" in result.warning_codes
+
+
+def test_orchestrate_total_budget_across_multiple_files(monkeypatch, tmp_path):
+    enable_reader(monkeypatch, tmp_path)
+    monkeypatch.setenv("PEDROCORE_ARTIFACT_MAX_TOTAL_CHARS", "100")
+    file_a = tmp_path / "a.txt"
+    file_b = tmp_path / "b.txt"
+    file_a.write_text("All tests passed. " + "x" * 70, encoding="utf-8")
+    file_b.write_text("y" * 90, encoding="utf-8")
+
+    response = client.post(
+        "/api/orchestrate",
+        json={
+            "message": "Analise os dois arquivos",
+            "provider": "local_qa",
+            "task_type": "qa_report_analysis",
+            "artifacts": [
+                {"type": "text", "name": "a.txt", "metadata": {"path": str(file_a)}},
+                {"type": "text", "name": "b.txt", "metadata": {"path": str(file_b)}},
+            ],
+        },
+    )
+    data = response.json()
+
+    assert response.status_code == 200
+    assert "ARTIFACT_READER_USED" in data["warning_codes"]
+    assert "ARTIFACT_READER_TOTAL_LIMIT_EXCEEDED" in data["warning_codes"]
