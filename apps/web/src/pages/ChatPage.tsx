@@ -271,7 +271,6 @@ export function ChatPage() {
       setErrorMessage(UI.apiError);
       showToast("Erro ao conectar com a API.");
     } finally {
-      setAllowRealProvider(false);
       setLoading(false);
     }
   }
