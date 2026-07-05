@@ -25,7 +25,7 @@ PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H — Project Context, Prompt Builder,
 Implementação inicial de código:
 
 - `PEDROCORE-IMPLEMENT-01A/01B` (Task Router mínimo + metadados de resposta) commitada em `577bc88`; correção documental commitada em `20e6cff`.
-- `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` — Project Context mínimo, Prompt Builder mínimo, metadados estruturais no `ChatResponse` e audit metadata não persistente — implementada e validada nesta etapa (em processo de commit).
+- `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` — Project Context mínimo, Prompt Builder mínimo, metadados estruturais no `ChatResponse` e audit metadata não persistente — implementada, validada e commitada em `95cbfab`. Testes backend: `37 passed, 2 warnings`. `apps/web` limpo, `.env` intocado, nenhum provider real chamado, FinGuard não acessado, nenhum endpoint novo criado.
 
 ## Local oficial
 
@@ -50,7 +50,7 @@ C:\Projetos\pedrocore-ia
 
 ## Em andamento
 
-Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` está implementada, validada e em processo de commit. `PEDROCORE-IMPLEMENT-01I` (Orchestration module) foi avaliada e adiada — ver "Ainda não existe".
+Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` está implementada, validada e commitada em `95cbfab`. `PEDROCORE-IMPLEMENT-01I` (Orchestration module) foi avaliada e adiada — ver "Ainda não existe".
 
 ## Ainda não existe
 
@@ -88,8 +88,10 @@ Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/
 
 ## Próximos passos
 
-- Commitar `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` (Project Context, Prompt Builder, metadados estruturais, audit não persistente).
+- Planejar a próxima etapa de `PEDROCORE-IMPLEMENT-01`.
+- Avaliar validação de `allowed_tasks` pelo Project Context (hoje resolvido mas ainda não aplicado como regra de bloqueio/aviso no fluxo).
 - Planejar QA Intelligence real (parser de relatório, classificador de risco) consumindo o Prompt Builder e o Project Context já existentes.
 - Planejar Artifact Reader real (recebimento de artefatos via payload).
-- Avaliar, no futuro, a criação de um Orchestration module e/ou endpoint `/api/orchestrate` — adiado nesta etapa (`01I`).
+- Planejar `/api/orchestrate` e/ou um Orchestration module somente futuramente, quando existir um segundo consumidor real do pipeline — adiado nesta etapa (`01I`).
+- Manter Artifact Reader, QA Intelligence real e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
 - Saneamento de documentação duplicada/legada permanece como pendência futura, a ser tratada em frente específica (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).
