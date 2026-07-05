@@ -4,7 +4,7 @@ Atualizado em: 05/07/2026
 
 ## PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate, /api/orchestrate, safe mode
 
-Status: implementada, em validação (ainda sem commit).
+Status: implementada, validada e commitada em `6ed4c41`.
 
 ### Motivação
 

@@ -86,7 +86,7 @@ Ainda não existia ao fim desta frente: Artifact Reader real (leitura automátic
 
 ## PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7)
 
-Terceira frente de implementação. Status: **implementada, em validação (ainda sem commit)**. Ver `docs/08_CHANGELOG.md` para o detalhamento completo.
+Terceira frente de implementação. Status: **implementada, validada e commitada em `6ed4c41`**. Ver `docs/08_CHANGELOG.md` para o detalhamento completo.
 
 - **Bloco 1 — QA textual real inicial.** `QATextAnalyzer` local determinístico (`apps/api/app/modules/qa_analysis/`): detecção de sucesso/falha/erro/warning e risco crítico por heurística textual, `risk_level`, `confidence`, `can_advance` conservador, sugestões seguras. Sem IA externa, sem leitura de arquivo, sem execução de comando. Skeleton QA agora é preenchido de verdade (`analysis_source="local_text_heuristic"`).
 - **Bloco 2 — Release Gate conservador.** `evaluate_release_gate` bloqueia sem artifacts, com path rejeitado, truncamento, falha/erro, risco high/critical, fallback Mock, safe mode ou provider mock; só libera com evidência limpa via análise local (`local_qa`) e confiança ≥ 0.6; `blocked_reason` sempre preenchido ao bloquear.

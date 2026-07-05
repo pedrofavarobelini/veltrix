@@ -69,6 +69,6 @@
 
 ## 8. Próximas etapas
 
-- Testes finais globais e documentação final completa do MVP.
-- Decisão futura sobre tag de fechamento do MVP.
+- Consolidação final do MVP e preparação da tag (`PEDROCORE-FINALIZE-04`) — ver `docs/13-fechamento/PREPARACAO_TAG_V6_0_0.md`.
+- Decisão humana sobre a criação da tag `v6.0.0`.
 - Futuras integrações (FinGuard real, Artifact Reader real, QA visual, provider real em fluxo crítico) somente após nova aprovação explícita.

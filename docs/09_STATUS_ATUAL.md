@@ -1,10 +1,10 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 04/07/2026
+Atualizado em: 05/07/2026
 
 ## Status oficial
 
-Reformulação documental (`PEDROCORE-REPLAN-01`) concluída; implementação inicial de código em andamento (`PEDROCORE-IMPLEMENT-01`). Este é o único documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
+Reformulação documental (`PEDROCORE-REPLAN-01`) concluída; MVP backend (`PEDROCORE-IMPLEMENT-01`, `02` e `03`) implementado e commitado. Este é o único documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
 
 ## Versão atual de produto
 
@@ -49,10 +49,11 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-IMPLEMENT-01A/01B` — Task Router mínimo implementado em código: `task_type`, `origin_system`, `context` e `metadata` opcionais no `ChatRequest`; Task Router mínimo em `apps/api/app/modules/task_router/` reconhecendo 7 task_types + `unknown`, sem bloqueio duro; metadados de tarefa (`task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`) no `ChatResponse`; warning forte quando fallback Mock ocorre em tarefa crítica. Commitada em `577bc88`.
 - `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` — Project Context mínimo (`apps/api/app/modules/project_context/`, resolve `pedrocore`/`finguard`/`unknown`, somente configuração interna); Prompt Builder mínimo (`apps/api/app/modules/prompt_builder/`, monta `enriched_system_prompt` sem chamar provider); metadados estruturais novos no `ChatResponse` (`project_id`, `project_read_only`, `project_can_execute_commands`, `project_can_write_files`, `response_style`, `audit_id`, `audit_timestamp`); audit metadata não persistente (`apps/api/app/modules/audit/`, `audit_id`/`timestamp` gerados em memória, sem banco/arquivo/log); testes backend: `37 passed, 2 warnings`. Commitada em `95cbfab`.
 - `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — QA textual foundation: policy de `allowed_tasks` (`ChatResponse.task_allowed_for_project`), artefatos textuais por payload (`apps/api/app/modules/artifacts/`, `ChatRequest.artifacts`, `ChatResponse.artifact_count`/`artifact_types`/`artifact_warnings`), Prompt Builder com seção `[Artefatos enviados]`, QA response skeleton seguro (`apps/api/app/modules/qa_response/`, `ChatResponse.qa_skeleton`, sempre `status="not_analyzed"`/`can_advance=False`/`confidence=0.0`, sem análise real), warnings específicos de QA textual e testes de contrato. Testes backend: `66 passed, 2 warnings`. Commitada em `e115672`.
+- `PEDROCORE-IMPLEMENT-03` — MVP backend (Blocos 1–7): QA textual real inicial (heurística local determinística em `apps/api/app/modules/qa_analysis/`, skeleton preenchido com `analysis_source="local_text_heuristic"`), release gate conservador (`evaluate_release_gate` com `blocked_reason`), `POST /api/orchestrate` (pipeline centralizado em `apps/api/app/modules/orchestration/`, consumido também pelo `/api/chat`), safe mode (`allow_real_provider=false` por padrão, `PROVIDER_REAL_BLOCKED`), autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + `X-PedroCore-Api-Key`, somente `/api/orchestrate`), warning/error contract padronizado (`apps/api/app/modules/contracts/`) e audit não persistente completo (`latency_ms`, `provider_used`, `safe_mode_blocked`, `risk_level`, `can_advance`). Limites de artifacts (10 / 20k / 100k) e rejeição de campos de path sem leitura de disco. Testes backend: `125 passed, 2 warnings`. Commitada em `6ed4c41`.
 
 ## Em andamento
 
-- `PEDROCORE-IMPLEMENT-03` — MVP backend (Blocos 1–7): QA textual real inicial (heurística local determinística em `apps/api/app/modules/qa_analysis/`, skeleton preenchido com `analysis_source="local_text_heuristic"`), release gate conservador (`evaluate_release_gate` com `blocked_reason`), `POST /api/orchestrate` (pipeline centralizado em `apps/api/app/modules/orchestration/`, consumido também pelo `/api/chat`), safe mode (`allow_real_provider=false` por padrão, `PROVIDER_REAL_BLOCKED`), autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + `X-PedroCore-Api-Key`, somente `/api/orchestrate`), warning/error contract padronizado (`apps/api/app/modules/contracts/`) e audit não persistente completo (`latency_ms`, `provider_used`, `safe_mode_blocked`, `risk_level`, `can_advance`). Limites de artifacts (10 / 20k / 100k) e rejeição de campos de path sem leitura de disco. Testes backend: `125 passed, 2 warnings`. **Implementada e validada localmente — ainda sem commit.**
+Nenhuma frente de implementação em andamento no momento — `PEDROCORE-IMPLEMENT-03` está implementada, validada e commitada em `6ed4c41`. Em curso: `PEDROCORE-FINALIZE-04` (consolidação final do MVP e preparação da decisão sobre a tag `v6.0.0`), somente documental.
 
 ## Ainda não existe
 
@@ -89,8 +90,7 @@ C:\Projetos\pedrocore-ia
 
 ## Próximos passos
 
-- Validar, documentar em definitivo e commitar `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7).
-- Testes finais globais e documentação final completa do MVP antes de qualquer tag.
+- Decisão humana sobre a criação da tag `v6.0.0` (ver `docs/13-fechamento/PREPARACAO_TAG_V6_0_0.md`).
 - Planejar enforcement real da policy de `allowed_tasks` (hoje só sinaliza via warning, não bloqueia).
 - Manter Artifact Reader real, análise visual real, OCR, Playwright, agente exploratório, dashboard, log persistente e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
 - Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.
