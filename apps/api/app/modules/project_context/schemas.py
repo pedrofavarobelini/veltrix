@@ -10,3 +10,8 @@ class ProjectContext(BaseModel):
     allowed_tasks: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     notes: str | None = None
+
+
+class TaskPolicyResult(BaseModel):
+    allowed: bool = True
+    warnings: list[str] = Field(default_factory=list)

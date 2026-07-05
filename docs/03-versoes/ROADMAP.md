@@ -70,6 +70,20 @@ Primeira frente de implementação de código pós-reformulação, detalhada em 
 
 Ainda não existe: Artifact Reader real, QA Intelligence real, análise visual, banco de dados/persistência, autenticação entre sistemas, endpoint `/api/orchestrate`, integração real com o FinGuard, ou qualquer alteração de frontend/design.
 
+## PEDROCORE-IMPLEMENT-02 — QA textual foundation
+
+Segunda frente de implementação de código, evoluindo a base interna de orquestração para suportar policy de tarefas por projeto, artefatos textuais por payload e um skeleton seguro de resposta QA — sem QA Intelligence real, sem leitura de arquivo e sem integração real com o FinGuard.
+
+- **02A — Policy de allowed_tasks por Project Context.** *(implementada, em validação)* `TaskPolicyResult`/`evaluate_task_policy(project, task_type)` em `apps/api/app/modules/project_context/`: task listada em `allowed_tasks` → permitida sem warning; task fora da lista → warning de cautela, sem bloquear; lista vazia/projeto `unknown` → permitida com warning específico. `ChatResponse.task_allowed_for_project` adicionado.
+- **02B — Artefatos textuais por payload.** *(implementada, em validação)* `ChatRequest.artifacts` opcional; módulo `apps/api/app/modules/artifacts/`: `ArtifactService.process()` gera `count`/`types`/`names`/`warnings`/`text_block` a partir do conteúdo enviado, sem ler nenhum arquivo. 9 tipos textuais aceitos; tipos visuais (`screenshot`, `image`, `playwright_trace`) apenas sinalizados como não suportados. `ChatResponse` ganhou `artifact_count`, `artifact_types`, `artifact_warnings`.
+- **02C — Prompt Builder com artefatos.** *(implementada, em validação)* Nova seção `[Artefatos enviados]` no prompt enriquecido, com o texto recebido no payload; sem interpretação ou resumo automático; informa explicitamente quando nenhum artefato foi enviado.
+- **02D — QA response skeleton seguro.** *(implementada, em validação)* Módulo `apps/api/app/modules/qa_response/`: `QAResponseSkeleton` retornado apenas para `qa_report_analysis`/`qa_failure_diagnosis`/`release_gate_review`, sempre com `status="not_analyzed"`, `risk_level="unknown"`, `can_advance=False`, `confidence=0.0` e listas de achados vazias — deixando explícito que não há análise real. Tarefas não-QA retornam `qa_skeleton=None`. `ChatResponse.qa_skeleton` adicionado.
+- **02E — Warnings específicos para QA textual.** *(implementada, em validação)* Tarefa QA crítica sem artefatos gera warning dedicado (em `task_warnings` e no skeleton); fallback crítico continua gerando warning forte, refletido também no skeleton; artefato visual gera warning em `artifact_warnings`/`task_warnings`/skeleton; policy negada gera warning em `task_warnings`.
+- **02F — Testes de contrato para fluxo QA textual.** *(implementada, em validação)* Novos arquivos `apps/api/tests/test_artifacts.py`, `test_qa_response.py` e `test_qa_flow.py`, mais extensões em `test_project_context.py` e `test_prompt_builder.py`, cobrindo os 19 itens de contrato (artifacts, policy, skeleton, fallback crítico, compatibilidade retroativa). Testes backend: `66 passed, 2 warnings`.
+- **02G — Proteção adicional contra provider real em testes.** *(implementada, em validação)* Toda a suíte nova usa apenas `mock`/provider inexistente; nenhuma chamada a Gemini/OpenAI/Claude/DeepSeek/Grok.
+
+Ainda não existe nesta frente: Artifact Reader real (leitura automática de arquivo/pasta), QA Intelligence real (parser/classificador de risco de verdade), análise visual real, endpoint `/api/orchestrate`, integração real com o FinGuard, bloqueio duro por policy de `allowed_tasks`, banco/persistência, autenticação entre sistemas, ou qualquer alteração de frontend/design.
+
 ## Fases futuras (planejadas, sem ordem de data fixa)
 
 Dependentes da conclusão de `PEDROCORE-REPLAN-01` e sujeitas a repriorização:

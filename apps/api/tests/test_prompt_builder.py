@@ -100,3 +100,19 @@ def test_preserves_original_system_prompt():
     result = prompt_builder.build(build_input(system_prompt="Prompt customizado do usuário."))
 
     assert "Prompt customizado do usuário." in result.enriched_system_prompt
+
+
+def test_includes_artifacts_text_block_when_provided():
+    data = build_input(task_type="qa_report_analysis", origin_system="finguard")
+    data.artifacts_text_block = "- tipo: qa_report\n  nome: qa.md\n  conteúdo:\nSmoke ok."
+    result = prompt_builder.build(data)
+
+    assert "[Artefatos enviados]" in result.enriched_system_prompt
+    assert "Smoke ok." in result.enriched_system_prompt
+
+
+def test_reports_absence_of_artifacts():
+    result = prompt_builder.build(build_input())
+
+    assert "[Artefatos enviados]" in result.enriched_system_prompt
+    assert "Nenhum artefato foi enviado." in result.enriched_system_prompt

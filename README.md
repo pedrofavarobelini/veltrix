@@ -1,16 +1,17 @@
 # PedroCore IA
 
 Versão atual de produto: V5.1.9
-Frente atual: PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H — Base interna de orquestração expandida
+Frente atual: PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G — QA textual foundation
 
 ## Estado atual
 
 - Reformulação documental `PEDROCORE-REPLAN-01` (01A a 01E) concluída: visão oficial, contratos técnicos, arquitetura-alvo, QA Intelligence e fechamento (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).
-- Implementação inicial de código: Task Router mínimo, Project Context mínimo (configuração interna por sistema, ex.: `pedrocore`/`finguard`) e Prompt Builder mínimo (monta o system_prompt enriquecido, sem chamar provider) existem no backend.
-- Audit metadata não persistente gera `audit_id`/`audit_timestamp` por requisição, sem banco ou log.
+- Implementação de código: Task Router, Project Context (com policy de `allowed_tasks`), Prompt Builder (com seção de artefatos) e Audit metadata não persistente existem no backend.
+- `POST /api/chat` aceita artefatos textuais por payload (`artifacts`), sem ler nenhum arquivo externo.
+- Tarefas de QA crítica (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`) recebem um skeleton de resposta seguro (`qa_skeleton`), que deixa explícito que **não há análise real** ainda — sempre sem achados inventados e sem autorizar avanço (`can_advance` nunca `true`).
 - `POST /api/chat` permanece compatível com requisições antigas; nenhum endpoint novo de orquestração foi criado.
 - Frontend e design preservados sem alteração.
-- Integração real com o FinGuard ainda não existe.
+- Integração real com o FinGuard e QA Intelligence real ainda não existem.
 
 ## O que é o PedroCore IA
 
@@ -22,13 +23,14 @@ O PedroCore IA é o **orquestrador central de IA do ecossistema de projetos Pedr
 - Interpreta modo de resposta e monta o prompt correspondente para o provider selecionado.
 - Aplica fallback automático para o `MockProvider` quando um provider real falha ou não está configurado.
 - Reconhece `task_type` (mínimo) e sinaliza criticidade/warnings de tarefa na resposta.
-- Resolve um Project Context mínimo por `origin_system` (configuração interna, sem acesso a sistemas externos) e monta um `system_prompt` enriquecido via Prompt Builder antes de chamar o provider.
+- Resolve um Project Context mínimo por `origin_system` (configuração interna, sem acesso a sistemas externos), avalia se a tarefa está na política do projeto (sem bloquear) e monta um `system_prompt` enriquecido via Prompt Builder antes de chamar o provider.
+- Aceita artefatos textuais no payload e os inclui no prompt, sem interpretá-los ou resumi-los automaticamente.
 - Gera metadados de auditoria não persistentes (`audit_id`/`audit_timestamp`) por requisição.
 
 ## Planejado / futuro
 
 - Receber chamadas de sistemas externos do ecossistema Pedro (não implementado hoje).
-- QA Intelligence real e Artifact Reader, consumindo o Prompt Builder e o Project Context já existentes.
+- QA Intelligence real (análise de fato dos artefatos recebidos) e Artifact Reader (leitura automática de arquivo).
 - Resposta estruturada por tipo de tarefa, além do texto livre atual.
 - Leitura somente-leitura de artefatos Markdown de projetos externos (ex.: relatórios de QA do FinGuard) como parte de inteligência operacional/QA Intelligence.
 - Auditoria/logs de chamadas e persistência de histórico no backend.

@@ -13,6 +13,7 @@ class PromptBuildInput(BaseModel):
     origin_system: str
     context: dict | None = None
     metadata: dict | None = None
+    artifacts_text_block: str | None = None
 
 
 class PromptBuildResult(BaseModel):

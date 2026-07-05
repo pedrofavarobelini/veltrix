@@ -175,3 +175,23 @@ O audit metadata (`audit_id`, `timestamp`, `origin_system`, `task_type`, `provid
 ## Decisão 044 — Orchestration module deve ser adiado até haver necessidade real de endpoint ou reuso fora do /api/chat
 
 Um módulo dedicado de orquestração (`apps/api/app/modules/orchestration/`) não deve ser criado enquanto `ChatService` for o único consumidor do pipeline (Task Router, Project Context, Prompt Builder, Provider, fallback, audit). Extrair esse módulo antes de existir um segundo consumidor real (ex.: um futuro endpoint `/api/orchestrate`) seria abstração prematura.
+
+## Decisão 045 — Artifact payload inicial deve aceitar apenas conteúdo enviado, sem leitura automática de arquivos
+
+O recebimento de artefatos (`ChatRequest.artifacts`) processa exclusivamente o conteúdo textual enviado no corpo da requisição. Nenhum caminho de arquivo é aceito como instrução de leitura, e nenhuma leitura automática de disco/repositório é realizada — inclusive para artefatos do FinGuard.
+
+## Decisão 046 — QA skeleton deve representar ausência de análise real até QA Intelligence existir
+
+Enquanto QA Intelligence real não for implementada, qualquer resposta estruturada de QA (`QAResponseSkeleton`) deve ter `status="not_analyzed"`, listas de achados vazias e `confidence=0.0`, deixando explícito ao consumidor que nenhuma análise de fato ocorreu.
+
+## Decisão 047 — allowed_tasks deve começar como warning/policy, não bloqueio duro
+
+A avaliação de `task_type` contra `allowed_tasks` do Project Context (`TaskPolicyResult`) sinaliza `task_allowed_for_project` e adiciona warnings, mas não impede a execução da tarefa nesta fase. Bloqueio duro é uma evolução futura, a ser decidida separadamente.
+
+## Decisão 048 — Artefatos visuais devem ser aceitos apenas como metadado/warning até análise visual existir
+
+Artefatos do tipo `screenshot`, `image` ou `playwright_trace` são aceitos no payload apenas para gerar um warning de "análise visual ainda não implementada" — seu conteúdo não é incluído no prompt nem analisado de nenhuma forma até que a capacidade de análise visual real seja implementada.
+
+## Decisão 049 — can_advance nunca pode ser true em skeleton sem análise real
+
+Enquanto o `QAResponseSkeleton` não refletir uma análise real (QA Intelligence real ainda não implementada), o campo `can_advance` deve ser sempre `False`, nunca `True` — mesmo em fallback, mesmo com artefatos presentes.

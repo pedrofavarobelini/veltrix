@@ -59,6 +59,7 @@ class PromptBuilder:
             ),
             f"[Contexto enviado]\n{context_text}",
             f"[Metadata]\n{metadata_text}",
+            f"[Artefatos enviados]\n{data.artifacts_text_block or 'Nenhum artefato foi enviado.'}",
             "[Regras de segurança]\n" + "\n".join(f"- {rule}" for rule in security_rules),
         ]
 

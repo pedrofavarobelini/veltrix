@@ -1,6 +1,54 @@
 # PedroCore IA — Changelog
 
-Atualizado em: 04/07/2026
+Atualizado em: 05/07/2026
+
+## PEDROCORE-IMPLEMENT-02 — QA textual foundation
+
+Status: implementada, validada.
+
+### Motivação
+
+Com `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` commitada em `95cbfab` (correção documental em `1ff1758`), esta etapa evolui a base de orquestração para suportar policy de tarefas por projeto, recebimento de artefatos textuais por payload e um skeleton seguro de resposta QA — sem implementar QA Intelligence real, sem ler arquivos e sem integração real com o FinGuard.
+
+### Backend — Criado
+
+- `apps/api/app/modules/artifacts/__init__.py`, `schemas.py`, `service.py` — `ArtifactInput`/`ArtifactProcessingResult` e `ArtifactService.process(artifacts)`: aceita 9 tipos textuais (`markdown`, `qa_report`, `log`, `terminal_output`, `json_result`, `documentation`, `changelog`, `pending_list`, `text`), sinaliza tipos visuais (`screenshot`, `image`, `playwright_trace`) como não suportados sem tentar analisá-los, gera warning para conteúdo vazio e para tipo desconhecido, e produz `text_block` para o Prompt Builder. Não lê arquivo, não aceita path como instrução de leitura.
+- `apps/api/app/modules/qa_response/__init__.py`, `schemas.py`, `service.py` — `QAResponseSkeleton` e `QAResponseService.build_skeleton(...)`: retorna skeleton apenas para `qa_report_analysis`/`qa_failure_diagnosis`/`release_gate_review`, sempre `status="not_analyzed"`, `risk_level="unknown"`, `can_advance=False`, `confidence=0.0`, listas de achados vazias e warnings explicando ausência de análise real, fallback crítico e artefatos ausentes/visuais.
+
+### Backend — Alterado
+
+- `apps/api/app/modules/project_context/schemas.py`/`service.py` — `TaskPolicyResult` e `ProjectContextResolver.evaluate_task_policy(project, task_type)`: task listada em `allowed_tasks` → permitida sem warning; fora da lista → warning de cautela sem bloquear; lista vazia/projeto `unknown` → permitida com warning específico.
+- `apps/api/app/modules/prompt_builder/schemas.py`/`service.py` — `PromptBuildInput.artifacts_text_block` e nova seção `[Artefatos enviados]` no prompt enriquecido (conteúdo recebido ou aviso de ausência), sem interpretação/resumo automático.
+- `apps/api/app/modules/chat/schemas.py` — `ChatRequest.artifacts` opcional; `ChatResponse` ganhou `task_allowed_for_project`, `artifact_count`, `artifact_types`, `artifact_warnings`, `qa_skeleton`.
+- `apps/api/app/modules/chat/service.py` — `ChatService.send_message` passou a avaliar a policy de `allowed_tasks`, processar `payload.artifacts`, repassar o bloco textual ao Prompt Builder e construir o `qa_skeleton` (sucesso e fallback); `task_warnings` agora agrega também os warnings de policy e de artefatos, incluindo o warning de "QA sem artefatos" para tarefas críticas.
+
+### Testes
+
+- `apps/api/tests/test_artifacts.py` — 6 testes: sem artefatos, markdown com conteúdo, artefato sem conteúdo, artefato visual, tipo desconhecido, metadata incluída no bloco textual.
+- `apps/api/tests/test_qa_response.py` — 4 testes: skeleton `not_analyzed` para task QA, `None` para task não-QA, warning de fallback crítico propagado, warning de artefato visual propagado.
+- `apps/api/tests/test_qa_flow.py` — 13 testes de API: compatibilidade retroativa, artefato markdown/qa_report aceitos, artefato sem conteúdo, artefato visual, tipo desconhecido, `finguard`+`qa_report_analysis` permitido, `finguard`+`general_chat` com warning, origem desconhecida com warning de policy, QA sem artefatos com warning, `release_gate_review` com fallback e skeleton, task não-QA sem skeleton, `/api/providers`.
+- `apps/api/tests/test_project_context.py` — 4 testes novos de policy (`evaluate_task_policy`): task permitida, task não listada, projeto desconhecido, lista vazia em projeto conhecido.
+- `apps/api/tests/test_prompt_builder.py` — 2 testes novos: seção de artefatos presente com conteúdo, ausência de artefatos relatada explicitamente.
+- **Comando rodado:** `./.venv/Scripts/python.exe -m pytest -v` (dentro de `apps/api`).
+- **Resultado:** `66 passed, 2 warnings` (37 testes anteriores + 29 novos; warnings pré-existentes de deprecação do Starlette/Pydantic, não introduzidos por esta mudança).
+
+### Compatibilidade
+
+- `POST /api/chat` continua aceitando requisições antigas sem `artifacts`, com todos os campos novos tendo defaults seguros.
+- `GET /api/providers` inalterado.
+- Nenhum endpoint novo foi criado — nenhuma menção a `/api/orchestrate` existe no código.
+- `can_advance` nunca é `True` no skeleton — sempre `False` nesta etapa.
+
+### Não alterado nesta etapa
+
+- Sem alterações de frontend, componentes, estilos, layout ou design (`apps/web` limpo).
+- Sem alterações no `.env`.
+- Sem chamadas a providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok) — testes usam apenas Mock e provider inexistente.
+- Sem leitura ou escrita no repositório do FinGuard.
+- Sem instalação de dependências.
+- Sem Artifact Reader real (leitura automática de arquivo), QA Intelligence real, análise visual real, endpoint de orquestração, banco de dados/persistência ou autenticação entre sistemas.
+- Sem alteração de versão de produto (V5.1.9) ou versão de pacote backend (0.2.0).
+- Sem commit e sem criação de tag até esta etapa.
 
 ## PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H — Base interna de orquestração expandida
 

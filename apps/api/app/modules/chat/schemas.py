@@ -1,5 +1,8 @@
 from pydantic import BaseModel, Field
 
+from app.modules.artifacts.schemas import ArtifactInput
+from app.modules.qa_response.schemas import QAResponseSkeleton
+
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1)
@@ -11,6 +14,7 @@ class ChatRequest(BaseModel):
     origin_system: str = "pedrocore"
     context: dict | None = None
     metadata: dict | None = None
+    artifacts: list[ArtifactInput] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -33,6 +37,11 @@ class ChatResponse(BaseModel):
     response_style: str = "free_text"
     audit_id: str | None = None
     audit_timestamp: str | None = None
+    task_allowed_for_project: bool = True
+    artifact_count: int = 0
+    artifact_types: list[str] = Field(default_factory=list)
+    artifact_warnings: list[str] = Field(default_factory=list)
+    qa_skeleton: QAResponseSkeleton | None = None
 
 
 class ProviderInfo(BaseModel):

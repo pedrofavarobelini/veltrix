@@ -1,10 +1,24 @@
-from app.modules.project_context.schemas import ProjectContext
+from app.modules.project_context.schemas import ProjectContext, TaskPolicyResult
 
 DEFAULT_PROJECT_ID = "pedrocore"
 UNKNOWN_PROJECT_ID = "unknown"
 
 UNKNOWN_SYSTEM_WARNING = (
     "Sistema de origem desconhecido; tratado como 'unknown' com limites restritivos."
+)
+
+TASK_NOT_ALLOWED_WARNING = (
+    "task_type não listado em allowed_tasks do projeto; "
+    "resultado deve ser tratado com cautela."
+)
+
+EMPTY_ALLOWED_TASKS_WARNING = (
+    "Projeto sem lista de tarefas permitidas; "
+    "task_type aceito sem validação rígida nesta etapa."
+)
+
+UNKNOWN_PROJECT_POLICY_WARNING = (
+    "Sistema de origem desconhecido; task_type não validado contra política de projeto."
 )
 
 _PROJECTS: dict[str, dict[str, object]] = {
@@ -54,6 +68,27 @@ class ProjectContextResolver:
             )
 
         return ProjectContext(project_id=normalized, warnings=[], **config)
+
+    def evaluate_task_policy(
+        self,
+        project: ProjectContext,
+        task_type: str,
+    ) -> TaskPolicyResult:
+        if not project.allowed_tasks:
+            if project.project_id == UNKNOWN_PROJECT_ID:
+                return TaskPolicyResult(
+                    allowed=True,
+                    warnings=[UNKNOWN_PROJECT_POLICY_WARNING],
+                )
+            return TaskPolicyResult(
+                allowed=True,
+                warnings=[EMPTY_ALLOWED_TASKS_WARNING],
+            )
+
+        if task_type in project.allowed_tasks:
+            return TaskPolicyResult(allowed=True, warnings=[])
+
+        return TaskPolicyResult(allowed=False, warnings=[TASK_NOT_ALLOWED_WARNING])
 
 
 project_context_resolver = ProjectContextResolver()

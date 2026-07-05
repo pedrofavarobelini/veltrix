@@ -1,4 +1,9 @@
-from app.modules.project_context.service import project_context_resolver
+from app.modules.project_context.service import (
+    EMPTY_ALLOWED_TASKS_WARNING,
+    TASK_NOT_ALLOWED_WARNING,
+    UNKNOWN_PROJECT_POLICY_WARNING,
+    project_context_resolver,
+)
 
 
 def test_resolves_pedrocore():
@@ -69,3 +74,36 @@ def test_resolver_only_returns_data():
             "o PedroCore só pode receber/analisar artefatos enviados por payload no futuro."
         ),
     }
+
+
+def test_policy_allows_listed_task():
+    project = project_context_resolver.resolve("finguard")
+    policy = project_context_resolver.evaluate_task_policy(project, "qa_report_analysis")
+
+    assert policy.allowed is True
+    assert policy.warnings == []
+
+
+def test_policy_warns_for_unlisted_task():
+    project = project_context_resolver.resolve("finguard")
+    policy = project_context_resolver.evaluate_task_policy(project, "general_chat")
+
+    assert policy.allowed is False
+    assert TASK_NOT_ALLOWED_WARNING in policy.warnings
+
+
+def test_policy_warns_for_unknown_project():
+    project = project_context_resolver.resolve("sistema_inexistente")
+    policy = project_context_resolver.evaluate_task_policy(project, "general_chat")
+
+    assert policy.allowed is True
+    assert UNKNOWN_PROJECT_POLICY_WARNING in policy.warnings
+
+
+def test_policy_warns_for_empty_allowed_tasks_on_known_project():
+    project = project_context_resolver.resolve("pedrocore")
+    project.allowed_tasks = []
+    policy = project_context_resolver.evaluate_task_policy(project, "general_chat")
+
+    assert policy.allowed is True
+    assert EMPTY_ALLOWED_TASKS_WARNING in policy.warnings
