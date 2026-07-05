@@ -10,6 +10,8 @@ from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
 from app.modules.exploration.service import exploration_service
 from app.modules.orchestration.schemas import OrchestrationOutcome
+from app.modules.policy_enforcement.service import policy_enforcement_service
+from app.modules.real_features import service as real_features
 from app.modules.project_context.service import (
     EMPTY_ALLOWED_TASKS_WARNING,
     FINGUARD_ORIGIN_SYSTEMS,
@@ -65,9 +67,30 @@ class OrchestrationService:
         strategy = task_router.resolve(payload.task_type)
         project = project_context_resolver.resolve(payload.origin_system)
         policy = project_context_resolver.evaluate_task_policy(project, strategy.task_type)
+        requested_provider = (payload.provider or settings.default_provider).lower()
+
+        enforcement = policy_enforcement_service.evaluate(
+            raw_task_type=payload.task_type,
+            strategy=strategy,
+            project=project,
+            policy=policy,
+            metadata=payload.metadata,
+            context=payload.context,
+            enforce=real_features.enforce_project_policy(),
+        )
+        if enforcement.blocked:
+            return self._policy_blocked_outcome(
+                payload=payload,
+                strategy=strategy,
+                project=project,
+                policy=policy,
+                enforcement=enforcement,
+                requested_provider=requested_provider,
+                started=started,
+            )
+
         effective_artifacts, reader_items = self._apply_artifact_reader(payload)
         artifacts_result = artifact_service.process(effective_artifacts)
-        requested_provider = (payload.provider or settings.default_provider).lower()
 
         audit = audit_service.create(
             origin_system=payload.origin_system,
@@ -328,6 +351,76 @@ class OrchestrationService:
                 effective.append(artifact)
 
         return effective, items
+
+    def _policy_blocked_outcome(
+        self,
+        payload: ChatRequest,
+        strategy,
+        project,
+        policy,
+        enforcement,
+        requested_provider: str,
+        started: float,
+    ) -> OrchestrationOutcome:
+        """Bloqueio real por policy: nenhum provider, reader ou análise é executado."""
+        audit = audit_service.create(
+            origin_system=payload.origin_system,
+            task_type=strategy.task_type,
+            provider_requested=requested_provider,
+            criticality=strategy.criticality,
+        )
+        audit.fallback_used = False
+        audit.provider_used = "none"
+        audit.safe_mode_blocked = False
+        audit.status = "blocked"
+        audit.latency_ms = round((time.perf_counter() - started) * 1000, 2)
+        audit.can_advance = False
+
+        items: list[WarningItem] = []
+        for message in project.warnings:
+            items.append(make_warning(codes.UNKNOWN_ORIGIN_SYSTEM, message))
+        for message in policy.warnings:
+            items.append(make_warning(codes.PROJECT_TASK_NOT_ALLOWED, message))
+        for code, message in zip(enforcement.warning_codes, enforcement.warnings):
+            items.append(make_warning(code, message))
+
+        answer = (
+            "Solicitação bloqueada por policy do PedroCore. "
+            f"Motivo: {enforcement.blocked_reason}"
+        )
+
+        return OrchestrationOutcome(
+            answer=answer,
+            provider_requested=requested_provider,
+            provider_used="none",
+            model="none",
+            mode=payload.mode,
+            fallback_used=False,
+            safe_mode_blocked=False,
+            error=enforcement.blocked_reason,
+            error_code=enforcement.error_code,
+            task_type=strategy.task_type,
+            origin_system=payload.origin_system,
+            task_criticality=strategy.criticality,
+            requires_structured_response=strategy.requires_structured_response,
+            response_style=strategy.response_style,
+            project_id=project.project_id,
+            project_read_only=project.read_only,
+            project_can_execute_commands=project.can_execute_commands,
+            project_can_write_files=project.can_write_files,
+            task_allowed_for_project=policy.allowed,
+            artifact_count=0,
+            artifact_types=[],
+            artifact_warnings=[],
+            qa_skeleton=None,
+            release_gate=None,
+            visual_qa_analysis=None,
+            exploration=None,
+            warning_items=items,
+            audit=audit,
+            status="blocked",
+            blocked_reason=enforcement.blocked_reason,
+        )
 
     async def _mock_fallback(
         self,
