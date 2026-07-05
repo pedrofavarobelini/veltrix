@@ -12,7 +12,7 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G — QA textual foundation.
+PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate conservador, `/api/orchestrate`, safe mode, auth interna opcional, warning/error contract e audit não persistente.
 
 `PEDROCORE-REPLAN-01` (01A a 01E) está **concluída no escopo documental** e commitada:
 
@@ -52,33 +52,31 @@ C:\Projetos\pedrocore-ia
 
 ## Em andamento
 
-Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` está implementada, validada e commitada em `e115672`.
+- `PEDROCORE-IMPLEMENT-03` — MVP backend (Blocos 1–7): QA textual real inicial (heurística local determinística em `apps/api/app/modules/qa_analysis/`, skeleton preenchido com `analysis_source="local_text_heuristic"`), release gate conservador (`evaluate_release_gate` com `blocked_reason`), `POST /api/orchestrate` (pipeline centralizado em `apps/api/app/modules/orchestration/`, consumido também pelo `/api/chat`), safe mode (`allow_real_provider=false` por padrão, `PROVIDER_REAL_BLOCKED`), autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + `X-PedroCore-Api-Key`, somente `/api/orchestrate`), warning/error contract padronizado (`apps/api/app/modules/contracts/`) e audit não persistente completo (`latency_ms`, `provider_used`, `safe_mode_blocked`, `risk_level`, `can_advance`). Limites de artifacts (10 / 20k / 100k) e rejeição de campos de path sem leitura de disco. Testes backend: `125 passed, 2 warnings`. **Implementada e validada localmente — ainda sem commit.**
 
 ## Ainda não existe
 
-- Artifact Reader real — artefatos só são recebidos via payload; nenhuma leitura automática de arquivo/pasta foi implementada.
-- QA Intelligence real — o QA response skeleton sinaliza estrutura (`status`, `risk_level`, `findings`, etc.), mas não há parser de relatório, classificador de risco ou lógica de diagnóstico real; nenhum `finding`/`failure` é inferido.
-- Endpoint `/api/orchestrate` ou qualquer endpoint novo de orquestração — o pipeline opera internamente dentro de `POST /api/chat` (Decisão Técnica 039).
-- Orchestration module (`apps/api/app/modules/orchestration/`) — avaliado na etapa `01I` e adiado; `ChatService` já encapsula o pipeline, extrair um módulo agora seria abstração prematura.
-- Resposta estruturada real por tipo de tarefa (o `ChatResponse` sinaliza `requires_structured_response` e devolve `qa_skeleton`, mas a resposta em si continua sendo `answer: str` livre; o skeleton é sempre vazio/conservador).
-- Bloqueio duro por policy de `allowed_tasks` — `task_allowed_for_project=False` apenas sinaliza, não impede a execução da tarefa.
-- Análise visual real — artefatos visuais (`screenshot`, `image`, `playwright_trace`) só geram warning de "não suportado", nunca são analisados.
-- Provider Orchestration avançada (seleção por task_type/custo/qualidade) — a seleção de provider continua manual/por default.
-- Leitura real de arquivos do FinGuard — nenhuma leitura automática de repositório ou pasta do FinGuard existe; Project Context é apenas configuração interna.
-- Persistência em banco de dados (histórico hoje só existe no navegador; audit metadata é não persistente).
-- Autenticação entre sistemas externos e o PedroCore.
-- Qualquer integração real com o FinGuard ou outro sistema externo.
+- Artifact Reader real — artefatos só são recebidos via payload; campos de path são **rejeitados** (`ARTIFACT_PATH_REJECTED`) e nenhum arquivo é lido do disco.
+- QA Intelligence com IA real — a análise QA atual é heurística textual local determinística (`local_text_heuristic`); não usa provider real, não substitui validação humana e não executa testes.
+- Execução de comandos pelo PedroCore — `suggested_commands` são apenas strings seguras, nada é executado.
+- Análise visual real / OCR / Playwright / agente exploratório — artefatos visuais só geram warning de "não suportado".
+- Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim mock/fallback nunca aprovam release gate.
+- Bloqueio duro por policy de `allowed_tasks` — `task_allowed_for_project=False` apenas sinaliza.
+- Provider Orchestration avançada (seleção por task_type/custo/qualidade).
+- Persistência em banco de dados / log persistente / dashboard (audit é não persistente, devolvido só na resposta).
+- Qualquer integração real com o FinGuard ou outro sistema externo — nenhuma leitura de repositório/pasta do FinGuard existe.
 - Qualquer mudança de frontend/design — preservados sem alteração.
+- Tag final do MVP.
 
 ## Proibido nesta fase
 
 - Alterar `apps/web`, frontend, componentes, estilos, layout ou design.
 - Instalar dependências ou rodar servidor.
-- Chamar providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok).
+- Chamar providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok) — inclusive em testes.
 - Alterar `.env`.
 - Ler, escrever ou executar comandos no repositório do FinGuard.
-- Criar endpoint `/api/orchestrate` ou qualquer endpoint novo de orquestração.
-- Implementar Prompt Builder real, Project Context real, Artifact Reader, QA Intelligence real ou Audit/logs.
+- Implementar leitura real de arquivos por path recebido em payload.
+- Implementar execução de comandos recebidos por payload.
 - Remover documentação antiga/duplicada nesta etapa.
 - Criar tag ou alterar versão de produto/backend.
 
@@ -91,9 +89,9 @@ Nenhuma frente em andamento no momento — `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/
 
 ## Próximos passos
 
-- Planejar a próxima etapa de `PEDROCORE-IMPLEMENT-02` ou abrir `PEDROCORE-IMPLEMENT-03`.
-- Avaliar limite de tamanho de artefatos (`ArtifactService`) antes de qualquer uso com provider real.
+- Validar, documentar em definitivo e commitar `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7).
+- Testes finais globais e documentação final completa do MVP antes de qualquer tag.
 - Planejar enforcement real da policy de `allowed_tasks` (hoje só sinaliza via warning, não bloqueia).
-- Planejar QA Intelligence textual real (parser de relatório, classificador de risco) para preencher o skeleton com achados reais, consumindo os artefatos textuais já recebidos.
-- Manter Artifact Reader real, análise visual real, endpoint `/api/orchestrate` e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
+- Manter Artifact Reader real, análise visual real, OCR, Playwright, agente exploratório, dashboard, log persistente e integração real com o FinGuard como não implementados até decisão explícita em etapa futura.
+- Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.
 - Saneamento de documentação duplicada/legada permanece como pendência futura, a ser tratada em frente específica (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).

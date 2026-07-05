@@ -195,3 +195,27 @@ Artefatos do tipo `screenshot`, `image` ou `playwright_trace` são aceitos no pa
 ## Decisão 049 — can_advance nunca pode ser true em skeleton sem análise real
 
 Enquanto o `QAResponseSkeleton` não refletir uma análise real (QA Intelligence real ainda não implementada), o campo `can_advance` deve ser sempre `False`, nunca `True` — mesmo em fallback, mesmo com artefatos presentes.
+
+## Decisão 050 — /api/orchestrate criado no MVP com pipeline centralizado em OrchestrationService
+
+Por decisão explícita do MVP backend, o endpoint `POST /api/orchestrate` foi criado (atualizando a postura das Decisões 039 e 044): o pipeline completo foi extraído para `OrchestrationService`, que agora é consumido por dois clientes reais — `/api/chat` (compatibilidade legada, sem API key) e `/api/orchestrate` (contrato operacional completo para sistemas externos). A condição da Decisão 044 (segundo consumidor real) foi atendida.
+
+## Decisão 051 — Safe mode: provider real bloqueado por padrão (allow_real_provider=false)
+
+Nenhum provider real (Gemini, OpenAI, Claude, DeepSeek, Grok) é chamado sem `allow_real_provider=true` explícito no payload. Ausente = `false`. O bloqueio não instancia chamada externa, aplica fallback Mock e registra `PROVIDER_REAL_BLOCKED`, `safe_mode_blocked=true`, `fallback_used=true`, preservando `provider_requested`/`provider_used`.
+
+## Decisão 052 — QA textual real inicial é heurística local determinística, não IA
+
+A primeira análise QA real (`qa_analysis`) usa padrões textuais determinísticos locais (sem rede, sem chave, sem provider real) sobre artefatos enviados por payload. O skeleton preenchido declara `analysis_source="local_text_heuristic"`; `confidence` nunca chega a 1.0; a análise não substitui validação humana.
+
+## Decisão 053 — Release gate conservador: mock nunca aprova; decisão vem da análise local
+
+`release_gate_review` só libera `can_advance=true` com evidência textual limpa (sucesso explícito, sem falha/erro, risco `low`, confiança ≥ 0.6), sem fallback Mock, sem safe mode block e sem provider mock como fonte da resposta — o caminho aprovável é o pseudo-provider local `local_qa`, cuja decisão vem exclusivamente do QA Text Analyzer. Qualquer bloqueio preenche `blocked_reason` e `RELEASE_GATE_BLOCKED`.
+
+## Decisão 054 — Artifacts com limites duros e rejeição de path; leitura de arquivo por payload é proibida
+
+Limites: 10 artefatos, 20.000 caracteres por artefato, 100.000 no total (excedente truncado/ignorado com warning). Metadata contendo campos de caminho (`path`, `file_path`, `absolute_path`, `relative_path`, `filesystem_path`, `local_path`, `directory`, `folder`, `glob`) causa rejeição do artefato (`ARTIFACT_PATH_REJECTED`) sem qualquer leitura de disco — não existe e não deve existir `open`/`read_text`/`listdir`/`glob` sobre dados vindos de payload.
+
+## Decisão 055 — Contrato padronizado de warnings/errors, auth interna opcional e audit não persistente completo
+
+Respostas expõem `warning_codes`, `warnings` com severidade (`info`/`warning`/`error`/`critical`), `error_code`, `blocked_reason` e `status`, mantendo `task_warnings` textual por compatibilidade. `/api/orchestrate` aceita autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + header `X-PedroCore-Api-Key`; sem chave configurada, modo dev/local com `INTERNAL_AUTH_NOT_CONFIGURED`); `/api/chat` permanece livre. O audit (`audit_id`, `timestamp`, `origin_system`, `task_type`, `provider_requested`, `provider_used`, `fallback_used`, `safe_mode_blocked`, `status`, `latency_ms`, `risk_level`, `can_advance`) permanece não persistente e nunca contém segredos ou conteúdo de artefatos.

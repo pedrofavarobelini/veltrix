@@ -2,6 +2,44 @@
 
 Atualizado em: 05/07/2026
 
+## PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate, /api/orchestrate, safe mode
+
+Status: implementada, em validação (ainda sem commit).
+
+### Motivação
+
+Evoluir o PedroCore de "QA skeleton sem análise real" para um MVP operacional: análise textual QA local e determinística, release gate conservador, endpoint operacional `/api/orchestrate`, safe mode de providers reais, autenticação interna opcional, contrato padronizado de warnings/errors e audit não persistente completo.
+
+### Backend — Criado
+
+- `apps/api/app/modules/contracts/codes.py` — códigos padronizados de warning/error (`QA_NO_ARTIFACTS`, `QA_FALLBACK_MOCK`, `PROJECT_TASK_NOT_ALLOWED`, `UNKNOWN_ORIGIN_SYSTEM`, `ARTIFACT_VISUAL_UNSUPPORTED`, `ARTIFACT_TRUNCATED`, `ARTIFACT_PATH_REJECTED`, `PROVIDER_REAL_BLOCKED`, `INTERNAL_AUTH_*`, `RELEASE_GATE_BLOCKED`, `QA_RISK_CRITICAL`, `QA_FAILURE_DETECTED`, `QA_ERROR_DETECTED`, `QA_WARNING_DETECTED`, `QA_ARTIFACT_LIMIT_EXCEEDED`), severidades (`info`/`warning`/`error`/`critical`) e schema `WarningItem`.
+- `apps/api/app/modules/qa_analysis/` — `QATextAnalyzer` local determinístico: detecta sucesso/falha/erro/warning/build-lint-typecheck e risco crítico (produção, banco real, drop/truncate/delete from, secret/token/senha/api key/.env, deploy) por regex com word boundaries; classifica `risk_level` (low/medium/high/critical), calcula `confidence` (0–1, nunca 1.0), decide `can_advance` conservador e gera `suggested_commands`/`suggested_fixes` apenas seguros. Sem IA externa, sem rede, sem leitura de arquivo, sem execução de comando.
+- `apps/api/app/modules/orchestration/` — `OrchestrationService` centraliza o pipeline (Task Router → Project Context → Policy → Artifacts → Provider com safe mode → QA Analyzer → QA Response/Release Gate → Audit), consumido por `/api/chat` e pelo novo `POST /api/orchestrate` (resposta estruturada com `status`, `warnings` com severidade, `warning_codes`, `error_code`, `blocked_reason`, `qa`, `release_gate`, `audit` completo). Pseudo-provider local `local_qa` responde sem chamada externa.
+
+### Backend — Alterado
+
+- `artifacts/` — limites `MAX_ARTIFACTS=10`, `MAX_ARTIFACT_CONTENT_CHARS=20000`, `MAX_TOTAL_ARTIFACT_CHARS=100000` com truncamento e warnings; rejeição de metadata com campos de path (`path`, `file_path`, `absolute_path`, `relative_path`, `filesystem_path`, `local_path`, `directory`, `folder`, `glob`) sem nunca ler arquivo; novos campos `warning_codes`, `analysis_text`, `textual_count`, `rejected_count`, `path_rejected`, `truncated`.
+- `qa_response/` — `QAResponseSkeleton` preenchido com dados reais do analyzer (`analysis_source="local_text_heuristic"`), com guardas conservadoras de `can_advance`; novo `evaluate_release_gate(...)` → `ReleaseGateResult` (`can_advance`, `blocked_reason`, `risk_level`, `confidence`): bloqueia sem artifacts, com path rejeitado, truncamento, falha/erro, risco high/critical, fallback Mock, safe mode ou provider mock em release gate; só libera com evidência textual limpa, risco low e confiança ≥ 0.6 via análise local.
+- `audit/schemas.py` — `AuditMetadata` estendido: `provider_used`, `safe_mode_blocked`, `status`, `latency_ms`, `risk_level`, `can_advance`; continua não persistente (memória, devolvido só na resposta, sem conteúdo de artifacts/segredos).
+- `chat/schemas.py` — `ChatRequest.allow_real_provider` (default `False`); `ChatResponse` ganhou `warning_codes`, `safe_mode_blocked`, `status`, `blocked_reason`, `error_code` (defaults compatíveis).
+- `chat/service.py` — passou a delegar ao `OrchestrationService`; contrato legado 100% preservado; `/api/chat` continua sem exigir API key.
+- `main.py` — inclui o router de orquestração (`POST /api/orchestrate`).
+- `.env.example` — adicionada `PEDROCORE_INTERNAL_API_KEY=""` (sem valor real). `.env` real não foi tocado.
+
+### Safe mode e autenticação
+
+- `allow_real_provider=false` por padrão (ausente = false): Gemini/OpenAI/Claude/DeepSeek/Grok nunca são chamados sem autorização explícita; bloqueio gera fallback Mock com `PROVIDER_REAL_BLOCKED`, `provider_requested`/`provider_used`, `fallback_used=true`, `safe_mode_blocked=true`; em `release_gate_review` o bloqueio impede avanço (`RELEASE_GATE_BLOCKED`).
+- `POST /api/orchestrate` com auth interna opcional: se `PEDROCORE_INTERNAL_API_KEY` configurada, exige header `X-PedroCore-Api-Key` (ausente → 401 `INTERNAL_AUTH_MISSING`; errado → 401 `INTERNAL_AUTH_INVALID`); sem chave configurada, modo dev/local com warning `INTERNAL_AUTH_NOT_CONFIGURED`. A chave nunca é retornada. `/api/chat` continua livre.
+
+### Testes
+
+- Novos: `tests/test_qa_analysis.py` (21), `tests/test_release_gate.py` (13), `tests/test_orchestrate_api.py` (13), `tests/test_safe_mode.py` (6); `tests/test_artifacts.py` ganhou 6 testes (truncamento, limite de quantidade, limite total, rejeição de path incluindo arquivo real em disco nunca lido).
+- **Comando:** `./.venv/Scripts/python.exe -m pytest -q` (em `apps/api`). **Resultado:** `125 passed, 2 warnings` (66 anteriores preservados sem alteração + 59 novos). Nenhum teste chama provider real, depende de chave real ou faz request de rede.
+
+### Ainda não existe
+
+Integração real com FinGuard, leitura real de arquivos, execução de comandos pelo PedroCore, QA visual real, OCR, Playwright, agente exploratório, dashboard, log persistente, provider real liberado em fluxo crítico, tag final do MVP.
+
 ## PEDROCORE-IMPLEMENT-02 — QA textual foundation
 
 Status: implementada, validada.

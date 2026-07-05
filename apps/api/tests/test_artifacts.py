@@ -72,3 +72,91 @@ def test_artifact_metadata_is_included_in_text_block():
     assert result.warnings == []
     assert '"module": "personal-finance"' in result.text_block
     assert "Smoke tests passaram." in result.text_block
+
+
+def test_large_artifact_is_truncated_with_warning():
+    result = artifact_service.process(
+        [ArtifactInput(type="log", name="grande.log", content="x" * 25000)]
+    )
+
+    assert result.truncated is True
+    assert "ARTIFACT_TRUNCATED" in result.warning_codes
+    assert "x" * 20001 not in result.text_block
+    assert "x" * 20000 in result.analysis_text
+
+
+def test_too_many_artifacts_are_limited_with_warning():
+    artifacts = [
+        ArtifactInput(type="text", name=f"a{i}.txt", content=f"conteudo {i}")
+        for i in range(12)
+    ]
+    result = artifact_service.process(artifacts)
+
+    assert result.count == 10
+    assert "QA_ARTIFACT_LIMIT_EXCEEDED" in result.warning_codes
+    assert "conteudo 11" not in result.text_block
+
+
+def test_total_char_limit_is_enforced():
+    artifacts = [
+        ArtifactInput(type="log", name=f"l{i}.log", content=("y" * 19000))
+        for i in range(6)
+    ]
+    result = artifact_service.process(artifacts)
+
+    assert result.truncated is True
+    assert "ARTIFACT_TRUNCATED" in result.warning_codes
+    assert len(result.analysis_text) <= 100000 + len(artifacts) * 2
+
+
+def test_path_metadata_is_rejected_and_content_ignored():
+    result = artifact_service.process(
+        [
+            ArtifactInput(
+                type="qa_report",
+                name="externo.md",
+                content="conteudo-que-nao-deve-ser-analisado",
+                metadata={"path": "C:\\Projetos\\qualquer\\arquivo.md"},
+            )
+        ]
+    )
+
+    assert result.path_rejected is True
+    assert result.rejected_count == 1
+    assert "ARTIFACT_PATH_REJECTED" in result.warning_codes
+    assert "conteudo-que-nao-deve-ser-analisado" not in result.text_block
+    assert "conteudo-que-nao-deve-ser-analisado" not in result.analysis_text
+
+
+def test_file_path_and_absolute_path_keys_are_rejected():
+    for key in ["file_path", "absolute_path", "relative_path", "directory", "glob"]:
+        result = artifact_service.process(
+            [
+                ArtifactInput(
+                    type="text",
+                    content="abc",
+                    metadata={key: "qualquer-valor"},
+                )
+            ]
+        )
+        assert result.path_rejected is True, f"chave nao rejeitada: {key}"
+        assert "ARTIFACT_PATH_REJECTED" in result.warning_codes
+
+
+def test_real_local_file_is_never_read(tmp_path):
+    real_file = tmp_path / "segredo-local.txt"
+    real_file.write_text("CONTEUDO-REAL-DO-DISCO-NUNCA-LIDO", encoding="utf-8")
+
+    result = artifact_service.process(
+        [
+            ArtifactInput(
+                type="text",
+                name="segredo-local.txt",
+                metadata={"path": str(real_file)},
+            )
+        ]
+    )
+
+    assert result.path_rejected is True
+    assert "CONTEUDO-REAL-DO-DISCO-NUNCA-LIDO" not in result.text_block
+    assert "CONTEUDO-REAL-DO-DISCO-NUNCA-LIDO" not in result.analysis_text

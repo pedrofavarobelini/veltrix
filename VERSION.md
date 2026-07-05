@@ -12,11 +12,11 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G — QA textual foundation.
+PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7): QA textual real, release gate conservador, `/api/orchestrate`, safe mode.
 
 ## Status atual
 
-`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental (commits `1e5a8cb`, `6e7badd`, `c1e7816`, `8c68b67`, `cc808a7`). `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` commitada em `95cbfab`. Nesta etapa: policy de `allowed_tasks`, artefatos textuais por payload, Prompt Builder com artefatos e QA response skeleton seguro (sem análise real, `can_advance` sempre `False`). Testes backend passando (`66 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.
+`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental. `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `01C–01H` commitada em `95cbfab`; `PEDROCORE-IMPLEMENT-02` commitada em `e115672`. Nesta etapa (`IMPLEMENT-03`, ainda sem commit): QA textual real por heurística local determinística, release gate conservador com `blocked_reason`, endpoint `POST /api/orchestrate` (pipeline centralizado, também usado por `/api/chat`), safe mode com `allow_real_provider=false` por padrão, autenticação interna opcional para `/api/orchestrate`, contrato padronizado de warnings/errors e audit não persistente completo. Testes backend passando (`125 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.
 
 ## Observação sobre versionamento
 
@@ -29,7 +29,7 @@ Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
 ## Próximos passos técnicos
 
-- QA Intelligence real (parser de relatório, classificador de risco) para preencher o skeleton com achados reais (ainda não implementada).
-- Artifact Reader real (leitura automática de arquivo) e suporte a artefatos visuais (ainda não implementados).
-- Orchestration module e/ou endpoint `/api/orchestrate` — avaliados e adiados na etapa `01I`.
-- Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`, seção 12, para o escopo completo de `PEDROCORE-IMPLEMENT-01`.
+- Validar, documentar em definitivo e commitar `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7).
+- Testes finais globais e documentação final do MVP antes de qualquer tag.
+- Artifact Reader real (leitura automática de arquivo) e análise visual real continuam não implementados, por decisão.
+- Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.

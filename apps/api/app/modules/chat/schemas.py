@@ -15,6 +15,7 @@ class ChatRequest(BaseModel):
     context: dict | None = None
     metadata: dict | None = None
     artifacts: list[ArtifactInput] | None = None
+    allow_real_provider: bool = False
 
 
 class ChatResponse(BaseModel):
@@ -42,6 +43,11 @@ class ChatResponse(BaseModel):
     artifact_types: list[str] = Field(default_factory=list)
     artifact_warnings: list[str] = Field(default_factory=list)
     qa_skeleton: QAResponseSkeleton | None = None
+    warning_codes: list[str] = Field(default_factory=list)
+    safe_mode_blocked: bool = False
+    status: str = "ok"
+    blocked_reason: str | None = None
+    error_code: str | None = None
 
 
 class ProviderInfo(BaseModel):

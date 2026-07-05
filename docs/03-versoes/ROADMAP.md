@@ -82,7 +82,25 @@ Segunda frente de implementação de código, evoluindo a base interna de orques
 - **02F — Testes de contrato para fluxo QA textual.** *(implementada, commitada)* Commitada em `e115672`. Novos arquivos `apps/api/tests/test_artifacts.py`, `test_qa_response.py` e `test_qa_flow.py`, mais extensões em `test_project_context.py` e `test_prompt_builder.py`, cobrindo os 19 itens de contrato (artifacts, policy, skeleton, fallback crítico, compatibilidade retroativa). Testes backend: `66 passed, 2 warnings`.
 - **02G — Proteção adicional contra provider real em testes.** *(implementada, commitada)* Commitada em `e115672`. Toda a suíte nova usa apenas `mock`/provider inexistente; nenhuma chamada a Gemini/OpenAI/Claude/DeepSeek/Grok.
 
-Ainda não existe nesta frente: Artifact Reader real (leitura automática de arquivo/pasta), QA Intelligence real (parser/classificador de risco de verdade), análise visual real, endpoint `/api/orchestrate`, integração real com o FinGuard, bloqueio duro por policy de `allowed_tasks`, banco/persistência, autenticação entre sistemas, ou qualquer alteração de frontend/design.
+Ainda não existia ao fim desta frente: Artifact Reader real (leitura automática de arquivo/pasta), QA Intelligence real, análise visual real, endpoint `/api/orchestrate`, integração real com o FinGuard, bloqueio duro por policy de `allowed_tasks`, banco/persistência, autenticação entre sistemas, ou qualquer alteração de frontend/design. (O endpoint `/api/orchestrate` e a análise QA textual local passaram a existir na frente seguinte, `PEDROCORE-IMPLEMENT-03`.)
+
+## PEDROCORE-IMPLEMENT-03 — MVP backend (Blocos 1–7)
+
+Terceira frente de implementação. Status: **implementada, em validação (ainda sem commit)**. Ver `docs/08_CHANGELOG.md` para o detalhamento completo.
+
+- **Bloco 1 — QA textual real inicial.** `QATextAnalyzer` local determinístico (`apps/api/app/modules/qa_analysis/`): detecção de sucesso/falha/erro/warning e risco crítico por heurística textual, `risk_level`, `confidence`, `can_advance` conservador, sugestões seguras. Sem IA externa, sem leitura de arquivo, sem execução de comando. Skeleton QA agora é preenchido de verdade (`analysis_source="local_text_heuristic"`).
+- **Bloco 2 — Release Gate conservador.** `evaluate_release_gate` bloqueia sem artifacts, com path rejeitado, truncamento, falha/erro, risco high/critical, fallback Mock, safe mode ou provider mock; só libera com evidência limpa via análise local (`local_qa`) e confiança ≥ 0.6; `blocked_reason` sempre preenchido ao bloquear.
+- **Bloco 3 — API operacional mínima.** `OrchestrationService` centraliza o pipeline; novo `POST /api/orchestrate` com resposta estruturada (qa, release_gate, audit completo, warnings com severidade); `POST /api/chat` continua 100% compatível e sem API key.
+- **Bloco 4 — Safe mode.** `allow_real_provider=false` por padrão; providers reais nunca são chamados sem autorização explícita; bloqueio gera `PROVIDER_REAL_BLOCKED` + fallback Mock + `safe_mode_blocked=true`.
+- **Bloco 5 — Autenticação interna simples.** `PEDROCORE_INTERNAL_API_KEY` opcional + header `X-PedroCore-Api-Key` somente para `/api/orchestrate`; modo dev/local com `INTERNAL_AUTH_NOT_CONFIGURED` quando não configurada.
+- **Bloco 6 — Warning/Error contract.** Códigos padronizados com severidade em `apps/api/app/modules/contracts/`; `warning_codes`/`warnings`/`error_code`/`blocked_reason`/`status` nas respostas; `task_warnings` textual mantido por compatibilidade.
+- **Bloco 7 — Audit mínimo não persistente.** `AuditMetadata` completo (`provider_used`, `safe_mode_blocked`, `status`, `latency_ms`, `risk_level`, `can_advance`), retornado só na resposta, sem persistência e sem segredos/conteúdo de artifacts.
+
+Limites e artifacts: máx. 10 artefatos, 20k chars por artefato, 100k total; campos de path em metadata são rejeitados sem leitura (`ARTIFACT_PATH_REJECTED`).
+
+Testes backend: `125 passed, 2 warnings` (66 anteriores + 59 novos).
+
+Ainda não existe nesta frente: integração real com o FinGuard, leitura real de arquivos, execução de comandos pelo PedroCore, QA visual real, OCR, Playwright, agente exploratório, dashboard, log persistente, provider real liberado em fluxo crítico, tag final do MVP.
 
 ## Fases futuras (planejadas, sem ordem de data fixa)
 
