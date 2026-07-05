@@ -239,3 +239,23 @@ As tasks `exploratory_test_plan`, `manual_exploration_report` e `assisted_explor
 ## Decisão 060 — Bloco 12 (dashboard/logs/admin) cancelado por decisão de produto
 
 O Bloco 12 do planejamento maior foi cancelado e não deve ser implementado nem listado como pendência obrigatória. Audit permanece não persistente.
+
+## Decisão 061 — Recursos reais são opt-in, desabilitados por padrão e skipados no pytest padrão
+
+Todo recurso real (OCR, provider multimodal, Playwright, integração FinGuard real, provider real em teste) é controlado por flag de ambiente explícita com default `false` (`real_features/service.py`), aceita apenas com o valor literal `true`. Os testes reais correspondentes existem em `tests/test_real_optin.py` e são SKIPPED no pytest padrão; nunca devem virar testes padrão.
+
+## Decisão 062 — Somente a análise local determinística pode aprovar release gate
+
+`RELEASE_GATE_TRUSTED_PROVIDERS = {"local_qa"}`: provider real/externo nunca aprova release gate sozinho, mesmo com `allow_real_provider=true` (`RELEASE_REQUIRES_HUMAN_REVIEW`); mock e fallback continuam bloqueados; evidência visual/OCR/exploração isolada nunca aprova. Revisão humana é obrigatória para qualquer decisão apoiada em recurso real (`PEDROCORE_RELEASE_REQUIRE_HUMAN_REVIEW_FOR_REAL_FEATURES=true` por padrão).
+
+## Decisão 063 — Policy enforcement forte é o padrão; tasks perigosas têm bloqueio incondicional
+
+`PEDROCORE_ENFORCE_PROJECT_POLICY=true` por padrão: task crítica não permitida para o projeto e origem desconhecida em fluxo crítico são bloqueadas de verdade (não chegam ao provider/reader/análise). task_type com semântica de execução/escrita/deleção/migração/deploy e payloads com chaves de comando são bloqueados incondicionalmente, mesmo com o enforcement desligado.
+
+## Decisão 064 — Dependências pesadas (pytesseract, Playwright) nunca são instaladas automaticamente
+
+OCR local e Playwright read-only foram implementados como guard + adapter: se a dependência não estiver instalada pelo humano, o resultado é bloqueio seguro (`OCR_DEPENDENCY_UNAVAILABLE`/`PLAYWRIGHT_DEPENDENCY_UNAVAILABLE`), nunca instalação automática nem falha de teste.
+
+## Decisão 065 — v7.0.0 fecha o core operacional seguro local; integração no FinGuard é repositório separado
+
+A tag `v7.0.0` marca o fechamento local do PedroCore IA como core operacional seguro (Blocos 1–11 + IMPLEMENT-05 + FINALIZE-06). O cliente HTTP no repositório do FinGuard, push/deploy e qualquer recurso real em produção são frentes futuras com aprovação própria. Bloco 12 (dashboard/admin) permanece cancelado (Decisão 060).

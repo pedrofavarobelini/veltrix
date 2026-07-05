@@ -2,6 +2,20 @@
 
 Atualizado em: 05/07/2026
 
+## PEDROCORE-IMPLEMENT-05 + PEDROCORE-FINALIZE-06 — Integrações reais controladas e fechamento final local
+
+Status: implementadas e commitadas em subfrentes (`33a7dc2` 05A, `790e1b4` 05B, `70afba1` 05C, `b3f1be5` 05D, `2670040` 05E, `3bcfa05` 05F, `e08c519` 06A, + commit documental 06B). Fechamento final: `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
+
+- **05A — Flags/guards/testes opt-in:** módulo `real_features/` (todas as flags reais `false` por padrão; `PEDROCORE_ENFORCE_PROJECT_POLICY` e `PEDROCORE_RELEASE_REQUIRE_HUMAN_REVIEW_FOR_REAL_FEATURES` default `true`); 28 warning codes novos; helper `tests/real_flags.py`; 6 testes reais opt-in SKIPPED por padrão; 14 variáveis novas no `.env.example`.
+- **05B — FinGuard controlado:** módulo `policy_enforcement/` com bloqueio real (task perigosa, payload com comando, task crítica não permitida, origem desconhecida crítica) e curto-circuito na orquestração (`status=blocked`, provider nunca chamado); `pedrocore` passou a permitir tasks QA localmente; contrato final em `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE_REAL_CONTROLADO.md`.
+- **05C — Artifact Reader final:** consolidado com 4 testes extras (`.env` aninhado `apps/api/.env`, variantes `.env.*`, orçamento total no serviço e em requisição multi-arquivo).
+- **05D — OCR local opt-in:** módulo `ocr/` (`OCR_NOT_ENABLED`/`OCR_DEPENDENCY_UNAVAILABLE`/execução local com sanitização de segredo e revisão humana); dependência não instalada; status refletido no `visual_qa_analysis`.
+- **05E — Multimodal guard:** `evaluate_real_visual_guard` — três condições cumulativas (flag multimodal, flag visual QA, `allow_real_provider`) e, mesmo com todas, contrato-somente (`REAL_FEATURE_REQUIRES_HUMAN_CONFIRMATION`); nenhuma imagem é enviada a provider externo nesta versão.
+- **05F — Playwright read-only opt-in:** `exploration/playwright_adapter.py` — allowlist de base URLs, URLs FinGuard sempre bloqueadas, ações interativas (`click`/`type_text`/`submit`/`login`) sempre bloqueadas, navegação read-only só com flag + dependência instalada pelo humano.
+- **06A — Enforcement final:** somente `local_qa` aprova release gate (`RELEASE_GATE_TRUSTED_PROVIDERS`); provider real → `RELEASE_REQUIRES_HUMAN_REVIEW`; policy forte por padrão.
+- **Testes:** `216 passed, 6 skipped (opt-in), 2 warnings` (warnings pré-existentes Starlette/Pydantic). 50 testes novos nesta frente.
+- **Não alterado:** `apps/web`, `.env`, `apps/api/.env`; FinGuard real não acessado; sem push; `v6.0.0` preservada em `ee2ac68`. Bloco 12 permanece cancelado.
+
 ## PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11)
 
 Status: implementada, em validação nesta frente.

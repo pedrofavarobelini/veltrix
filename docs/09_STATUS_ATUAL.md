@@ -12,7 +12,7 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11): contrato FinGuard fake, Artifact Reader allowlisted, QA visual stub e agente exploratório assistido. A tag `v6.0.0` (MVP backend) permanece intocada em `ee2ac68`.
+Projeto **finalizado localmente** como core operacional seguro (`v7.0.0`). Últimas frentes: `PEDROCORE-IMPLEMENT-04` (Blocos 8–11, `18d1fc5`), `PEDROCORE-IMPLEMENT-05` (05A–05F: flags/guards opt-in, FinGuard controlado com policy forte, reader consolidado, OCR/multimodal/Playwright como opt-in seguro) e `PEDROCORE-FINALIZE-06` (06A enforcement final do release gate + 06B fechamento). A tag `v6.0.0` (MVP backend) permanece intocada em `ee2ac68`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
 `PEDROCORE-REPLAN-01` (01A a 01E) está **concluída no escopo documental** e commitada:
 
@@ -54,7 +54,7 @@ C:\Projetos\pedrocore-ia
 
 ## Em andamento
 
-- `PEDROCORE-IMPLEMENT-04` — Expansão operacional segura (Blocos 8–11): contrato FinGuard → PedroCore por payload fake (`finguard`/`finguard-local`, `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`); Artifact Reader real controlado por allowlist (`apps/api/app/modules/artifact_reader/`, **desabilitado por padrão**, nunca para FinGuard, nunca `.env`/binário/segredo/traversal); QA visual stub (`visual_qa_analysis` conservador, sem OCR/provider multimodal/Playwright); agente exploratório assistido (`exploration` com `can_execute_actions=false` sempre). Testes backend: `166 passed, 2 warnings`. Implementada e validada localmente nesta frente.
+Nenhuma frente em andamento — projeto finalizado localmente. Testes backend finais: `216 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (cliente FinGuard, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
 
 ## Ainda não existe
 

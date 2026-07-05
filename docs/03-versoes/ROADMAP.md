@@ -123,7 +123,13 @@ Status: **implementada, em validação (nesta frente)**. Ver `docs/08_CHANGELOG.
 
 Bloco 12 (dashboard/logs/admin): **cancelado por decisão de produto** (Decisão 060) — não é pendência.
 
-Testes backend: `166 passed, 2 warnings` (125 anteriores + 41 novos).
+Testes backend: `166 passed, 2 warnings` (125 anteriores + 41 novos). Commitada em `18d1fc5`.
+
+## PEDROCORE-IMPLEMENT-05 + PEDROCORE-FINALIZE-06 — Fechamento final local (v7.0.0)
+
+Status: **concluídas**. Subfrentes commitadas individualmente: 05A flags/guards/testes opt-in (`33a7dc2`), 05B FinGuard controlado + policy enforcement (`790e1b4`), 05C reader consolidado (`70afba1`), 05D OCR local opt-in (`b3f1be5`), 05E multimodal guard (`2670040`), 05F Playwright read-only opt-in (`3bcfa05`), 06A enforcement final do release gate (`e08c519`), 06B documentação final + tag local `v7.0.0`.
+
+Resultado: core operacional seguro finalizado localmente — recursos reais 100% opt-in e desabilitados por padrão; somente `local_qa` aprova release gate; tasks perigosas bloqueadas incondicionalmente; testes `216 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
 ## Fases futuras (planejadas, sem ordem de data fixa)
 

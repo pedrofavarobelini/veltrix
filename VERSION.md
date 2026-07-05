@@ -12,7 +12,7 @@ V5.1.9
 
 ## Frente atual
 
-PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11): contrato FinGuard fake, Artifact Reader allowlisted, QA visual stub e agente exploratório assistido.
+Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
 ## Status atual
 
@@ -31,10 +31,9 @@ Existem duas numerações distintas no projeto, que não devem ser confundidas:
 
 Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
-## Próximos passos técnicos
+## Próximos passos (opcionais, pós-fechamento)
 
-- Bloco 13 — Documentação final; Bloco 14 — Testes finais completos; Bloco 15 — Fechamento Git/tag futuro.
-- Integração real no repositório FinGuard (cliente HTTP) em frente separada.
-- OCR real, QA visual real com provider multimodal e Playwright real em frentes futuras.
-- Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.
+- Cliente HTTP no repositório do FinGuard (frente separada, com aprovação própria).
+- Push para GitHub/portfólio e deploy — decisões humanas futuras.
+- Execução real de OCR/multimodal/Playwright somente com flags, dependências instaladas manualmente e revisão humana.
 - Bloco 12 (dashboard/logs/admin): cancelado por decisão de produto — não é pendência.

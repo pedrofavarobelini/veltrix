@@ -1,8 +1,8 @@
 # PedroCore IA
 
 Versão atual de produto: V5.1.9
-Tag técnica atual: `v6.0.0` — tag anotada criada em `ee2ac68` com a mensagem `v6.0.0 - MVP backend PedroCore IA`.
-Frente atual: PEDROCORE-IMPLEMENT-04 — Expansão operacional segura (Blocos 8–11). A tag `v6.0.0` representa o fechamento do MVP backend, não o projeto completo.
+Tags técnicas: `v6.0.0` (MVP backend, em `ee2ac68`) e `v7.0.0` (core operacional seguro finalizado localmente).
+Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações reais controladas) e `PEDROCORE-FINALIZE-06` (enforcement final + fechamento) concluídas. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
 ## Estado atual
 
