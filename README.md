@@ -3,6 +3,8 @@
 Versão atual de produto: V5.1.9
 Tags técnicas: `v6.0.0` (MVP backend, em `ee2ac68`) e `v7.0.0` (core operacional seguro finalizado localmente).
 Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações reais controladas) e `PEDROCORE-FINALIZE-06` (enforcement final + fechamento) concluídas. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
+Mapa atual completo: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
+Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 
 ## Estado atual
 
@@ -18,7 +20,7 @@ Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações re
 - **Agente exploratório assistido** (Bloco 11): tasks exploratórias geram plano/checklist manual (`exploration`) com `can_execute_actions=false` sempre — nada é executado automaticamente.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
-- Integração real executando no FinGuard, OCR real, QA visual real com provider multimodal, Playwright real, log persistente e Blocos 13–15 finais ainda não existem. Bloco 12 (dashboard) foi cancelado por decisão de produto.
+- Cliente HTTP no FinGuard, OCR real em ambiente configurado, QA visual real com provider multimodal, Playwright real, log persistente e deploy/push ainda são opcionais e exigem aprovação própria. Bloco 12 (dashboard) foi cancelado por decisão de produto.
 
 ## O que é o PedroCore IA
 
@@ -35,35 +37,37 @@ O PedroCore IA é o **orquestrador central de IA do ecossistema de projetos Pedr
 - Decide release gate de forma conservadora (`can_advance`, `blocked_reason`), sem nunca aprovar com mock/fallback.
 - Gera audit não persistente completo por requisição (`audit_id`, `timestamp`, `latency_ms`, `provider_used`, `safe_mode_blocked`, `risk_level`, `can_advance`).
 
-## Planejado / futuro
+## Opcional / futuro
 
-- Receber chamadas de sistemas externos do ecossistema Pedro (não implementado hoje).
-- QA Intelligence real (análise de fato dos artefatos recebidos) e Artifact Reader (leitura automática de arquivo).
-- Resposta estruturada por tipo de tarefa, além do texto livre atual.
-- Leitura somente-leitura de artefatos Markdown de projetos externos (ex.: relatórios de QA do FinGuard) como parte de inteligência operacional/QA Intelligence.
-- Auditoria/logs de chamadas e persistência de histórico no backend.
+- Cliente HTTP no repositório do FinGuard consumindo `POST /api/orchestrate` (frente separada, com aprovação própria).
+- Push para GitHub/portfólio e deploy.
+- Execução real de OCR, Playwright ou multimodal somente com flags, dependências/chaves reais e revisão humana.
+- Provider orchestration avançada por custo/qualidade/task.
+- Log persistente/histórico backend se a decisão de produto mudar; dashboard/logs/admin (Bloco 12) segue cancelado.
 
 ## Relação com o FinGuard
 
-O FinGuard é um projeto externo e independente. O PedroCore não altera código, dados, migrations, seeds, testes ou configuração do FinGuard, não executa comandos nele e não faz commit nele. Qualquer consumo futuro de artefatos do FinGuard (relatórios de QA em Markdown, documentação Obsidian) será sempre em modo somente leitura, e ainda não está implementado.
+O FinGuard é um projeto externo e independente. Do lado PedroCore, o contrato controlado já reconhece `origin_system=finguard` e `origin_system=finguard-local` em `POST /api/orchestrate`, com tasks permitidas, policy forte, Artifact Reader bloqueado para FinGuard e provider real bloqueado por padrão. O PedroCore não altera código, dados, migrations, seeds, testes ou configuração do FinGuard, não executa comandos nele, não lê path real do repositório e não faz commit nele. O cliente HTTP real dentro do repositório FinGuard é trabalho futuro separado.
 
 ## Providers
 
 | Provider | Situação |
 |---|---|
 | Mock | Real e funcional, sem custo, usado como fallback padrão |
-| Gemini | Implementado; chave configurada localmente para testes |
-| OpenAI | Implementado estruturalmente; sem chave configurada |
-| Claude | Implementado estruturalmente; sem chave configurada |
-| DeepSeek | Implementado estruturalmente; sem chave configurada |
-| Grok/xAI | Implementado estruturalmente; sem chave configurada |
+| Gemini | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |
+| OpenAI | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |
+| Claude | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |
+| DeepSeek | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |
+| Grok/xAI | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |
 
-Qualquer provider real sem chave configurada cai automaticamente para o `MockProvider` (fallback obrigatório).
+Qualquer provider real sem autorização explícita cai para bloqueio de safe mode (`PROVIDER_REAL_BLOCKED`) e fallback Mock. Provider real nunca aprova release gate sozinho.
 
 ## Documentação oficial
 
 - `README.md` (este arquivo)
 - `VERSION.md`
+- `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`
+- `docs/MOC_PEDROCORE_IA.md`
 - `docs/00-visao-geral/README.md`
 - `docs/00-visao-geral/OBJETIVO.md`
 - `docs/03-versoes/ROADMAP.md`

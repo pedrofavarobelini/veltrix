@@ -1,10 +1,10 @@
-# Project Context (Planejado)
+# Project Context
 
-> Parte da frente `PEDROCORE-REPLAN-01C`. O Project Context aqui descrito é um módulo/conceito **planejado**. Ele não existe no código hoje — não há registro, arquivo de configuração ou estrutura de dados de "projeto" no PedroCore. Nenhum registro real de projeto (incluindo o FinGuard) é criado nesta etapa. Este documento apenas planeja o conceito.
+> Nota DOCFIX: este documento nasceu como planejamento. Em `v7.0.0`, o módulo existe em `apps/api/app/modules/project_context/`. Use [[../00_MAPEAMENTO_GERAL_PEDROCORE]] para o estado atual completo.
 
-## Responsabilidade futura
+## Responsabilidade atual
 
-O Project Context seria a camada conceitual que:
+O Project Context é a camada que:
 
 - Representa sistemas externos do ecossistema Pedro (ex.: FinGuard) como entidades configuráveis dentro do PedroCore.
 - Armazena metadados planejados sobre o sistema de origem (nome de exibição, identificador, tipo de projeto).
@@ -37,8 +37,8 @@ Campos ilustrados:
 
 ## Deixar claro
 
-Isso é planejamento conceitual. **Nenhum registro real de projeto é criado nesta etapa** — não há arquivo de configuração, banco de dados ou estrutura em memória representando o FinGuard ou qualquer outro sistema dentro do PedroCore hoje. O exemplo acima é ilustrativo, para orientar o desenho técnico de uma fase futura de implementação.
+O contexto atual é configuração interna em memória, não banco de dados e não leitura de repositórios externos. `finguard` e `finguard-local` são representações internas seguras; não apontam para path real do FinGuard.
 
 ## Estado de implementação
 
-Nenhuma parte do Project Context está implementada. O `ChatService`/`ProviderRegistry` atuais não têm nenhum conceito de "projeto de origem", "sistema externo" ou "limites por projeto" — isso é inteiramente uma proposta de arquitetura-alvo desta fase.
+Implementado em `apps/api/app/modules/project_context/`. Resolve `pedrocore`, `finguard`, `finguard-local` e `unknown`; avalia `allowed_tasks`; mantém FinGuard read-only e sem execução/escrita.

@@ -1,6 +1,6 @@
-# QA Intelligence — Visão Geral (Planejada)
+# QA Intelligence — Visão Geral
 
-> Parte da frente `PEDROCORE-REPLAN-01D`. QA Intelligence aqui descrita é uma camada **futura/planejada** do PedroCore IA. Nada neste documento ou nos documentos irmãos está implementado: não há módulo, endpoint, schema ou lógica de análise de QA no código hoje. O PedroCore continua sendo, hoje, apenas uma API de chat multi-provider (`POST /api/chat`, `GET /api/providers`).
+> Nota DOCFIX: este documento nasceu como planejamento da frente `PEDROCORE-REPLAN-01D`. Em `v7.0.0`, o PedroCore já possui QA textual local determinístico, `POST /api/orchestrate`, `qa`, `release_gate`, `visual_qa_analysis` stub e `exploration` assistido/manual. QA com IA real, QA visual real e automação autônoma continuam fora do padrão. Use [[../00_MAPEAMENTO_GERAL_PEDROCORE]] como estado atual.
 
 ## 1. Definição de QA Intelligence
 
@@ -12,29 +12,29 @@ QA Intelligence é uma camada futura do PedroCore IA para:
 - Sugerir próximos comandos de investigação (nunca executá-los).
 - Explicar causas prováveis de uma falha.
 - Avaliar, de forma assistida, se uma frente de trabalho pode avançar (`can_advance`).
-- Apoiar, no futuro, análise visual/exploratória de evidências (screenshots, gravações).
+- Apoiar análise textual/exploratória de evidências e, de forma futura/opt-in, análise visual real de screenshots/gravações.
 - Padronizar o diagnóstico técnico devolvido a sistemas externos, em formato estruturado e consumível por máquina.
 
-**Essa camada é planejada, ainda não implementada.** Nenhum código de análise, endpoint de QA, parser de relatório ou classificador de risco existe hoje em `apps/api`.
+**Estado atual:** a camada existe como heurística textual local determinística (`apps/api/app/modules/qa_analysis/`) e release gate conservador (`apps/api/app/modules/qa_response/`). Ela não chama provider real, não executa testes, não lê o FinGuard e não substitui revisão humana.
 
 ## 2. Relação com o QA Automation do FinGuard
 
 - O FinGuard é um projeto externo e independente.
 - O QA Automation pertence ao FinGuard e já valida, dentro do próprio FinGuard: API, backend, frontend, rotas, banco de teste, Prisma, Playwright, smoke tests, E2E, relatórios e evidências.
-- `QA-AUTOMATION-01G` (o agente exploratório assistido por IA) foi delegada ao PedroCore como **caso de uso futuro** — não uma implementação atual.
+- O lado PedroCore implementa exploração assistida/manual como plano/checklist (`exploration`), sem execução autônoma.
 - O PedroCore **não executa** o QA do FinGuard.
 - O PedroCore **não roda testes** do FinGuard.
 - O PedroCore **não roda migrations** do FinGuard.
 - O PedroCore **não roda seed/reset** do FinGuard.
 - O PedroCore **não comita** no FinGuard.
 - O PedroCore **não altera arquivos** do FinGuard.
-- O PedroCore poderá, no futuro, **receber artefatos do FinGuard como payload ou entrada controlada** — nunca por acesso direto ao repositório ou à infraestrutura do FinGuard.
+- O PedroCore pode receber artefatos do FinGuard como payload textual controlado — nunca por acesso direto ao repositório ou à infraestrutura do FinGuard.
 
 **QA Intelligence não é o QA Automation.** QA Intelligence não executa testes e não substitui Playwright, smoke tests, banco de teste, Prisma, migrations, seed/reset ou scripts do FinGuard — ela analisa artefatos **já produzidos** por esses processos e devolve um diagnóstico estruturado.
 
 ## 3. Artefatos que QA Intelligence poderá analisar futuramente
 
-Todos os tipos abaixo são planejados. Nesta fase, qualquer análise só poderia ocorrer com conteúdo enviado no payload (ver `docs/10-contratos/CONTRATO_ORQUESTRACAO.md`, seção 6) — **não há leitura automática de arquivos externos** hoje nem nesta etapa de planejamento.
+Todos os tipos abaixo nasceram como planejamento. No estado atual, a análise padrão ocorre com conteúdo enviado no payload; o Artifact Reader existe como opt-in allowlisted, default-off e bloqueado para FinGuard.
 
 | Tipo | Finalidade | Formato esperado | Riscos | Texto ou visual | Exige provider multimodal | Payload nesta fase | Leitura automática |
 |---|---|---|---|---|---|---|---|
@@ -62,7 +62,7 @@ Os relatórios de QA atuais do FinGuard são **Markdown livre**, não JSON estru
 - Qualquer parser/interpretação futura deve ser **tolerante a variação de texto** — títulos, ordens de seção e nível de detalhe podem mudar entre relatórios.
 - **Se o relatório estiver incompleto**, a resposta estruturada de QA Intelligence deve indicar **baixa confiança** (`confidence` baixo) em vez de tentar preencher lacunas com suposições.
 
-## 5. Casos de uso futuros
+## 5. Casos de uso
 
 Ver documentos dedicados por caso de uso:
 
@@ -74,7 +74,7 @@ Os demais casos de uso (`visual_qa_analysis`, `artifact_summary`, `regression_ri
 
 | Caso de uso | Objetivo | Entrada esperada | Saída esperada | Resposta estruturada obrigatória | Mock permitido | Fallback Mock bloqueia conclusão | Observação de segurança |
 |---|---|---|---|---|---|---|---|
-| `visual_qa_analysis` | Analisar evidência visual (screenshot/trace) de possível regressão | `message` + `artifacts` do tipo `screenshot`/`image`/`playwright_trace` | Resposta estruturada descrevendo observações visuais | Sim | Apenas para teste de integração | Sim, em uso crítico | Exige provider multimodal (fase futura); não existe hoje |
+| `visual_qa_analysis` | Registrar evidência visual (screenshot/trace) de possível regressão | `message` + `artifacts` do tipo `screenshot`/`image`/`playwright_trace` | Stub conservador com revisão humana | Sim | Apenas para teste de integração | Sim, em uso crítico | QA visual real exige provider multimodal em frente futura/opt-in; hoje há stub |
 | `artifact_summary` | Resumir um artefato sem análise crítica aprofundada | `message` + `artifacts` | Texto livre ou resumo estruturado simples | Não (recomendado) | Sim, livremente | Não é crítico por padrão | Uso geral, menor risco |
 | `regression_risk_review` | Avaliar risco de regressão a partir de mudanças/evidências | `message` + `artifacts` (diff, changelog, relatório) + `context` | Resposta estruturada com `risk_level` | Sim | Apenas para teste | Sim, em avaliação real | Não substitui análise de QA automatizado do FinGuard |
 | `test_gap_analysis` | Identificar lacunas de cobertura de teste a partir de relatórios/roadmap | `message` + `artifacts` (relatório, roadmap) | Resposta estruturada ou lista de lacunas | Recomendado | Sim | Não necessariamente crítico | Diagnóstico, não implementação de testes |
@@ -146,10 +146,10 @@ Critérios conceituais para classificação de risco:
 
 ## 10. Análise visual/exploratória futura
 
-- `visual_qa_analysis` poderá, no futuro, analisar `screenshot`, `image` ou outra evidência visual (ex.: trace do Playwright).
-- **Não existe suporte implementado** para análise visual hoje nem nesta fase de planejamento.
+- `visual_qa_analysis` existe hoje como stub conservador para `screenshot`, `image`, `pdf` e `playwright_trace`.
+- **Não existe análise visual real automática** nesta versão; o stub exige revisão humana e nunca libera release gate sozinho.
 - Essa capacidade pode exigir um **provider multimodal** — nenhum provider atual do PedroCore (Mock, Gemini, OpenAI, Claude, DeepSeek, Grok) está configurado ou testado para esse uso nesta fase.
-- QA Intelligence **não deve navegar no sistema sozinha** nesta fase — não há automação de navegador prevista.
+- QA Intelligence **não deve navegar no sistema sozinha** no fluxo padrão — Playwright é opt-in, read-only e bloqueia ações interativas.
 - QA Intelligence **não deve clicar, editar ou executar ações automaticamente** sem uma fase própria e dedicada de planejamento para isso.
 - Exploração visual autônoma (ex.: um agente que navega e testa por conta própria) deve ser **planejada separadamente**, depois que a base textual/estruturada (relatórios, logs, diagnóstico) estiver madura.
 
@@ -177,10 +177,10 @@ QA Intelligence é um caso de uso que consumiria os módulos já documentados em
 
 - **Task Router** identificaria o `task_type` de QA (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `visual_qa_analysis`, etc.) e decidiria a estratégia (Mock permitido ou não, resposta estruturada obrigatória).
 - **Project Context** aplicaria os limites do projeto externo (ex.: FinGuard: `read_only: true`, `can_execute_commands: false`, `can_write_files: false`, `allowed_tasks` incluindo as tarefas de QA).
-- **Artifact Reader** futuro receberia/leria os artefatos de QA em modo somente leitura (nesta fase, apenas via payload).
+- **Artifact Reader** opt-in pode ler artefatos allowlisted em modo somente leitura, mas nunca para FinGuard; o padrão continua payload.
 - **Prompt Builder** montaria um prompt especializado de QA, combinando o artefato, o contexto do projeto e o schema de resposta estruturada esperado.
 - **Provider Orchestration** escolheria um provider adequado (real, para análises confiáveis; Mock apenas para teste).
 - **Structured Responses** validaria que a resposta segue o schema de QA descrito na seção 6.
 - **Audit/logs** registraria a análise realizada (origem, tarefa, provider, fallback, criticidade), sem armazenar dados sensíveis do conteúdo analisado.
 
-**Esses módulos ainda são planejados.** Nenhum deles está implementado em código — a relação acima é conceitual, para orientar como QA Intelligence se encaixaria na arquitetura-alvo quando (e se) ela vier a ser implementada.
+**Estado atual:** Task Router, Project Context, Prompt Builder, Artifact Service, Artifact Reader opt-in, QA Analysis, QA Response, Orchestration e Audit já existem em código. Provider Orchestration avançada, logs persistentes e QA visual real continuam opcionais/futuros.

@@ -4,7 +4,9 @@ Atualizado em: 05/07/2026
 
 ## Status oficial
 
-Reformulação documental (`PEDROCORE-REPLAN-01`) concluída; MVP backend (`PEDROCORE-IMPLEMENT-01`, `02` e `03`) implementado e commitado; consolidação documental `PEDROCORE-FINALIZE-04` commitada em `ee2ac68`; tag anotada `v6.0.0` criada apontando para `ee2ac68`. Este é o único documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
+Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag final local e aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`. `v6.0.0` permanece como tag do MVP backend e aponta para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`). Este é o documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
+
+DOCFIX atual: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
 
 ## Versão atual de produto
 
@@ -37,7 +39,7 @@ C:\Projetos\pedrocore-ia
 ## Concluído
 
 - Backend FastAPI com estrutura multi-provider (`BaseAIProvider`, `ProviderRegistry`, 6 providers: Mock, Gemini, OpenAI, Claude, DeepSeek, Grok).
-- Endpoints `/`, `/health`, `POST /api/chat`, `GET /api/providers`.
+- Endpoints `/`, `/health`, `POST /api/chat`, `GET /api/providers`, `POST /api/orchestrate`.
 - Fallback automático para `MockProvider` quando um provider real falha ou não está configurado.
 - Frontend React/Vite/TypeScript com histórico local (`localStorage`), feedback gostei/não gostei, painel de configuração de providers e identidade visual aplicada (V5.1.9).
 - Testes de backend cobrindo chat mock, fallback por provider desconhecido, validação de payload e listagem de providers.
@@ -51,24 +53,24 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — QA textual foundation: policy de `allowed_tasks` (`ChatResponse.task_allowed_for_project`), artefatos textuais por payload (`apps/api/app/modules/artifacts/`, `ChatRequest.artifacts`, `ChatResponse.artifact_count`/`artifact_types`/`artifact_warnings`), Prompt Builder com seção `[Artefatos enviados]`, QA response skeleton seguro (`apps/api/app/modules/qa_response/`, `ChatResponse.qa_skeleton`, sempre `status="not_analyzed"`/`can_advance=False`/`confidence=0.0`, sem análise real), warnings específicos de QA textual e testes de contrato. Testes backend: `66 passed, 2 warnings`. Commitada em `e115672`.
 - `PEDROCORE-IMPLEMENT-03` — MVP backend (Blocos 1–7): QA textual real inicial (heurística local determinística em `apps/api/app/modules/qa_analysis/`, skeleton preenchido com `analysis_source="local_text_heuristic"`), release gate conservador (`evaluate_release_gate` com `blocked_reason`), `POST /api/orchestrate` (pipeline centralizado em `apps/api/app/modules/orchestration/`, consumido também pelo `/api/chat`), safe mode (`allow_real_provider=false` por padrão, `PROVIDER_REAL_BLOCKED`), autenticação interna opcional (`PEDROCORE_INTERNAL_API_KEY` + `X-PedroCore-Api-Key`, somente `/api/orchestrate`), warning/error contract padronizado (`apps/api/app/modules/contracts/`) e audit não persistente completo (`latency_ms`, `provider_used`, `safe_mode_blocked`, `risk_level`, `can_advance`). Limites de artifacts (10 / 20k / 100k) e rejeição de campos de path sem leitura de disco. Testes backend: `125 passed, 2 warnings`. Commitada em `6ed4c41`.
 - `PEDROCORE-FINALIZE-04` — consolidação documental do MVP backend, exemplos de API e preparação/registro da tag. Commitada em `ee2ac68`; tag anotada `v6.0.0` criada com a mensagem `v6.0.0 - MVP backend PedroCore IA`, apontando para `ee2ac68`.
+- `PEDROCORE-IMPLEMENT-04` — expansão operacional segura (Blocos 8–11): contrato FinGuard por payload fake, Artifact Reader controlado, QA visual stub, agente exploratório assistido. Commitada em `18d1fc5`.
+- `PEDROCORE-IMPLEMENT-05` — flags/guards/testes opt-in, FinGuard controlado com policy enforcement forte, reader consolidado, OCR local opt-in, multimodal guard e Playwright read-only opt-in. Commitada nas subfrentes `33a7dc2`, `790e1b4`, `70afba1`, `b3f1be5`, `2670040`, `3bcfa05`.
+- `PEDROCORE-FINALIZE-06` — enforcement final do release gate, documentação final e tag local `v7.0.0`. HEAD esperado: `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
 
 ## Em andamento
 
 Nenhuma frente em andamento — projeto finalizado localmente. Testes backend finais: `216 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (cliente FinGuard, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
 
-## Ainda não existe
+## Ainda não existe / permanece opcional
 
-- Artifact Reader em uso real — o módulo existe mas fica **desabilitado por padrão** (`PEDROCORE_ARTIFACT_READER_ENABLED=false`); sem allowlist configurada, path em payload continua rejeitado (`ARTIFACT_PATH_REJECTED`); leitura de caminhos do FinGuard é bloqueada em qualquer configuração.
+- Cliente HTTP implementado no repositório FinGuard — o lado PedroCore já aceita o contrato, mas o cliente no FinGuard é frente separada.
 - QA Intelligence com IA real — a análise QA atual é heurística textual local determinística (`local_text_heuristic`); não usa provider real, não substitui validação humana e não executa testes.
 - Execução de comandos pelo PedroCore — `suggested_commands` são apenas strings seguras, nada é executado; o agente exploratório é assistido (plano/manual) e nunca executa ações.
-- QA visual real / OCR / Playwright — artefatos visuais geram apenas stub conservador com exigência de revisão humana (`ocr_attempted=false`, `provider_attempted=false`, `playwright_attempted=false`).
-- Integração real executando no FinGuard — o contrato existe do lado do PedroCore com payload fake; o cliente HTTP no repositório do FinGuard é frente separada; nenhuma leitura de repositório/pasta do FinGuard existe.
-- Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim mock/fallback nunca aprovam release gate.
-- Bloqueio duro por policy de `allowed_tasks` — `task_allowed_for_project=False` apenas sinaliza.
-- Provider Orchestration avançada (seleção por task_type/custo/qualidade).
+- QA visual real multimodal — artefatos visuais geram stub conservador; OCR e Playwright existem como recursos opt-in/controlados, não como teste padrão nem release gate automático.
+- Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim provider real nunca aprova release gate sozinho.
+- Provider Orchestration avançada por custo/qualidade/task.
 - Persistência em banco de dados / log persistente (audit é não persistente, devolvido só na resposta). Dashboard (Bloco 12): **cancelado por decisão de produto**, não é pendência.
 - Qualquer mudança de frontend/design — preservados sem alteração.
-- Blocos 13–15 finais (documentação final, testes finais completos, fechamento Git/tag futuro).
 
 ## Proibido nesta fase
 
@@ -85,16 +87,14 @@ Nenhuma frente em andamento — projeto finalizado localmente. Testes backend fi
 ## Riscos atuais
 
 - **Documentação duplicada:** ainda existem pares de arquivos conflitantes em `docs/` (ex.: `docs/03_ROADMAP.md` vs `docs/03-versoes/ROADMAP.md`, `docs/09-status/STATUS_ATUAL.md` desatualizado) que não foram removidos nesta etapa, apenas sinalizados.
-- **`GEMINI_API_KEY` configurada localmente:** o `.env` real do backend tem a chave do Gemini preenchida; qualquer execução do servidor com `provider=gemini` gera uma chamada real. Isso não foi alterado e deve ser tratado com cuidado em qualquer teste manual futuro.
+- **Provider real autorizado explicitamente:** qualquer execução manual com provider real, chave/configuração disponível e `allow_real_provider=true` pode gerar chamada externa/custo. Testes padrão devem usar `mock` ou `local_qa`.
 - **Fallback Mock silencioso:** o fallback automático para `MockProvider` evita quebrar a interface, mas pode mascarar falhas reais de provider se o consumidor não checar explicitamente o campo `fallback_used` — especialmente relevante para futuros consumidores externos e para qualquer caso de uso de QA (ver Decisão Técnica 014).
-- **Resposta ainda não estruturada:** a API já aceita e sinaliza `task_type` e `task_criticality`, mas a resposta em si continua sendo texto livre (`answer: str`); `requires_structured_response` é apenas um indicador, sem validação de schema real, o que ainda limita o uso por sistemas externos que precisem consumir a resposta programaticamente.
+- **Structured response parcial:** `/api/orchestrate` já retorna `qa`, `release_gate`, `visual_qa_analysis`, `exploration`, `warnings` e `audit`, mas `answer` continua texto livre e provider orchestration avançada ainda não existe.
 
-## Próximos passos
+## Próximos passos opcionais
 
-- Validar e commitar `PEDROCORE-IMPLEMENT-04` (Blocos 8–11), sem mover/recriar a tag `v6.0.0`.
-- Bloco 13 — Documentação final; Bloco 14 — Testes finais completos; Bloco 15 — Fechamento Git/tag futuro.
-- Integração real no repositório FinGuard (cliente HTTP consumindo o contrato) em frente separada.
-- OCR real, QA visual real com provider multimodal e Playwright real em frentes futuras, com aprovação explícita.
-- Planejar enforcement real da policy de `allowed_tasks` (hoje só sinaliza via warning, não bloqueia).
-- Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica.
-- Saneamento de documentação duplicada/legada permanece como pendência futura, a ser tratada em frente específica (ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md`).
+- Cliente HTTP no repositório FinGuard (frente separada, com aprovação própria).
+- Push para GitHub/portfólio e deploy.
+- Execução real de OCR, QA visual multimodal e Playwright somente com flags, dependências instaladas manualmente e revisão humana.
+- Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica; ainda assim não aprova release gate sozinho.
+- Saneamento adicional de documentação histórica/duplicada, se o usuário quiser reduzir ruído do vault.

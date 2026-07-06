@@ -1,8 +1,8 @@
-# Contrato de Orquestração (Planejado)
+# Contrato de Orquestração
 
-> Parte da frente `PEDROCORE-REPLAN-01B`. Este documento especifica o contrato **futuro** de entrada e saída para sistemas externos consumirem o PedroCore IA como orquestrador central. Nada aqui está implementado: não existe endpoint novo, schema Pydantic, service ou roteador de tarefa no código hoje. O único contrato que existe de fato hoje é o descrito na seção "Contrato atual", para referência e contraste.
+> Nota DOCFIX: este documento nasceu como planejamento da frente `PEDROCORE-REPLAN-01B`. Em `v7.0.0`, o lado PedroCore já implementa `/api/orchestrate`, `ChatRequest`, `OrchestrationService`, Task Router, Project Context, Prompt Builder, Artifact Service, QA textual, release gate, warnings estruturados e audit. O estado atual completo está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]].
 
-## Contrato atual (referência — já implementado)
+## Contrato legado (referência — já implementado)
 
 Hoje, `POST /api/chat` aceita:
 
@@ -30,13 +30,13 @@ E devolve:
 }
 ```
 
-Isso continua funcionando sem alteração. O contrato de orquestração abaixo é um **novo contrato planejado**, que coexistiria (futuramente) com o atual, não o substitui nesta fase.
+Isso continua funcionando sem alteração. O contrato operacional atual coexiste com esse endpoint legado em `POST /api/orchestrate`.
 
 ---
 
-## 1. Contrato geral de orquestração (planejado)
+## 1. Contrato geral de orquestração
 
-Exemplo conceitual de requisição futura de um sistema externo para o PedroCore:
+Exemplo conceitual de requisição de um sistema externo para o PedroCore. O payload atual usa `provider` e `model`, não `provider_preference`/`model_preference`; veja [[../10-api/EXEMPLOS_API_MVP]] para exemplos executáveis:
 
 ```json
 {
@@ -62,7 +62,7 @@ Exemplo conceitual de requisição futura de um sistema externo para o PedroCore
 }
 ```
 
-**Importante:** este é um contrato planejado. Não existe ainda no código do PedroCore. Nenhum endpoint aceita este payload hoje.
+**Importante:** o endpoint atual é `POST /api/orchestrate`. Nem todos os campos conceituais deste documento viraram contrato Pydantic literal; o mapa canônico atual está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]].
 
 ## 2. Campos obrigatórios e opcionais
 
@@ -79,7 +79,7 @@ Exemplo conceitual de requisição futura de um sistema externo para o PedroCore
 | Campo | Função |
 |---|---|
 | `source` | Subsistema ou módulo específico dentro do `origin_system` (ex.: `qa-automation` dentro do FinGuard). Ajuda a refinar o contexto sem exigir um novo `origin_system`. |
-| `context` | Objeto livre com informações do projeto/ambiente/módulo/rota relevantes para a tarefa (ex.: `project`, `environment`, `module`, `route`). Usado pelo futuro Project Context. |
+| `context` | Objeto livre com informações do projeto/ambiente/módulo/rota relevantes para a tarefa (ex.: `project`, `environment`, `module`, `route`). Usado pelo Project Context atual. |
 | `artifacts` | Lista de artefatos anexados à solicitação (ver contrato de artefatos, seção 6). |
 | `provider_preference` | Preferência de provider/estratégia de roteamento (ver seção 7). |
 | `model_preference` | Preferência de modelo específico dentro do provider escolhido, quando aplicável. |
@@ -87,9 +87,9 @@ Exemplo conceitual de requisição futura de um sistema externo para o PedroCore
 | `priority` | Prioridade da solicitação (ex.: `low`, `normal`, `high`), para uso futuro em filas ou roteamento diferenciado — não implementado. |
 | `metadata` | Campo livre para informações adicionais que o sistema de origem queira anexar, sem impacto na lógica de roteamento nesta fase. |
 
-## 3. Tipos de tarefa planejados (`task_type`)
+## 3. Tipos de tarefa (`task_type`)
 
-Todos os `task_type` abaixo são **planejados**, para orientar o desenho futuro do Task Router (`PEDROCORE-REPLAN-01C`). Nenhum está implementado.
+Esta seção mistura tipos históricos planejados e tipos implementados. O conjunto implementado atual esta documentado em [[../00_MAPEAMENTO_GERAL_PEDROCORE]]; exemplos como `project_context_answer`, `log_analysis`, `roadmap_review` e `visual_qa_analysis` permanecem conceituais.
 
 ### `general_chat`
 - **Finalidade:** conversa geral, equivalente ao uso atual do chat.
@@ -128,7 +128,7 @@ Todos os `task_type` abaixo são **planejados**, para orientar o desenho futuro 
 - **Entrada esperada:** `message` + `artifacts` (relatório em `type: "markdown"` ou `"qa_report"`) + `context` do projeto/ambiente.
 - **Saída esperada:** resposta estruturada (ver `CONTRATO_QA_INTELLIGENCE.md`).
 - **Pode usar Mock:** apenas para teste de integração/desenvolvimento, nunca para uma análise real considerada válida.
-- **Exige provider real:** sim, para qualquer análise que será tratada como confiável (Decisão Técnica 020).
+- **Exige provider real:** não no estado atual; análise confiável de release usa `local_qa` heurístico local e provider real exige revisão humana.
 - **Formato de resposta:** estruturada (obrigatório).
 
 ### `qa_failure_diagnosis`
@@ -136,7 +136,7 @@ Todos os `task_type` abaixo são **planejados**, para orientar o desenho futuro 
 - **Entrada esperada:** `message` descrevendo a falha + `artifacts` (log, saída de terminal, relatório) + `context`.
 - **Saída esperada:** resposta estruturada com `probable_causes` e `suggested_commands` (apenas sugestão, nunca execução — ver seção 5).
 - **Pode usar Mock:** apenas para teste, nunca como diagnóstico real.
-- **Exige provider real:** sim, para diagnóstico confiável.
+- **Exige provider real:** não no estado atual; diagnóstico textual local usa `local_qa`/heurística local e provider real exige revisão humana.
 - **Formato de resposta:** estruturada (obrigatório).
 
 ### `visual_qa_analysis`
@@ -144,7 +144,7 @@ Todos os `task_type` abaixo são **planejados**, para orientar o desenho futuro 
 - **Entrada esperada:** `message` + `artifacts` do tipo `screenshot`/`image` + `context`.
 - **Saída esperada:** resposta estruturada descrevendo observações visuais, nunca um veredito automático definitivo.
 - **Pode usar Mock:** apenas para teste de integração.
-- **Exige provider real:** sim, e um provider com suporte a análise de imagem (a definir em fase futura).
+- **Exige provider real:** QA visual real exigiria provider multimodal e aprovação futura; hoje há stub conservador sem envio real.
 - **Formato de resposta:** estruturada (obrigatório).
 
 ### `log_analysis`
@@ -152,7 +152,7 @@ Todos os `task_type` abaixo são **planejados**, para orientar o desenho futuro 
 - **Entrada esperada:** `message` + `artifacts` do tipo `log` ou `terminal_output`.
 - **Saída esperada:** resposta estruturada com resumo e possíveis causas.
 - **Pode usar Mock:** apenas para teste.
-- **Exige provider real:** sim, para análise confiável.
+- **Exige provider real:** não no estado atual; provider real é sempre opt-in e exige revisão humana.
 - **Formato de resposta:** estruturada (recomendado).
 
 ### `roadmap_review`
@@ -168,7 +168,7 @@ Todos os `task_type` abaixo são **planejados**, para orientar o desenho futuro 
 - **Entrada esperada:** `message` + `artifacts` (relatórios de QA, resultados de smoke/E2E) + `context`.
 - **Saída esperada:** resposta estruturada com `can_advance` como **sugestão**, nunca como aprovação automática vinculante.
 - **Pode usar Mock:** apenas para teste, nunca para uma decisão real de release.
-- **Exige provider real:** sim, obrigatoriamente, dado o caráter crítico da tarefa.
+- **Exige provider real:** não no estado atual; release gate só aprova automaticamente com `local_qa` e evidência textual limpa. Provider real/externo nunca aprova sozinho.
 - **Formato de resposta:** estruturada (obrigatório).
 
 ### `artifact_summary`
@@ -210,9 +210,9 @@ A resposta estruturada específica de QA está detalhada em `CONTRATO_QA_INTELLI
 
 A resposta estruturada específica para análise de QA (`status`, `risk_level`, `can_advance`, `confidence`, `suggested_commands`, etc.) está documentada em [`CONTRATO_QA_INTELLIGENCE.md`](./CONTRATO_QA_INTELLIGENCE.md), por ser um caso de uso mais específico e sensível.
 
-## 6. Contrato de artefatos (planejado)
+## 6. Contrato de artefatos
 
-Tipos de `artifact.type` planejados:
+Tipos de `artifact.type` planejados/aceitos por contrato. O processamento atual aceita artefatos textuais por payload, rejeita paths por padrão e trata artefatos visuais como stub conservador:
 
 | Tipo | Como é recebido | Texto ou arquivo | Pode conter dado sensível | Restrição de tamanho | Observação de segurança |
 |---|---|---|---|---|---|
@@ -226,41 +226,41 @@ Tipos de `artifact.type` planejados:
 
 ### Regras desta fase (obrigatórias)
 
-- O PedroCore **ainda não lê arquivos externos automaticamente**. Nenhum caminho de pasta ou repositório é acessado.
-- O consumo inicial planejado é **exclusivamente por conteúdo enviado no payload** (`artifact.content`), nunca por referência a caminho de arquivo em disco de outro projeto.
-- Integração real com caminho/pasta de outros projetos (ex.: ler `qa/reports/` do FinGuard diretamente do disco) é **fase futura**, fora do escopo de `PEDROCORE-REPLAN-01B`.
+- O PedroCore rejeita paths por padrão. O Artifact Reader existe como opt-in controlado, default-off, allowlisted e bloqueado para qualquer origem/caminho FinGuard.
+- O consumo padrão é **exclusivamente por conteúdo enviado no payload** (`artifact.content`), nunca por referência a caminho de arquivo em disco de outro projeto.
+- Integração real com caminho/pasta de outros projetos (ex.: ler `qa/reports/` do FinGuard diretamente do disco) continua proibida; FinGuard deve enviar conteúdo por payload.
 - Relatórios de QA do FinGuard hoje são **Markdown livre, não JSON estruturado** — qualquer parser futuro para `qa_report`/`markdown` deve ser tolerante a variações de formatação, não pode assumir um schema rígido.
 
-## 7. Provider preference e roteamento (planejado)
+## 7. Provider preference e roteamento
 
-Valores planejados para `provider_preference`:
+Este documento usava `provider_preference` como nome conceitual. O schema atual usa `provider` e `model`.
 
-- `auto` — permite que o futuro Task Router escolha o provider mais adequado à tarefa (ainda não implementado; hoje não há Task Router).
+- `auto` — permanece conceitual; o Task Router atual define estratégia da tarefa, mas não faz seleção automática avançada por custo/qualidade.
 - `mock` — força o uso do `MockProvider`. Adequado para tarefas simples, testes e desenvolvimento.
 - `gemini`, `openai`, `claude`, `deepseek`, `grok` — força um provider real específico (sujeito à disponibilidade de chave configurada).
 
 ### Regras
 
-- `auto` deve, no futuro, permitir escolha automática pelo Task Router com base no `task_type` e em critérios ainda a definir (custo, latência, capacidade exigida).
+- `auto` pode, no futuro, permitir escolha automática com base no `task_type` e em critérios ainda a definir (custo, latência, capacidade exigida).
 - `mock` pode ser usado livremente em tarefas simples (`general_chat`, testes, desenvolvimento).
 - `mock` **não deve validar tarefas críticas de QA silenciosamente** — ou seja, para `task_type` como `qa_report_analysis`, `qa_failure_diagnosis` e `release_gate_review`, uma resposta via Mock nunca pode ser apresentada como uma análise real sem aviso explícito.
-- Providers reais exigem chave configurada **e**, no desenho técnico futuro, um controle explícito adicional (ex.: flag de ambiente ou confirmação) para reduzir risco de chamada acidental (Decisão Técnica 013).
+- Providers reais exigem chave/configuração **e** controle explícito por request (`allow_real_provider=true`) para reduzir risco de chamada acidental (Decisão Técnica 013).
 - Se `fallback_used = true` em uma tarefa crítica, a resposta **não deve ser tratada como validação confiável** pelo sistema de origem — deve ser tratada como indisponibilidade, não como aprovação/reprovação real.
 
-## 8. Regras de fallback (planejado, à luz do comportamento atual)
+## 8. Regras de fallback
 
-- O fallback atual (implementado hoje em `ChatService`) existe e cai automaticamente para `MockProvider` quando um provider real falha ou não está configurado.
+- O fallback atual é centralizado no pipeline de orquestração e cai para `MockProvider` quando um provider real falha, não está configurado ou é bloqueado pelo safe mode.
 - Isso é bom para a experiência de chat conversacional — evita quebrar a interface com erro bruto.
 - **Mas é perigoso para tarefas críticas.** Se aplicado sem aviso a `qa_report_analysis`, `qa_failure_diagnosis` ou `release_gate_review`, pode fazer o sistema de origem interpretar uma resposta simulada como uma análise real.
-- Regras planejadas para tarefas críticas:
+- Regras atuais para tarefas críticas:
   - A resposta deve indicar claramente `fallback_used: true` e um `warning` explícito no array `warnings`.
-  - Para essas tarefas, um fallback para Mock deve gerar **warning forte** e, dependendo do desenho futuro, pode **bloquear a conclusão** da tarefa em vez de devolver uma resposta simulada como se fosse válida.
+  - Para essas tarefas, um fallback para Mock gera **warning forte** e bloqueia release gate quando aplicável.
   - Essa distinção entre "fallback aceitável" (chat geral) e "fallback perigoso" (tarefa crítica) é uma decisão de arquitetura a ser refinada em `PEDROCORE-REPLAN-01C`/`01D`, mas o princípio já está fixado aqui e na Decisão Técnica 020.
 
 ## 9. Relação com o FinGuard (reforço)
 
 - O FinGuard é projeto externo e independente.
 - O PedroCore não altera o FinGuard, não roda o QA Automation do FinGuard, não roda migrations do FinGuard, não roda seed/reset do FinGuard e não comita no FinGuard.
-- O PedroCore poderá, no futuro, receber relatórios de QA do FinGuard como `artifacts` (payload), nunca por acesso direto ao repositório do FinGuard.
-- O QA Automation do FinGuard continua pertencendo ao FinGuard; apenas `QA-AUTOMATION-01G` (agente exploratório assistido por IA) foi delegado ao PedroCore como caso de uso futuro — ver `CONTRATO_QA_INTELLIGENCE.md`.
+- O PedroCore pode receber relatórios de QA do FinGuard como `artifacts` (payload), nunca por acesso direto ao repositório do FinGuard.
+- O QA Automation do FinGuard continua pertencendo ao FinGuard; o PedroCore oferece QA textual local, release gate conservador e exploração assistida/manual do lado PedroCore — ver `CONTRATO_QA_INTELLIGENCE.md`.
 - O PedroCore não calcula números financeiros oficiais do FinGuard.

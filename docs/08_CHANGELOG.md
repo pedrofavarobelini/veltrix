@@ -2,6 +2,30 @@
 
 Atualizado em: 05/07/2026
 
+## PEDROCORE-DOCFIX-OBSIDIAN-07 — Mapeamento completo e saneamento documental
+
+Status: documentação atualizada nesta tarefa, sem alteração de código de produção.
+
+### Motivo
+
+Após o fechamento local `v7.0.0`, alguns documentos históricos ainda descreviam como "futuro" ou "não implementado" recursos já existentes no lado PedroCore, como `/api/orchestrate`, Task Router, Project Context, Prompt Builder, QA textual local, Artifact Reader opt-in, policy enforcement forte e integração FinGuard controlada.
+
+### Corrigido
+
+- Criado `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` com visão completa de endpoints, módulos, fluxo, QA textual, release gate, policy, providers, safe mode, Artifact Reader, Visual QA, OCR, Playwright, exploration, audit, integração FinGuard, testes, estado Git/versionamento, pendências, riscos e melhorias opcionais.
+- Criados MOCs Obsidian: `MOC_PEDROCORE_IA`, `MOC_ARQUITETURA`, `MOC_SEGURANCA`, `MOC_QA_RELEASE_GATE`, `MOC_INTEGRACOES`, `MOC_TESTES`, `MOC_VERSOES_STATUS`.
+- `README.md`, `VERSION.md` e `docs/09_STATUS_ATUAL.md` alinhados com `v7.0.0`.
+- Documentos históricos de contratos, arquitetura, QA Intelligence, visão geral e roadmap receberam notas de status atual para separar planejamento antigo do estado implementado.
+
+### Não alterado
+
+- Sem mudança de código de produção.
+- Sem mudança de testes.
+- Sem provider real.
+- Sem leitura/acesso ao FinGuard.
+- Sem `.env`.
+- Sem push, merge, commit ou tag.
+
 ## PEDROCORE-IMPLEMENT-05 + PEDROCORE-FINALIZE-06 — Integrações reais controladas e fechamento final local
 
 Status: implementadas e commitadas em subfrentes (`33a7dc2` 05A, `790e1b4` 05B, `70afba1` 05C, `b3f1be5` 05D, `2670040` 05E, `3bcfa05` 05F, `e08c519` 06A, + commit documental 06B). Fechamento final: `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.

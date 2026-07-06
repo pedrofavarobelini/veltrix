@@ -82,7 +82,7 @@ Para payloads com origem FinGuard:
 - provider real permanece bloqueado por padrão (`PROVIDER_REAL_BLOCKED` quando solicitado sem autorização);
 - release gate continua conservador (mock/fallback/risco alto/evidência insuficiente sempre bloqueiam);
 - nenhum comando é executado; nenhuma escrita é permitida; nenhum banco é acessado;
-- task fora da lista permitida gera `PROJECT_TASK_NOT_ALLOWED` (warning, sem bloqueio duro).
+- task fora da lista permitida gera `PROJECT_TASK_NOT_ALLOWED`; fluxos críticos não permitidos e tasks/payloads perigosos são bloqueados por policy forte no contrato final controlado.
 
 ## 7. Limitações
 

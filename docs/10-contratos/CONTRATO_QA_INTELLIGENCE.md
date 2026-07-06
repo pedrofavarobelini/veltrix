@@ -1,14 +1,14 @@
-# Contrato de QA Intelligence (Planejado)
+# Contrato de QA Intelligence
 
-> Parte da frente `PEDROCORE-REPLAN-01B`. Este documento especifica o formato **futuro** de resposta estruturada para tarefas de QA e a relação de limites entre o PedroCore e o FinGuard. Nada aqui está implementado: não existe QA Intelligence, Artifact Reader real ou análise automática de QA no código hoje. O PedroCore continua sendo, hoje, apenas uma API de chat multi-provider (`POST /api/chat`, `GET /api/providers`).
+> Nota DOCFIX: este documento nasceu como planejamento da frente `PEDROCORE-REPLAN-01B`. Em `v7.0.0`, QA textual local, Artifact Reader opt-in, `/api/orchestrate`, `qa`, `release_gate`, `visual_qa_analysis` stub e `exploration` assistido/manual já existem no lado PedroCore. Use [[../00_MAPEAMENTO_GERAL_PEDROCORE]] para o contrato atual.
 
 ## Por que este documento existe
 
-O mapeamento do ecossistema identificou que a parte de IA exploratória/visual/inteligente do QA Automation do FinGuard foi delegada ao PedroCore como caso de uso futuro (`QA-AUTOMATION-01G`). Este documento planeja o contrato de resposta que esse caso de uso usaria, para orientar o desenho técnico das fases seguintes (`01C`, `01D`), sem implementar nada agora.
+O mapeamento do ecossistema identificou que a parte de IA exploratória/visual/inteligente do QA Automation do FinGuard seria responsabilidade do PedroCore. O contrato evoluiu para uma implementação segura: QA textual local, release gate conservador e exploração assistida/manual, sem automação destrutiva e sem acesso direto ao FinGuard.
 
-## 5. Resposta estruturada para QA Intelligence (planejada)
+## 5. Resposta estruturada para QA Intelligence
 
-Formato conceitual de resposta estruturada para tarefas de QA (`qa_report_analysis`, `qa_failure_diagnosis`, `visual_qa_analysis`, `release_gate_review`):
+Formato base de resposta estruturada para tarefas de QA (`qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`). `visual_qa_analysis` existe como stub conservador:
 
 ```json
 {
@@ -44,19 +44,19 @@ O PedroCore, nesta visão de arquitetura, **diagnostica e sugere** — ele nunca
 
 ### PedroCore não executa comandos automaticamente
 
-`suggested_commands` é sempre uma lista de texto/sugestão. O PedroCore, nesta arquitetura planejada, **não tem e não terá nesta fase** capacidade de executar comandos, scripts, testes ou qualquer ação dentro do FinGuard ou de qualquer outro sistema externo. Qualquer execução real permanece exclusivamente no sistema de origem.
+`suggested_commands` é sempre uma lista de texto/sugestão. O PedroCore **não executa comandos, scripts, testes ou qualquer ação dentro do FinGuard ou de qualquer outro sistema externo**. Qualquer execução real permanece exclusivamente no sistema de origem.
 
 ## Relação com o FinGuard (QA Intelligence)
 
 - O QA Automation do FinGuard (validação de API, backend, frontend, rotas, banco de teste, Prisma, Playwright, smoke tests, E2E, relatórios e evidências) está encerrado em seu escopo próprio e continua pertencendo integralmente ao FinGuard.
-- `QA-AUTOMATION-01G` — o agente exploratório assistido por IA — foi delegado ao PedroCore como caso de uso futuro (esta documentação), não implementado.
-- O PedroCore poderá futuramente receber relatórios de QA do FinGuard como artefatos (`type: "qa_report"` ou `"markdown"`) via payload — nunca por leitura direta do repositório do FinGuard.
+- O agente exploratório assistido existe no lado PedroCore como plano/manual (`exploration`), com `can_execute_actions=false`.
+- O PedroCore pode receber relatórios de QA do FinGuard como artefatos (`type: "qa_report"` ou `"markdown"`) via payload — nunca por leitura direta do repositório do FinGuard.
 - Os relatórios de QA atuais do FinGuard são **Markdown livre, não JSON estruturado**. Qualquer análise futura precisa ser tolerante a essa variação, não pode assumir um schema fixo do lado do FinGuard.
 - O PedroCore não roda o QA Automation do FinGuard, não roda migrations, não roda seed/reset, não executa testes do FinGuard e não comita no FinGuard.
 - O PedroCore **não calcula números financeiros oficiais** do FinGuard — pode explicar, resumir, analisar e sugerir a partir de artefatos recebidos, mas os cálculos financeiros permanecem exclusivamente no FinGuard.
 
 ## Uso seguro de providers reais nesta análise
 
-- Para qualquer resultado que será tratado como análise real (não apenas teste de integração), a tarefa exige provider real configurado, nunca apenas `MockProvider` (Decisão Técnica 020).
+- Para release gate no estado atual, a única aprovação automática permitida vem de `local_qa` com evidência textual limpa; provider real/externo exige revisão humana e nunca aprova sozinho. `MockProvider` nunca valida QA/release real.
 - Se a resposta foi gerada com `fallback_used: true`, o `status` recomendado é `blocked` (ou, no mínimo, um `warning` forte e explícito), nunca `pass` ou `fail` apresentados como se fossem conclusivos.
 - `confidence` deve refletir isso: uma resposta via fallback deve ter `confidence` baixo ou o campo deve ser omitido/nulo, nunca um valor alto que sugira confiabilidade.

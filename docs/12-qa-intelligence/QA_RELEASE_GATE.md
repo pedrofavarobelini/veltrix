@@ -1,6 +1,6 @@
-# QA Intelligence — Release Gate Assistido (`release_gate_review`) — Planejado
+# QA Intelligence — Release Gate Assistido (`release_gate_review`)
 
-> Parte da frente `PEDROCORE-REPLAN-01D`. Caso de uso **planejado**, não implementado. Nenhum endpoint, lógica de decisão de release ou mecanismo de bloqueio existe hoje no código do PedroCore.
+> Nota DOCFIX: este caso de uso foi implementado no lado PedroCore em `POST /api/orchestrate` e `/api/chat`, usando `task_type="release_gate_review"`. O release gate é conservador e só aprova com `local_qa` + evidência textual limpa; não executa merge, deploy, tag ou teste.
 
 ## Objetivo
 

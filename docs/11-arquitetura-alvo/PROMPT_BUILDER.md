@@ -1,10 +1,10 @@
-# Prompt Builder (Planejado)
+# Prompt Builder
 
-> Parte da frente `PEDROCORE-REPLAN-01C`. O Prompt Builder aqui descrito é um módulo **conceitual/planejado**. Ele não existe no código hoje. Hoje, cada provider monta seu próprio prompt via `BaseAIProvider.build_prompt` (`apps/api/app/modules/providers/base.py`), um template fixo por `mode`. Este documento planeja centralizar essa responsabilidade em um módulo dedicado, sem implementar nada nesta etapa.
+> Nota DOCFIX: este documento nasceu como planejamento. Em `v7.0.0`, o módulo existe em `apps/api/app/modules/prompt_builder/`. Use [[../00_MAPEAMENTO_GERAL_PEDROCORE]] para o estado atual completo.
 
-## Responsabilidade futura
+## Responsabilidade atual
 
-O Prompt Builder seria responsável por montar o prompt final enviado ao provider, combinando:
+O Prompt Builder é responsável por montar o prompt final enviado ao provider, combinando:
 
 - `system_prompt` (base ou customizado pelo sistema de origem).
 - `task_type` (e a estratégia definida pelo Task Router para essa tarefa).
@@ -23,4 +23,4 @@ Resumindo a divisão de responsabilidades: **Task Router decide, Prompt Builder 
 
 ## Estado de implementação
 
-Nenhuma parte do Prompt Builder dedicado está implementada. O que existe hoje é o método `build_prompt` dentro de `BaseAIProvider`, compartilhado por todos os providers, mas limitado a `system_prompt` + `mode` + `message` — sem suporte a `task_type`, `context`, `artifacts` ou formato de resposta estruturado. A evolução para um Prompt Builder dedicado e mais robusto é planejamento desta fase, não implementação.
+Implementado em `apps/api/app/modules/prompt_builder/`. Ele monta `enriched_system_prompt` com sistema, tarefa, origem, limites do projeto, contexto, metadata, artefatos e regras de segurança. `BaseAIProvider.build_prompt` permanece como suporte legado dos providers.

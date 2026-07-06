@@ -1,5 +1,7 @@
 # PedroCore IA — Decisões Técnicas
 
+> Nota DOCFIX: este arquivo preserva decisões tomadas ao longo das frentes. Algumas decisões antigas usam linguagem de futuro porque foram registradas antes de `v7.0.0`; o estado atual canônico está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]].
+
 ## Decisão 001 — Não treinar IA do zero
 
 O projeto cria uma camada/orquestrador de IA, não um modelo próprio.
@@ -30,7 +32,7 @@ O PedroCore deixa de ser documentado apenas como chat pessoal e passa a ser a ca
 
 ## Decisão 008 — Sistemas externos devem consumir IA preferencialmente via PedroCore
 
-A direção estratégica é que outros sistemas do ecossistema Pedro consumam capacidades de IA através do PedroCore, em vez de integrarem provedores diretamente. Essa integração ainda não está implementada; é objetivo futuro.
+A direção estratégica é que outros sistemas do ecossistema Pedro consumam capacidades de IA através do PedroCore, em vez de integrarem provedores diretamente. Em `v7.0.0`, o lado PedroCore já expõe `/api/orchestrate`; clientes dentro de sistemas externos continuam sendo frentes separadas.
 
 ## Decisão 009 — FinGuard é projeto externo e não deve ser alterado pelo PedroCore
 
@@ -42,7 +44,7 @@ A validação técnica (API, backend, frontend, rotas, banco de teste, Prisma, P
 
 ## Decisão 011 — IA exploratória/visual do QA será caso de uso futuro do PedroCore
 
-Apenas a parte de IA exploratória/visual/inteligente do QA Automation do FinGuard foi delegada ao PedroCore, como caso de uso futuro (QA Intelligence). Não implementado nesta etapa.
+Apenas a parte de IA exploratória/visual/inteligente do QA Automation do FinGuard foi delegada ao PedroCore. Em `v7.0.0`, há QA textual local, release gate conservador e exploração assistida/manual; QA visual real segue bloqueada/opt-in.
 
 ## Decisão 012 — PedroCore não calcula números financeiros oficiais de sistemas externos
 
@@ -50,11 +52,11 @@ O PedroCore pode, no futuro, explicar, resumir e sugerir a partir de artefatos e
 
 ## Decisão 013 — Providers reais exigem controle explícito para evitar chamadas acidentais
 
-A ausência de chave de API não pode ser o único mecanismo de proteção contra chamadas reais acidentais. Providers reais devem ter, no planejamento técnico futuro, um controle explícito (ex.: flag de ambiente ou confirmação) antes de serem acionados, especialmente em fluxos automatizados ou testes.
+A ausência de chave de API não pode ser o único mecanismo de proteção contra chamadas reais acidentais. Providers reais têm controle explícito por request (`allow_real_provider=true`) e continuam bloqueados por padrão, especialmente em fluxos automatizados ou testes.
 
 ## Decisão 014 — Fallback Mock não pode validar tarefas críticas silenciosamente
 
-O fallback automático para `MockProvider` é aceitável para preservar a experiência de chat, mas não pode ser usado, no futuro, para "validar" silenciosamente tarefas críticas de sistemas externos (ex.: análises de QA). Qualquer consumidor crítico deve checar explicitamente `fallback_used` antes de considerar uma resposta como real.
+O fallback automático para `MockProvider` é aceitável para preservar a experiência de chat, mas não pode ser usado para "validar" silenciosamente tarefas críticas de sistemas externos (ex.: análises de QA). Qualquer consumidor crítico deve checar explicitamente `fallback_used` antes de considerar uma resposta como real.
 
 ## Decisão 015 — Frontend/design ficam congelados durante a reformulação arquitetural
 
@@ -66,7 +68,7 @@ Qualquer contrato de entrada/saída, tipo de tarefa ou resposta estruturada do P
 
 ## Decisão 017 — Sistemas externos devem enviar `origin_system` e `task_type` em contratos futuros
 
-Todo contrato futuro de orquestração exige, no mínimo, `origin_system` (quem está chamando) e `task_type` (o que está sendo pedido), para permitir roteamento, auditoria e aplicação de regras específicas por tipo de tarefa.
+Todo contrato de orquestração exige, no mínimo, `origin_system` (quem está chamando) e `task_type` (o que está sendo pedido), para permitir roteamento, auditoria e aplicação de regras específicas por tipo de tarefa.
 
 ## Decisão 018 — Respostas críticas devem ter formato estruturado
 
@@ -74,11 +76,11 @@ Tarefas classificadas como críticas (ex.: `qa_report_analysis`, `qa_failure_dia
 
 ## Decisão 019 — Artefatos externos devem ser recebidos inicialmente por payload, não por leitura automática de pastas
 
-Nesta fase de planejamento, qualquer artefato (relatório, log, documento) só é considerado recebido pelo PedroCore se enviado no corpo da requisição (`artifacts[].content`). Leitura automática de diretórios ou arquivos de outros projetos (incluindo o FinGuard) é explicitamente fora de escopo até uma decisão arquitetural futura e específica.
+No uso padrão, qualquer artefato (relatório, log, documento) só é considerado recebido pelo PedroCore se enviado no corpo da requisição (`artifacts[].content`). Leitura por path existe apenas no Artifact Reader opt-in allowlisted e continua bloqueada para FinGuard.
 
 ## Decisão 020 — Tarefas críticas não podem depender silenciosamente de fallback Mock
 
-Para tarefas críticas, uma resposta gerada via fallback (`MockProvider`) nunca deve ser apresentada como análise real. `fallback_used: true` nessas tarefas deve gerar warning forte e, dependendo do desenho futuro, bloquear a conclusão da tarefa (`status: "blocked"`), em vez de devolver um resultado simulado como se fosse confiável.
+Para tarefas críticas, uma resposta gerada via fallback (`MockProvider`) nunca deve ser apresentada como análise real. `fallback_used: true` nessas tarefas gera warning forte e bloqueia release gate quando aplicável, em vez de devolver um resultado simulado como se fosse confiável.
 
 ## Decisão 021 — QA Intelligence será planejada como caso de uso do PedroCore, não como substituição do QA Automation
 
@@ -100,9 +102,9 @@ Cada sistema externo (ex.: FinGuard) é representado, na arquitetura-alvo, por u
 
 Qualquer novo endpoint de orquestração deve coexistir com `POST /api/chat`, sem quebrar o uso conversacional atual nem exigir mudança no frontend existente.
 
-## Decisão 026 — Artifact Reader futuro deve ser somente leitura e não pode executar comandos em projetos externos
+## Decisão 026 — Artifact Reader deve ser somente leitura e não pode executar comandos em projetos externos
 
-Quando implementado, o Artifact Reader nunca escreve, nunca comita e nunca executa comandos em projetos externos (incluindo o FinGuard). Nesta fase, artefatos só são recebidos via payload, nunca por leitura automática de pasta/repositório.
+O Artifact Reader nunca escreve, nunca comita e nunca executa comandos em projetos externos (incluindo o FinGuard). Ele é opt-in, allowlisted, default-off e bloqueado para origem/caminho FinGuard; no uso padrão, artefatos são recebidos via payload.
 
 ## Decisão 027 — Audit/logs devem ser planejados antes de integrações reais com sistemas externos
 

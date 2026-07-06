@@ -1,6 +1,6 @@
-# QA Intelligence — Análise de Relatório de QA (`qa_report_analysis`) — Planejado
+# QA Intelligence — Análise de Relatório de QA (`qa_report_analysis`)
 
-> Parte da frente `PEDROCORE-REPLAN-01D`. Caso de uso **planejado**, não implementado. Nenhum endpoint, parser ou lógica de análise de relatório existe hoje no código do PedroCore.
+> Nota DOCFIX: este caso de uso foi implementado no lado PedroCore como heurística textual local em `POST /api/orchestrate` e `/api/chat`, usando `task_type="qa_report_analysis"`. Não é IA real, não lê o FinGuard e não executa testes.
 
 ## Objetivo
 

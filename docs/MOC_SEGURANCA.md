@@ -1,0 +1,37 @@
+# MOC Seguranca
+
+Mapa dos limites de seguranca do PedroCore IA.
+
+## Referencias atuais
+
+- [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 11 a 19 e 27.
+- [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - garantias finais.
+- [[11-integracoes/CONTRATO_FINGUARD_PEDROCORE_REAL_CONTROLADO]] - bloqueios para FinGuard.
+- [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros.
+
+## Controles principais
+
+- Safe mode: `allow_real_provider=false` por padrao.
+- Policy enforcement: bloqueio de tasks perigosas e payload com comando.
+- Artifact Reader: opt-in, allowlist e bloqueio de `.env`, segredo, binario, traversal e FinGuard.
+- Release gate: somente `local_qa` com evidencia textual limpa aprova.
+- OCR: local, opt-in e com revisao humana.
+- Multimodal: guard/contrato, sem envio real nesta versao.
+- Playwright: opt-in, read-only, allowlist e acoes interativas bloqueadas.
+- Audit: nao persistente e sem conteudo de artefatos.
+
+## Codigo relacionado
+
+- `apps/api/app/modules/policy_enforcement/`
+- `apps/api/app/modules/real_features/`
+- `apps/api/app/modules/artifact_reader/`
+- `apps/api/app/modules/qa_response/`
+- `apps/api/app/modules/exploration/playwright_adapter.py`
+- `apps/api/app/modules/contracts/codes.py`
+
+## Riscos conhecidos
+
+- Falso positivo/negativo da heuristica textual.
+- Chamada real se provider real for autorizado explicitamente.
+- Fallback Mock mascarando falha se consumidor ignorar `fallback_used`.
+- Documentos historicos fora dos MOCs podem refletir fases antigas.

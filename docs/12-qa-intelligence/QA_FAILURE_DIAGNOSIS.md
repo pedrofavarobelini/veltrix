@@ -1,6 +1,6 @@
-# QA Intelligence — Diagnóstico de Falha (`qa_failure_diagnosis`) — Planejado
+# QA Intelligence — Diagnóstico de Falha (`qa_failure_diagnosis`)
 
-> Parte da frente `PEDROCORE-REPLAN-01D`. Caso de uso **planejado**, não implementado. Nenhum endpoint, classificador de falha ou lógica de diagnóstico existe hoje no código do PedroCore.
+> Nota DOCFIX: este caso de uso foi implementado no lado PedroCore como heurística textual local em `POST /api/orchestrate` e `/api/chat`, usando `task_type="qa_failure_diagnosis"`. Não é IA real, não lê o FinGuard e não executa testes.
 
 ## Objetivo
 

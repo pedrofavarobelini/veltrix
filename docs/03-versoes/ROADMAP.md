@@ -2,6 +2,8 @@
 
 > Documento oficial de roadmap. Substitui a leitura anterior deste arquivo e a versão paralela em `docs/03_ROADMAP.md` (a ser consolidada/tratada em etapa futura). Nenhuma data é prometida; status refletem apenas conclusão ou planejamento.
 
+> Nota DOCFIX: o estado atual canônico está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]]. Seções históricas de planejamento foram preservadas, mas devem ser lidas como contexto da época em que foram escritas.
+
 ## Entregas concluídas
 
 ### V1 — Chat/API mock
@@ -131,20 +133,18 @@ Status: **concluídas**. Subfrentes commitadas individualmente: 05A flags/guards
 
 Resultado: core operacional seguro finalizado localmente — recursos reais 100% opt-in e desabilitados por padrão; somente `local_qa` aprova release gate; tasks perigosas bloqueadas incondicionalmente; testes `216 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
-## Fases futuras (planejadas, sem ordem de data fixa)
+## Opcionais pós-fechamento (sem ordem de data fixa)
 
-Dependentes da conclusão de `PEDROCORE-REPLAN-01` e sujeitas a repriorização:
+Itens que permanecem opcionais após `v7.0.0`:
 
-- Task Router.
-- Prompt Builder.
-- Resposta estruturada (schemas por tipo de tarefa, além de texto livre).
-- Auditoria/logs de chamadas (origem, provider usado, fallback, latência).
-- Leitura controlada de artefatos Markdown (relatórios de QA, documentação Obsidian de projetos externos), sempre somente leitura.
-- QA Intelligence (caso de uso concreto de análise de relatórios de QA do FinGuard).
-- Persistência/histórico no backend (hoje o histórico existe apenas no `localStorage` do navegador).
-- Integração controlada com sistemas externos, incluindo autenticação e identificação do sistema chamador.
+- Cliente HTTP no repositório FinGuard consumindo o contrato do PedroCore.
+- Provider Orchestration avançada por custo/qualidade/task.
+- Persistência/histórico backend e logs persistentes, se a decisão de produto mudar.
+- Execução real de OCR/Playwright/multimodal com flags, dependências instaladas manualmente e revisão humana.
+- Push para GitHub/portfólio e deploy.
+- Saneamento adicional de documentação histórica duplicada.
 
-Nenhum desses itens está implementado. Nenhuma integração com o FinGuard existe hoje — toda menção acima é planejamento futuro.
+Itens já implementados no lado PedroCore: Task Router, Prompt Builder, Project Context, `/api/orchestrate`, QA textual local, release gate conservador, Artifact Reader opt-in, warnings estruturados, audit não persistente, FinGuard controlado por contrato e exploração assistida/manual.
 
 ## Documentação de contratos (01B)
 
@@ -154,7 +154,7 @@ Os contratos técnicos planejados na fase `01B` estão detalhados em `docs/10-co
 - `docs/10-contratos/CONTRATO_ORQUESTRACAO.md` — contrato de entrada/saída, tipos de tarefa, artefatos, provider preference e fallback.
 - `docs/10-contratos/CONTRATO_QA_INTELLIGENCE.md` — resposta estruturada de QA e limites com o FinGuard.
 
-Esses documentos são especificação/planejamento. Nenhum contrato neles descrito está implementado no código.
+Esses documentos nasceram como especificação/planejamento. Em `v7.0.0`, parte relevante está implementada no código; use [[../00_MAPEAMENTO_GERAL_PEDROCORE]] como mapa atual.
 
 ## Documentação de arquitetura-alvo (01C)
 
@@ -165,7 +165,7 @@ A arquitetura-alvo que sustentaria os contratos da `01B` está detalhada em `doc
 - `docs/11-arquitetura-alvo/PROMPT_BUILDER.md` — responsabilidade planejada de montagem de prompt.
 - `docs/11-arquitetura-alvo/PROJECT_CONTEXT.md` — conceito planejado de representação de sistemas externos.
 
-Esses documentos são especificação/planejamento de arquitetura. Nenhum módulo neles descrito (Task Router, Prompt Builder, Project Context, Artifact Reader, Audit/logs) está implementado no código.
+Esses documentos nasceram como especificação/planejamento de arquitetura. Em `v7.0.0`, Task Router, Prompt Builder, Project Context, Artifact Reader opt-in, Orchestration e Audit não persistente estão implementados; logs persistentes e provider orchestration avançada seguem opcionais.
 
 ## Documentação de QA Intelligence (01D)
 
@@ -176,7 +176,7 @@ A camada futura de QA Intelligence está detalhada em `docs/12-qa-intelligence/`
 - `docs/12-qa-intelligence/QA_FAILURE_DIAGNOSIS.md` — caso de uso `qa_failure_diagnosis`.
 - `docs/12-qa-intelligence/QA_RELEASE_GATE.md` — caso de uso `release_gate_review`.
 
-Esses documentos são especificação/planejamento. QA Intelligence **não está implementada** — não há leitura real de arquivos do FinGuard, não há análise visual real e não há endpoint de QA no código hoje.
+Esses documentos nasceram como especificação/planejamento. Em `v7.0.0`, QA textual local e release gate estão implementados; não há leitura real de arquivos do FinGuard, não há análise visual real automática e o endpoint operacional é `/api/orchestrate`.
 
 ## Documentação de fechamento (01E)
 

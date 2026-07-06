@@ -10,15 +10,16 @@ Ser o **orquestrador central de IA do ecossistema de projetos Pedro**: receber m
 
 Devolver uma **resposta padronizada** para o sistema de origem, de forma previsível e consistente, independentemente de qual provider foi usado internamente para gerá-la.
 
-## Objetivo futuro (planejado, não implementado)
+## Objetivo operacional atual e evoluções opcionais
 
 Apoiar casos de **inteligência operacional**:
 
-- Análise de relatórios, logs, documentos e evidências de outros projetos.
-- Apoio à parte exploratória/visual/inteligente do QA Automation de projetos externos, como o FinGuard.
-- Leitura somente-leitura de artefatos Markdown/documentação (ex.: relatórios de QA, notas Obsidian), sem qualquer escrita nos sistemas de origem.
+- Análise textual local de relatórios, logs, documentos e evidências enviados por payload.
+- Apoio à parte exploratória/manual do QA de projetos externos por plano assistido, sem executar ações.
+- Contrato controlado para origem `finguard`/`finguard-local`, sem leitura direta do repositório FinGuard.
+- Leitura somente-leitura de artefatos Markdown/documentação via Artifact Reader apenas quando explicitamente habilitado, allowlisted e nunca para FinGuard.
 
-Esses itens são objetivos futuros de planejamento; nenhum foi implementado até esta etapa (`PEDROCORE-REPLAN-01A`).
+O que permanece opcional/futuro: cliente HTTP no repositório FinGuard, QA visual real com provider multimodal, OCR/Playwright reais em ambiente configurado por humano, provider orchestration avançada e logs persistentes.
 
 ## Objetivos fora do escopo atual
 
@@ -26,7 +27,7 @@ Esses itens são objetivos futuros de planejamento; nenhum foi implementado até
 - Alterar, rodar migrations, seed/reset, testes ou comandos dentro de qualquer projeto externo, incluindo o FinGuard.
 - Substituir o QA Automation do FinGuard (validação de API, backend, frontend, rotas, banco de teste, Prisma, Playwright, smoke tests, E2E) — esse subsistema permanece interno ao FinGuard.
 - Redesenhar frontend, layout ou identidade visual durante a reformulação documental/arquitetural em curso.
-- Prometer ou implementar integração já pronta com o FinGuard ou qualquer outro sistema externo.
+- Implementar o cliente HTTP real dentro do FinGuard nesta frente; isso é trabalho separado, no repositório FinGuard, com aprovação própria.
 
 ## Histórico do objetivo original (V1)
 
