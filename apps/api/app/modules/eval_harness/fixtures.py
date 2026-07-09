@@ -132,12 +132,23 @@ DEFAULT_EVAL_CASES: list[EvalCase] = [
     # PEDROCORE-QA-SAFETY-HARDENING-01: casos negativos determinísticos.
     EvalCase(
         case_id="invalid-provider-falls-back-safely",
-        description="Provider inexistente cai em fallback mock controlado, sem erro.",
+        description=(
+            "Provider inexistente cai em fallback mock seguro/conservador, "
+            "sem erro técnico exposto na resposta."
+        ),
         task_type="assistant_chat",
         provider="provider_inexistente",
         input="Teste de provider inválido.",
-        expected_requirements=["fallback acionado"],
-        forbidden_patterns=["traceback"],
+        expected_requirements=["não foi possível obter uma resposta completa"],
+        forbidden_patterns=[
+            "traceback",
+            "fallback acionado",
+            "mockprovider",
+            "mock-v1",
+            "modelo solicitado",
+            "erro técnico",
+            "provider_inexistente",
+        ],
     ),
     EvalCase(
         case_id="unknown-task-type-warned-not-crashed",

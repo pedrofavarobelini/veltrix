@@ -11,6 +11,7 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
 from app.main import app
 from app.modules.eval_harness.service import eval_harness_service
 from app.modules.providers.registry import provider_registry
@@ -98,8 +99,78 @@ def test_invalid_provider_fails_standardized():
     assert data["provider_requested"] == "provider_inexistente"
     assert data["provider_used"] == "mock"
     assert data["fallback_used"] is True
-    assert "Fallback acionado" in data["answer"]
+    # /api/orchestrate nunca expõe erro técnico bruto publicamente (só
+    # `error_code`, um código estável); a resposta conversacional também
+    # não pode citar o nome do provider inválido nem debug/traceback.
+    assert "provider_inexistente" not in data["answer"]
     assert "Traceback" not in response.text
+    assert "Traceback" not in data["answer"]
+
+
+# Substrings tecnicas/debug que NUNCA podem aparecer na resposta conversacional
+# de um fallback (contrato de UX exigido pelo consumidor FinGuard).
+FORBIDDEN_ANSWER_SUBSTRINGS = [
+    "MockProvider",
+    "mock-v1",
+    "Modelo solicitado",
+    "A V2 possui arquitetura multi-provider",
+    "Mensagem recebida",
+    "PROVIDER_REAL_BLOCKED",
+    "PROVIDER_REAL_UNAVAILABLE",
+    "Fallback acionado",
+    "Erro técnico",
+    "Traceback",
+]
+
+
+def test_fallback_answer_never_leaks_technical_debug_text():
+    """PEDROCORE x FinGuard: quando o provider solicitado falha, nao esta
+    configurado ou e bloqueado por safe mode, a resposta conversacional
+    (`answer`) deve ser sempre segura/conservadora, nunca um eco tecnico/
+    debug do erro interno. Nenhum destes dois gatilhos toca em provider
+    real (o segundo e bloqueado por allow_real_provider=false antes de
+    qualquer chamada), entao nao precisa do guard/marker de provider real."""
+    scenarios = [
+        {"message": "Teste", "provider": "provider_inexistente"},
+        {"message": "Teste", "provider": "gemini"},
+    ]
+
+    for payload in scenarios:
+        response = client.post("/api/orchestrate", json=payload)
+        data = response.json()
+
+        assert response.status_code == 200, payload
+        assert data["fallback_used"] is True, payload
+        assert data["provider_used"] == "mock", payload
+        for forbidden in FORBIDDEN_ANSWER_SUBSTRINGS:
+            assert forbidden not in data["answer"], (payload, forbidden, data["answer"])
+
+
+@pytest.mark.expected_guarded_call
+def test_fallback_answer_never_leaks_technical_debug_text_for_auto_real_provider(
+    monkeypatch, real_provider_guard
+):
+    """Mesma garantia acima, cobrindo o gatilho provider=auto com
+    allow_real_provider=true e uma chave Gemini falsa configurada — o guard
+    estrutural do conftest intercepta a chamada antes de qualquer rede real,
+    e o fallback resultante ainda assim nao pode vazar texto tecnico."""
+    if real_provider_guard is None:
+        pytest.skip("guard desativado por PEDROCORE_RUN_REAL_PROVIDER_TESTS=true")
+
+    monkeypatch.setattr(settings, "gemini_api_key", "test-fake-key-never-leak")
+
+    response = client.post(
+        "/api/orchestrate",
+        json={"message": "Teste", "provider": "auto", "allow_real_provider": True},
+    )
+    data = response.json()
+
+    assert response.status_code == 200
+    assert data["fallback_used"] is True
+    assert data["provider_used"] == "mock"
+    assert real_provider_guard == ["gemini"]
+    for forbidden in FORBIDDEN_ANSWER_SUBSTRINGS:
+        assert forbidden not in data["answer"], (forbidden, data["answer"])
 
 
 def test_nested_payload_cannot_bypass_allow_real_provider():
@@ -195,10 +266,14 @@ def test_even_authorized_flag_cannot_reach_network_in_tests(real_provider_guard)
     data = response.json()
 
     assert response.status_code == 200
+    # A prova de que o guard disparou de verdade é `real_provider_guard`
+    # (populado pelo próprio conftest ao interceptar a chamada), não o
+    # texto da resposta: `/api/orchestrate` não expõe erro técnico bruto
+    # publicamente, e a resposta conversacional nunca deve citar o guard.
     assert real_provider_guard == ["gemini"]
     assert data["provider_used"] == "mock"
     assert data["fallback_used"] is True
-    assert "REAL_PROVIDER_CALL_BLOCKED_BY_TEST_GUARD" in (data["answer"] or "")
+    assert "REAL_PROVIDER_CALL_BLOCKED_BY_TEST_GUARD" not in (data["answer"] or "")
 
 
 def test_eval_harness_never_invokes_real_provider(real_provider_guard, monkeypatch):

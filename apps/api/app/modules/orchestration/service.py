@@ -101,6 +101,17 @@ PROVIDER_REAL_UNAVAILABLE_WARNING = (
     "fallback Mock seguro aplicado."
 )
 
+# Resposta segura e conservadora usada por _mock_fallback(). Nunca deve conter
+# erro tecnico bruto, nome de classe de provider/exception, nem rotulo de
+# debug (ex.: "MockProvider", "mock-v1", "Modelo solicitado", texto de
+# arquitetura interna). Detalhes tecnicos ficam apenas em error/error_code/
+# warnings/audit, que ja sao retornados separadamente pelo chamador.
+SAFE_FALLBACK_ANSWER = (
+    "No momento não foi possível obter uma resposta completa do provider "
+    "solicitado. Isso não executa nenhuma ação financeira nem altera seus "
+    "dados. Tente novamente em instantes ou reformule sua pergunta."
+)
+
 READER_FINGUARD_ORIGIN_WARNING = (
     "Artifact Reader não está disponível para origem FinGuard nesta frente; "
     "artefatos devem ser enviados por payload."
@@ -687,20 +698,15 @@ class OrchestrationService:
         error: str,
         enriched_system_prompt: str,
     ) -> tuple[str, str, str]:
-        mock = provider_registry.mock()
-        fallback_message = (
-            f"Fallback acionado. O provider '{requested_provider}' falhou, não está "
-            f"configurado ou foi bloqueado.\n\n"
-            f"Erro técnico: {error}\n\n"
-            f"Mensagem original: {payload.message}"
-        )
-        result = await mock.generate_response(
-            message=fallback_message,
-            mode=payload.mode,
-            model="mock-v1",
-            system_prompt=enriched_system_prompt,
-        )
-        return result.answer, "mock", "mock-v1"
+        """Fallback seguro e conservador quando o provider solicitado falha,
+        não está configurado ou foi bloqueado.
+
+        A resposta ao usuário final (`answer`) nunca expõe erro técnico bruto,
+        nome de classe de provider/exception, nem texto de debug — isso
+        continua disponível só para quem consome `error`/`error_code`/
+        `warning_codes`/`audit` (backend, logs, QA), nunca na conversa.
+        """
+        return SAFE_FALLBACK_ANSWER, "mock", "mock-v1"
 
     def _collect_warnings(
         self,
