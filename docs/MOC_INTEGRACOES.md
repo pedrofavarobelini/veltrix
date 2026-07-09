@@ -24,8 +24,8 @@ Mapa de integracoes controladas do lado PedroCore.
 - O PedroCore reconhece `origin_system=finguard` e `origin_system=finguard-local`.
 - O lado PedroCore esta pronto para receber payload HTTP em `/api/orchestrate`.
 - FinGuard e consumidor read-only do assistente de ecossistema (`assistant_chat`, `finance_advice`, `project_status`, `report_memory_query`); a integracao do Assistente FinGuard via PedroCore pertence a FINGUARD-PEDROCORE-ASSISTANT-01.
-- O cliente HTTP no repositorio FinGuard ainda e frente separada.
+- O cliente HTTP do Assistente no repositorio FinGuard ja consome `/api/orchestrate`; REAL-PROVIDER-QA-01 adiciona pedido controlado `provider=auto|gemini`.
 - O PedroCore nao acessa, le, escreve, testa ou comita no FinGuard.
 - Artifact Reader e bloqueado para origem/caminho FinGuard.
-- Provider real e bloqueado por padrao.
+- Provider real e bloqueado por padrao; Gemini real so com `allow_real_provider=true`, chave no PedroCore e teste manual opt-in.
 - Release gate e conservador.

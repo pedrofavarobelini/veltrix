@@ -7,9 +7,10 @@ Claude, DeepSeek, Grok) durante o pytest padrão:
     chamada e levanta RuntimeError, sem nunca alcançar SDK ou rede;
   - ao final de cada teste, o guard falha o teste se algum provider real foi
     invocado (mesmo que o pipeline tenha absorvido o erro via fallback);
-  - o guard respeita o opt-in existente: com
-    PEDROCORE_RUN_REAL_PROVIDER_TESTS=true ele se desativa por completo,
-    preservando os testes reais de tests/test_real_optin.py.
+  - o guard respeita os opt-ins existentes: com
+    PEDROCORE_RUN_REAL_PROVIDER_TESTS=true ou PEDROCORE_RUN_REAL_GEMINI_TESTS=true
+    ele se desativa por completo, preservando os testes reais de
+    tests/test_real_optin.py.
 
 Testes que disparam o guard de propósito devem usar o marker
 `@pytest.mark.expected_guarded_call`.
@@ -55,7 +56,9 @@ def real_provider_guard(monkeypatch, request):
     Retorna a lista de nomes de providers reais invocados no teste (vazia no
     caminho seguro). Retorna None quando o opt-in real está ativo.
     """
-    if flag_is_true(real_features.FLAG_RUN_REAL_PROVIDER_TESTS):
+    if flag_is_true(real_features.FLAG_RUN_REAL_PROVIDER_TESTS) or flag_is_true(
+        real_features.FLAG_RUN_REAL_GEMINI_TESTS
+    ):
         yield None
         return
 

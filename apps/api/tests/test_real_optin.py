@@ -10,6 +10,7 @@ import os
 
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
 from app.main import app
 from app.modules.real_features import service as real_features
 from tests.real_flags import optin
@@ -57,6 +58,30 @@ def test_real_provider_authorized_call():
         },
     )
     assert response.status_code == 200
+
+
+@optin(real_features.FLAG_RUN_REAL_GEMINI_TESTS)
+def test_real_gemini_orchestrate_authorized_call():
+    # Chama Gemini real via /api/orchestrate apenas com opt-in explicito.
+    # Nunca roda no pytest padrao e nunca imprime chave.
+    assert settings.gemini_api_key, "GEMINI_API_KEY precisa estar configurada no ambiente PedroCore"
+    response = client.post(
+        "/api/orchestrate",
+        json={
+            "origin_system": "finguard",
+            "project_id": "finguard",
+            "task_type": "finance_advice",
+            "message": "Responda de forma conservadora em uma frase.",
+            "provider": "gemini",
+            "allow_real_provider": True,
+            "allow_local_model": False,
+            "context_from_memory": False,
+        },
+    )
+    data = response.json()
+    assert response.status_code == 200
+    assert data["provider_used"] == "gemini"
+    assert settings.gemini_api_key not in str(data)
 
 
 @optin(real_features.FLAG_RUN_REAL_OCR_TESTS)

@@ -31,7 +31,7 @@ class ProviderRegistry:
         return self._providers["mock"]
 
     def list_providers(self) -> list[dict[str, object]]:
-        return [
+        providers = [
             {
                 "name": provider.name,
                 "label": provider.label,
@@ -41,6 +41,25 @@ class ProviderRegistry:
             }
             for provider in self._providers.values()
         ]
+        providers.extend(
+            [
+                {
+                    "name": "local_qa",
+                    "label": "Local QA",
+                    "default_model": "local-qa-v1",
+                    "configured": True,
+                    "real_provider": False,
+                },
+                {
+                    "name": "auto",
+                    "label": "Auto",
+                    "default_model": "auto",
+                    "configured": self._providers["gemini"].is_configured,
+                    "real_provider": True,
+                },
+            ]
+        )
+        return providers
 
 
 provider_registry = ProviderRegistry()

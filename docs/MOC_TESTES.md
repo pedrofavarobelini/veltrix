@@ -20,6 +20,15 @@ cd C:\Projetos\pedrocore-ia\apps\api
 
 Resultado atual (`PEDROCORE-QA-SAFETY-HARDENING-01`, commit `d6106b7`): `341 passed, 6 skipped, 2 warnings`.
 
+Teste direcionado da frente `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`:
+
+```powershell
+cd C:\Projetos\pedrocore-ia\apps\api
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider tests/test_real_provider_policy.py tests/test_providers.py tests/test_real_optin.py tests/test_safe_mode.py tests/test_orchestrate_api.py
+```
+
+Resultado local: `28 passed, 7 skipped, 2 warnings`. Gemini real nao roda nesse comando.
+
 Eval harness deterministico (sem provider real, sem rede):
 
 ```powershell
@@ -39,6 +48,7 @@ Auditoria local documentada:
 
 - `apps/api/tests/test_real_optin.py`
 - Flags `PEDROCORE_RUN_REAL_*_TESTS=true`.
+- Gemini real usa `PEDROCORE_RUN_REAL_GEMINI_TESTS=true`.
 - Nao fazem parte do teste padrao.
 - Podem exigir chave real, dependencia local ou efeito externo; precisam de aprovacao humana.
 

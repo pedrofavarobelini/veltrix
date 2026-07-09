@@ -6,6 +6,7 @@ Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações re
 Frente pós-fechamento: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence, contrato de Local Model Provider e Evaluation Foundation). Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 Frente commitada mais recente: `PEDROCORE-QA-SAFETY-HARDENING-01` (`d6106b7`) — endurecimento de QA/safety sem reabrir o core funcional. Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
 Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organizacao de links Markdown/Obsidian, sem alteracao de codigo.
+Frente em validacao local: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` - `provider=auto|gemini` controlado em `/api/orchestrate`, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore; testes padrao usam stub/mock e o teste real fica opt-in.
 Mapa atual completo: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 
@@ -53,12 +54,16 @@ O PedroCore IA é o **orquestrador central de IA do ecossistema de projetos Pedr
 
 ## Relação com o FinGuard
 
-O FinGuard é um projeto externo e independente. Do lado PedroCore, o contrato controlado já reconhece `origin_system=finguard` e `origin_system=finguard-local` em `POST /api/orchestrate`, com tasks permitidas, policy forte, Artifact Reader bloqueado para FinGuard e provider real bloqueado por padrão. O PedroCore não altera código, dados, migrations, seeds, testes ou configuração do FinGuard, não executa comandos nele, não lê path real do repositório e não faz commit nele. O cliente HTTP real dentro do repositório FinGuard é trabalho futuro separado.
+O FinGuard é um projeto externo e independente. Do lado PedroCore, o contrato controlado já reconhece `origin_system=finguard` e `origin_system=finguard-local` em `POST /api/orchestrate`, com tasks permitidas, policy forte, Artifact Reader bloqueado para FinGuard e provider real bloqueado por padrão. O PedroCore não altera código, dados, migrations, seeds, testes ou configuração do FinGuard, não executa comandos nele, não lê path real do repositório e não faz commit nele.
+
+Para o Assistente IA do FinGuard, o consumidor pode pedir `provider=mock|auto|gemini`, mas o PedroCore decide o provider final. Gemini real exige `allow_real_provider=true` e `GEMINI_API_KEY` somente no ambiente PedroCore; o FinGuard nao recebe nem repassa essa chave.
 
 ## Providers
 
 | Provider | Situação |
 |---|---|
+| local_qa | Pseudo-provider deterministico local para QA/release gate; sem provider externo |
+| Auto | Politica controlada para consumidor externo; nesta frente escolhe Gemini somente com autorizacao e chave configurada |
 | Mock | Real e funcional, sem custo, usado como fallback padrão |
 | Gemini | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |
 | OpenAI | Implementado estruturalmente; chamada real exige chave/configuração e `allow_real_provider=true` |

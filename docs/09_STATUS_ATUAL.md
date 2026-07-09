@@ -16,6 +16,8 @@ Ultima frente commitada: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de
 
 Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organizacao de links Markdown/Obsidian em `docs/`, sem alteracao de codigo.
 
+Frente local em validacao: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`. O PedroCore passa a decidir `provider=auto` para consumidores externos: mock default, `local_qa` preservado, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore. Teste real Gemini fica manual/opt-in e skipado por padrao.
+
 ## Versão atual de produto
 
 V5.1.9

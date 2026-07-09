@@ -22,6 +22,8 @@ Frente commitada mais recente: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecime
 
 Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — linkagem Markdown/Obsidian em documentacao, sem alteracao de codigo, testes, `.env`, provider real, `local_model` real, FinGuard, push, tag ou merge.
 
+Frente local em andamento: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` - adiciona selecao segura `provider=auto|gemini` em `/api/orchestrate`, preserva mock default e `local_qa`, e mantem Gemini real fora dos testes padrao (`PEDROCORE_RUN_REAL_GEMINI_TESTS=true` para execucao manual).
+
 ## Status atual
 
 `PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental. `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `01C–01H` commitada em `95cbfab`; `PEDROCORE-IMPLEMENT-02` commitada em `e115672`. `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7) commitada em `6ed4c41`: QA textual real por heurística local determinística, release gate conservador com `blocked_reason`, endpoint `POST /api/orchestrate` (pipeline centralizado, também usado por `/api/chat`), safe mode com `allow_real_provider=false` por padrão, autenticação interna opcional para `/api/orchestrate`, contrato padronizado de warnings/errors e audit não persistente completo. `PEDROCORE-FINALIZE-04` foi consolidada em `ee2ac68`, commit para o qual aponta a tag anotada `v6.0.0` com a mensagem `v6.0.0 - MVP backend PedroCore IA`. Testes backend passando (`125 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.

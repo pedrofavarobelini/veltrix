@@ -11,4 +11,13 @@ def test_list_providers():
     names = {provider["name"] for provider in data}
 
     assert response.status_code == 200
-    assert {"mock", "gemini", "openai", "claude", "deepseek", "grok"}.issubset(names)
+    assert {
+        "mock",
+        "gemini",
+        "openai",
+        "claude",
+        "deepseek",
+        "grok",
+        "local_qa",
+        "auto",
+    }.issubset(names)

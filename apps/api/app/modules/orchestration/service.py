@@ -15,6 +15,7 @@ from app.modules.orchestration.schemas import (
     AssistantResponsePayload,
     OrchestrationOutcome,
 )
+from app.modules.providers.base import ProviderConfigError
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.report_memory.service import report_memory_service
 from app.modules.policy_enforcement.service import policy_enforcement_service
@@ -89,6 +90,15 @@ LOCAL_MODEL_TASK_BLOCKED_WARNING = (
 PROVIDER_REAL_BLOCKED_WARNING = (
     "Provider real bloqueado pelo safe mode (allow_real_provider=false); "
     "fallback seguro aplicado."
+)
+AUTO_PROVIDER_NAME = "auto"
+AUTO_REAL_PROVIDER_CANDIDATES = ("gemini",)
+AUTO_PROVIDER_REAL_BLOCKED_WARNING = (
+    "Provider auto exige allow_real_provider=true explicito; fallback Mock seguro aplicado."
+)
+PROVIDER_REAL_UNAVAILABLE_WARNING = (
+    "Provider real autorizado, mas nenhum provider real configurado esta disponivel; "
+    "fallback Mock seguro aplicado."
 )
 
 READER_FINGUARD_ORIGIN_WARNING = (
@@ -185,6 +195,7 @@ class OrchestrationService:
         error: str | None = None
         error_code: str | None = None
         local_model_items: list[WarningItem] = []
+        provider_items: list[WarningItem] = []
 
         if requested_provider in LOCAL_PROVIDERS:
             analysis = qa_text_analyzer.analyze(
@@ -205,7 +216,50 @@ class OrchestrationService:
         else:
             provider = provider_registry.get(requested_provider)
 
-            if provider is None:
+            if requested_provider == AUTO_PROVIDER_NAME:
+                if not payload.allow_real_provider:
+                    safe_mode_blocked = True
+                    error = AUTO_PROVIDER_REAL_BLOCKED_WARNING
+                    error_code = codes.PROVIDER_REAL_BLOCKED
+                    answer, provider_used, model_used = await self._mock_fallback(
+                        payload, requested_provider, error, prompt.enriched_system_prompt
+                    )
+                    fallback_used = True
+                else:
+                    provider = self._select_auto_real_provider()
+                    if provider is None:
+                        error = PROVIDER_REAL_UNAVAILABLE_WARNING
+                        error_code = codes.PROVIDER_REAL_UNAVAILABLE
+                        provider_items.append(
+                            make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
+                        )
+                        answer, provider_used, model_used = await self._mock_fallback(
+                            payload, requested_provider, error, prompt.enriched_system_prompt
+                        )
+                        fallback_used = True
+                    else:
+                        try:
+                            result = await provider.generate_response(
+                                message=payload.message,
+                                mode=payload.mode,
+                                model=payload.model,
+                                system_prompt=prompt.enriched_system_prompt,
+                            )
+                            answer = result.answer
+                            provider_used = result.provider
+                            model_used = result.model
+                        except Exception as exc:
+                            error = str(exc)
+                            if isinstance(exc, ProviderConfigError):
+                                error_code = codes.PROVIDER_REAL_UNAVAILABLE
+                                provider_items.append(
+                                    make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
+                                )
+                            answer, provider_used, model_used = await self._mock_fallback(
+                                payload, requested_provider, error, prompt.enriched_system_prompt
+                            )
+                            fallback_used = True
+            elif provider is None:
                 error = f"Provider não suportado: {requested_provider}"
                 answer, provider_used, model_used = await self._mock_fallback(
                     payload, requested_provider, error, prompt.enriched_system_prompt
@@ -242,6 +296,11 @@ class OrchestrationService:
                     model_used = result.model
                 except Exception as exc:
                     error = str(exc)
+                    if provider.real_provider and isinstance(exc, ProviderConfigError):
+                        error_code = codes.PROVIDER_REAL_UNAVAILABLE
+                        provider_items.append(
+                            make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
+                        )
                     answer, provider_used, model_used = await self._mock_fallback(
                         payload, requested_provider, error, prompt.enriched_system_prompt
                     )
@@ -307,6 +366,7 @@ class OrchestrationService:
             exploration=exploration,
             memory_items=memory_items,
             local_model_items=local_model_items,
+            provider_items=provider_items,
         )
 
         blocked_reason: str | None = None
@@ -431,6 +491,19 @@ class OrchestrationService:
                 prompt.enriched_system_prompt,
             )
             return answer, provider_used, model_used, True, error, None, items
+
+    def _select_auto_real_provider(self):
+        """Seleciona provider real disponivel para provider=auto.
+
+        Nesta frente, a politica real autorizada comeca por Gemini. Outros
+        providers reais continuam registrados para o chat do PedroCore, mas nao
+        entram na decisao auto do contrato FinGuard ate frente propria.
+        """
+        for provider_name in AUTO_REAL_PROVIDER_CANDIDATES:
+            provider = provider_registry.get(provider_name)
+            if provider is not None and provider.real_provider and provider.is_configured:
+                return provider
+        return None
 
     def build_assistant_payload(
         self, outcome: OrchestrationOutcome
@@ -645,6 +718,7 @@ class OrchestrationService:
         exploration=None,
         memory_items: list[WarningItem] | None = None,
         local_model_items: list[WarningItem] | None = None,
+        provider_items: list[WarningItem] | None = None,
     ) -> list[WarningItem]:
         items: list[WarningItem] = []
         seen: set[tuple[str, str]] = set()
@@ -734,6 +808,10 @@ class OrchestrationService:
 
         if local_model_items:
             for item in local_model_items:
+                add(item.code, item.message, item.severity)
+
+        if provider_items:
+            for item in provider_items:
                 add(item.code, item.message, item.severity)
 
         if strategy.task_type == FINANCE_ADVICE_TASK_TYPE:

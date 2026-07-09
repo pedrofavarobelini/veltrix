@@ -1,5 +1,15 @@
 # PedroCore IA — Changelog
 
+## FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01 - Provider real controlado via PedroCore
+
+Status: implementacao local em validacao, sem push/tag/merge e sem teste real Gemini padrao.
+
+- `POST /api/orchestrate` agora aceita `provider=auto` como politica controlada; sem `allow_real_provider=true`, cai em mock seguro.
+- Com `allow_real_provider=true`, `provider=auto` escolhe Gemini quando `GEMINI_API_KEY` esta configurada no ambiente PedroCore; `provider=gemini` continua exigindo autorizacao explicita.
+- Se houver autorizacao mas nenhum provider real configurado, retorna fallback Mock com `PROVIDER_REAL_UNAVAILABLE`.
+- `local_qa` permanece intacto para QA/release gate; mock segue default seguro.
+- Testes padrao novos usam Gemini stubado/mocado e o guard estrutural continua bloqueando rede real. Teste real Gemini foi separado em `PEDROCORE_RUN_REAL_GEMINI_TESTS=true`, skipado por padrao.
+
 Atualizado em: 09/07/2026
 
 ## PEDROCORE-DOCS-GRAPH-LINKING-01 — Linkagem Obsidian e integracao QA Safety
