@@ -34,8 +34,10 @@ Tasks não críticas fora da lista continuam gerando warning (`PROJECT_TASK_NOT_
 
 - Padrão (sempre rodam): payload fake aceito, todas as tasks permitidas aceitas, tasks perigosas bloqueadas, payload com comando bloqueado, origem desconhecida crítica bloqueada, reader/paths bloqueados para FinGuard, API key interna respeitada, provider real bloqueado, `/api/chat` intacto (`tests/test_finguard_enforcement.py`, `tests/test_finguard_contract.py`).
 - Real-provider stubado (sempre roda): `tests/test_real_provider_policy.py` cobre `mock`, `auto`, `gemini`, chave ausente, `local_qa`, auth interna e segredo nao vazado, sem rede real.
+- Fallback seguro/sem vazamento tecnico (sempre roda): `tests/test_provider_real_safety.py::test_fallback_answer_never_leaks_technical_debug_text` e `::test_fallback_answer_never_leaks_technical_debug_text_for_auto_real_provider` cobrem os 3 gatilhos de fallback (provider invalido, provider real bloqueado, `auto` sem provider real disponivel) contra uma lista de substrings tecnicas proibidas (`MockProvider`, `mock-v1`, erro bruto, etc.).
 - Opt-in (skipado por padrão): `tests/test_real_optin.py::test_real_finguard_contract_roundtrip`, controlado por `PEDROCORE_RUN_REAL_FINGUARD_TESTS=true`.
 - Opt-in real Gemini (skipado por padrao): `tests/test_real_optin.py::test_real_gemini_orchestrate_authorized_call`, controlado por `PEDROCORE_RUN_REAL_GEMINI_TESTS=true`.
+- Validado manualmente em 2026-07-09: `provider=auto` + `allow_real_provider=true` retornou resposta conversacional real via Gemini (`provider_used=gemini`, `fallback_used=false`), sem texto tecnico/debug em nenhum cenario de fallback testado. Ver `docs/08_CHANGELOG.md`.
 
 ## 5. O que falta (fora deste repositório)
 

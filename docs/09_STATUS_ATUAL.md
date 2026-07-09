@@ -16,7 +16,7 @@ Ultima frente commitada: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de
 
 Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organizacao de links Markdown/Obsidian em `docs/`, sem alteracao de codigo.
 
-Frente local em validacao: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`. O PedroCore passa a decidir `provider=auto` para consumidores externos: mock default, `local_qa` preservado, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore. Teste real Gemini fica manual/opt-in e skipado por padrao.
+Frente local **validada com sucesso**: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`. O PedroCore decide `provider=auto` para consumidores externos: mock default, `local_qa` preservado, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore. Corrigido bug de fallback que vazava texto tecnico/debug (`MockProvider`, `mock-v1`, erro bruto) na resposta conversacional — fallback agora sempre seguro/conservador (ver `docs/08_CHANGELOG.md`). Validacao manual confirmou Gemini real respondendo de forma conversacional via `provider=auto` (modelo `gemini-2.5-flash`; `gemini-3.5-flash`, o default de `.env`, estava com 503 transitorio do lado do Google no momento do teste). Teste real Gemini fica manual/opt-in e skipado por padrao. Pytest: `351 passed, 7 skipped, 2 warnings`.
 
 ## Versão atual de produto
 

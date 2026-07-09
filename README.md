@@ -6,7 +6,7 @@ Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações re
 Frente pós-fechamento: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence, contrato de Local Model Provider e Evaluation Foundation). Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 Frente commitada mais recente: `PEDROCORE-QA-SAFETY-HARDENING-01` (`d6106b7`) — endurecimento de QA/safety sem reabrir o core funcional. Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
 Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organizacao de links Markdown/Obsidian, sem alteracao de codigo.
-Frente em validacao local: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` - `provider=auto|gemini` controlado em `/api/orchestrate`, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore; testes padrao usam stub/mock e o teste real fica opt-in.
+Frente **validada com sucesso** em 2026-07-09: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` - `provider=auto|gemini` controlado em `/api/orchestrate`, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore; testes padrao usam stub/mock e o teste real fica opt-in. Corrigido bug de fallback que vazava texto tecnico/debug na resposta conversacional (ver `docs/08_CHANGELOG.md`); validacao manual confirmou resposta real via Gemini (`provider_used=gemini`, sem fallback). Pytest `351 passed, 7 skipped, 2 warnings`.
 Mapa atual completo: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 

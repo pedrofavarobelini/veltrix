@@ -18,7 +18,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado atual (`PEDROCORE-QA-SAFETY-HARDENING-01`, commit `d6106b7`): `341 passed, 6 skipped, 2 warnings`.
+Resultado atual (`PEDROCORE-QA-SAFETY-HARDENING-01`, commit `d6106b7`): `341 passed, 6 skipped, 2 warnings`. Apos a correcao de fallback seguro da frente `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` (2026-07-09): `351 passed, 7 skipped, 2 warnings` — ver `docs/08_CHANGELOG.md`.
 
 Teste direcionado da frente `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`:
 

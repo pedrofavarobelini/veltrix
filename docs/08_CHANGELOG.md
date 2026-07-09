@@ -1,14 +1,32 @@
 # PedroCore IA — Changelog
 
-## FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01 - Provider real controlado via PedroCore
+## FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01 - Fechamento: fallback seguro + validacao real com Gemini
 
-Status: implementacao local em validacao, sem push/tag/merge e sem teste real Gemini padrao.
+Status: **validado localmente com Gemini real** (`provider=auto`, `allow_real_provider=true`), sem push/tag/merge, sem alterar `.env`/chave, sem rodar Gemini real na suite padrao.
 
-- `POST /api/orchestrate` agora aceita `provider=auto` como politica controlada; sem `allow_real_provider=true`, cai em mock seguro.
+### Correcao de fallback (bug encontrado no uso visual do Assistente FinGuard)
+
+- **Bug**: `_mock_fallback()` (`orchestration/service.py`) montava a resposta de fallback chamando `MockProvider` em modo `"tecnico"` (modo default de `ChatRequest` quando o chamador nao envia `mode`, caso do FinGuard) e embutia o erro tecnico bruto na propria resposta conversacional — a `answer` chegava ao usuario final com texto como "Resposta tecnica simulada do MockProvider", "mock-v1", "Modelo solicitado", "A V2 possui arquitetura multi-provider" e ate o traceback resumido do provider real (`Falha no GeminiProvider: 503 UNAVAILABLE...`).
+- **Correcao**: `_mock_fallback()` agora retorna sempre uma resposta segura e conservadora fixa (`SAFE_FALLBACK_ANSWER`), sem citar provider, modelo, classe de excecao ou erro tecnico bruto. Detalhe tecnico continua disponivel apenas em `error`/`error_code`/`warning_codes`/`audit` (nunca expostos em `answer`; o proprio schema publico `OrchestrateResponse` ja nao expunha `error` bruto, so `error_code`).
+- **Testes atualizados/criados** em `tests/test_provider_real_safety.py`: 2 asserts que dependiam do texto tecnico antigo foram corrigidos para verificar ausencia do texto no lugar de presenca; 2 testes novos (`test_fallback_answer_never_leaks_technical_debug_text`, `test_fallback_answer_never_leaks_technical_debug_text_for_auto_real_provider`) cobrem os 3 gatilhos de fallback (provider invalido, provider real bloqueado por safe mode, `auto` sem provider real disponivel) contra uma lista fixa de substrings tecnicas proibidas.
+- **Eval harness** (`app/modules/eval_harness/fixtures.py`): caso `invalid-provider-falls-back-safely` atualizado para exigir o novo texto seguro e proibir explicitamente `mockprovider`, `mock-v1`, `modelo solicitado`, `erro técnico`, `fallback acionado`, `provider_inexistente`.
+- Suite padrao apos a correcao: **351 passed, 7 skipped** (era 341 passed, 6 skipped antes desta correcao — 2 testes hardening novos + 1 skip novo por causa do proprio marker `expected_guarded_call`; nenhum teste removido).
+
+### Validacao manual com Gemini real (2026-07-09)
+
+- PedroCore local subido com `.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 3333` (nunca `python -m uvicorn` generico) e `GEMINI_API_KEY` carregada só via `.env` local (nunca impressa, nunca exportada manualmente).
+- Primeira chamada real `provider=auto` + `allow_real_provider=true` retornou fallback: o modelo padrao configurado (`GEMINI_MODEL=gemini-3.5-flash`, em `.env`) respondeu **503 UNAVAILABLE ("high demand")** — indisponibilidade transitoria do lado do Google, confirmada via diagnostico direto do `GeminiProvider` (chave valida, `is_configured=True`).
+- Diagnostico adicional (fora da suite, script descartavel) testou outros modelos Gemini: `gemini-2.5-flash` respondeu com sucesso; `gemini-2.0-flash` retornou 429 (quota); `gemini-flash-latest` tambem 503. Isso confirma que a integracao real (chave, roteamento, política de autorizacao) funciona corretamente — a indisponibilidade e especifica do modelo `gemini-3.5-flash` no momento do teste, nao um bug do PedroCore.
+- Com `GEMINI_MODEL=gemini-2.5-flash` sobreposto **apenas via variavel de ambiente do processo** (sem alterar `.env`), a mesma chamada `provider=auto`/`allow_real_provider=true` retornou `provider_used="gemini"`, `model="gemini-2.5-flash"`, `fallback_used=false`, resposta conversacional completa (plano de quitacao de divida considerando renda/aluguel/alimentacao) e disclaimer financeiro presente. Nenhuma configuracao permanente foi alterada; `GEMINI_MODEL=gemini-3.5-flash` continua o default em `.env`.
+- Confirmado: `GEMINI_API_KEY` nunca impressa, nunca commitada, nunca exposta em log/resposta/teste.
+
+### Comportamento (sem mudanca desde a implementacao original)
+
+- `POST /api/orchestrate` aceita `provider=auto` como politica controlada; sem `allow_real_provider=true`, cai em mock seguro.
 - Com `allow_real_provider=true`, `provider=auto` escolhe Gemini quando `GEMINI_API_KEY` esta configurada no ambiente PedroCore; `provider=gemini` continua exigindo autorizacao explicita.
 - Se houver autorizacao mas nenhum provider real configurado, retorna fallback Mock com `PROVIDER_REAL_UNAVAILABLE`.
 - `local_qa` permanece intacto para QA/release gate; mock segue default seguro.
-- Testes padrao novos usam Gemini stubado/mocado e o guard estrutural continua bloqueando rede real. Teste real Gemini foi separado em `PEDROCORE_RUN_REAL_GEMINI_TESTS=true`, skipado por padrao.
+- Testes padrao usam Gemini stubado/mocado e o guard estrutural continua bloqueando rede real. Teste real Gemini fica opt-in via `PEDROCORE_RUN_REAL_GEMINI_TESTS=true`, skipado por padrao.
 
 Atualizado em: 09/07/2026
 
