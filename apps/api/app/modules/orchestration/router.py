@@ -85,4 +85,5 @@ async def orchestrate(payload: ChatRequest, request: Request):
         visual_qa_analysis=outcome.visual_qa_analysis,
         exploration=outcome.exploration,
         audit=outcome.audit,
+        memory_used=outcome.memory_used,
     )

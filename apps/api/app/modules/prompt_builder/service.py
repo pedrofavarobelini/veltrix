@@ -63,6 +63,16 @@ class PromptBuilder:
             "[Regras de segurança]\n" + "\n".join(f"- {rule}" for rule in security_rules),
         ]
 
+        # Seções opcionais da Intelligence Layer / memória técnica: só entram
+        # quando fornecidas pelo pipeline; nunca alteram o prompt legado.
+        if data.intelligence_instructions:
+            sections.append(
+                "[Plano de inteligência]\n"
+                + "\n".join(f"- {item}" for item in data.intelligence_instructions)
+            )
+        if data.memory_block:
+            sections.append(f"[Memória técnica]\n{data.memory_block}")
+
         enriched_system_prompt = "\n\n".join(sections)
         full_prompt = f"{enriched_system_prompt}\n\n[Mensagem do usuário]\n{data.message}"
 

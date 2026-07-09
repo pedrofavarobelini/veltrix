@@ -30,6 +30,8 @@ Mapa de versao, status, changelog e fechamento.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_IMPLEMENT_05F]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINALIZE_06A]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]
+- [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]]
+- [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]]
 
 ## Roadmap e decisoes
 

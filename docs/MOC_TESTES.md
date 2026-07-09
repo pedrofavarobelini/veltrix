@@ -16,7 +16,14 @@ cd C:\Projetos\pedrocore-ia\apps\api
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado final registrado no fechamento: `216 passed, 6 skipped, 2 warnings`.
+Resultado atual (ECOSYSTEM-INTELLIGENCE-SUITE-01): `296 passed, 6 skipped, 2 warnings`.
+
+Eval harness deterministico (sem provider real, sem rede):
+
+```powershell
+cd C:\Projetos\pedrocore-ia\apps\api
+uv run python -m app.modules.eval_harness.run
+```
 
 ## Testes opt-in
 
@@ -33,3 +40,5 @@ Resultado final registrado no fechamento: `216 passed, 6 skipped, 2 warnings`.
 - QA/release: `test_qa_analysis.py`, `test_qa_response.py`, `test_qa_flow.py`, `test_release_gate.py`, `test_release_hardening.py`.
 - FinGuard: `test_finguard_contract.py`, `test_finguard_enforcement.py`.
 - Reader/OCR/visual/Playwright/exploration: `test_artifact_reader.py`, `test_ocr_guard.py`, `test_visual_qa.py`, `test_multimodal_guard.py`, `test_playwright_guard.py`, `test_exploration.py`.
+- Fundacao de inteligencia: `test_intelligence_layer.py`, `test_report_intelligence.py`, `test_local_model_contract.py`, `test_evaluation_foundation.py`.
+- Ecossistema/memoria/local model/eval: `test_ecosystem_contract.py`, `test_report_memory.py`, `test_local_model_provider.py`, `test_eval_harness.py`.

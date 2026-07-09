@@ -44,6 +44,8 @@ class OrchestrationOutcome(BaseModel):
     # PEDROCORE-MODEL-FOUNDATION-01: plano interno da Intelligence Layer.
     # Não é exposto em ChatResponse/OrchestrateResponse nesta frente.
     intelligence_plan: IntelligencePlan | None = None
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01: memória técnica consultada nesta request.
+    memory_used: bool = False
 
     @property
     def task_warnings(self) -> list[str]:
@@ -83,3 +85,27 @@ class OrchestrateResponse(BaseModel):
     visual_qa_analysis: VisualQAAnalysis | None = None
     exploration: ExplorationPlan | None = None
     audit: AuditMetadata
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01 (aditivo, retrocompatível): indica se a
+    # memória técnica foi anexada ao contexto (context_from_memory=true).
+    memory_used: bool = False
+
+
+class AssistantResponsePayload(BaseModel):
+    """Payload auxiliar de assistente para sistemas consumidores do ecossistema.
+
+    Não substitui OrchestrateResponse: é uma projeção documentada/conveniente
+    do outcome, montada por build_assistant_payload() no OrchestrationService.
+    O backend do sistema consumidor pode usá-la como formato de resposta do
+    seu próprio assistente (ex.: futura FINGUARD-PEDROCORE-ASSISTANT-01).
+    """
+
+    answer: str
+    suggestions: list[str] = Field(default_factory=list)
+    disclaimer: str | None = None
+    safety_flags: list[str] = Field(default_factory=list)
+    provider_used: str
+    model: str
+    audit_id: str | None = None
+    memory_used: bool = False
+    evaluation: dict | None = None
+    warnings: list[WarningItem] = Field(default_factory=list)

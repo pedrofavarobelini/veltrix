@@ -50,7 +50,12 @@ def test_local_model_is_distinct_from_local_qa():
     assert LOCAL_PROVIDER_NAME == "local_qa"
 
 
-def test_local_model_is_not_registered_as_provider():
-    # Nesta frente o contrato não é um provider funcional: pedir
-    # provider="local_model" cai no fallback Mock existente.
-    assert provider_registry.get("local_model") is None
+def test_local_model_is_registered_but_disabled_by_default():
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01: o provider passou a existir no registry,
+    # mas é opt-in default-off — nunca configured sem flag explícita e nunca
+    # real_provider externo.
+    provider = provider_registry.get("local_model")
+
+    assert provider is not None
+    assert provider.real_provider is False
+    assert provider.is_configured is False

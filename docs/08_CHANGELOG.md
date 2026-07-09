@@ -1,6 +1,45 @@
 # PedroCore IA — Changelog
 
-Atualizado em: 08/07/2026
+Atualizado em: 09/07/2026
+
+## PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01 — Inteligência de ecossistema (pacote A+B+C+D)
+
+Status: implementada e validada; commit pendente de autorização humana. Base: `689e50a`.
+
+### Fase A — Ecosystem finalize
+
+- `ChatRequest` + `allow_local_model=false` e `context_from_memory=false` (aditivos, default seguro).
+- 7 task types novos (`assistant_chat`, `ecosystem_assistant`, `finance_advice`, `project_status`, `report_memory_query`, `local_model_chat`, `evaluation_run`); FinGuard recebeu somente `assistant_chat`/`finance_advice`/`project_status`/`report_memory_query` como consumidor read-only.
+- `finance_advice` conservador: disclaimer obrigatório anexado à resposta + `FINANCIAL_DISCLAIMER`.
+- Intelligence Layer conectada: `plan.instructions` → seção `[Plano de inteligência]` do prompt (Prompt Builder com campos opcionais retrocompatíveis).
+- `AssistantResponsePayload` + `build_assistant_payload()`; `OrchestrateResponse.memory_used` (aditivo).
+- Contrato: `docs/10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT.md`.
+
+### Fase B — Report Memory
+
+- Módulo `report_memory/` (entry/query/snapshot; repositórios in-memory e `local_json` opcional; segredos redigidos com `[REDACTED]`).
+- Flag `PEDROCORE_REPORT_MEMORY_PERSISTENCE=off` (default) | `memory` | `local_json` (+ `PEDROCORE_REPORT_MEMORY_DIR`).
+- Rotas novas com auth interna opcional: `POST /api/reports/analyze`, `POST /api/reports/ingest`, `GET /api/project-memory/{project_id}/summary`.
+- `/api/orchestrate` com `context_from_memory=true` anexa snapshot limitado (2k chars, `[Memória técnica]`) e marca `memory_used=true`; codes `REPORT_MEMORY_USED/DISABLED/EMPTY/IS_NOT_TRAINING`.
+- Contrato: `docs/10-contratos/CONTRATO_REPORT_MEMORY.md`. **Relatórios não treinam IA.**
+
+### Fase C — Local Model Provider opt-in
+
+- `providers/local_model_provider.py`: `local_model` registrado no registry (default OFF, `real_provider=false`, `configured=false` sem flag); gate cumulativo (`allow_local_model` + `PEDROCORE_ENABLE_LOCAL_MODEL` + backend + task não crítica); codes `LOCAL_MODEL_*`; fora de `RELEASE_GATE_TRUSTED_PROVIDERS`.
+- **Sem rede nesta frente**: transport padrão None (fallback controlado); testes com fake transport; flags novas apenas em `.env.example`.
+
+### Fase D — Eval Harness
+
+- Módulo `eval_harness/` com `EvalCase` (rejeita `allow_real_provider=true`), `EvalRunResult`, 11 fixtures determinísticas e executor `uv run python -m app.modules.eval_harness.run` (verificado: 11/11, exit 0). Não é benchmark de LLM; sem provider real, sem internet.
+
+### Testes
+
+- Novos: `test_ecosystem_contract.py`, `test_report_memory.py`, `test_local_model_provider.py`, `test_eval_harness.py` (39 testes).
+- Atualizados: `test_local_model_contract.py` (local_model agora registrado porém disabled) e `test_project_context.py` (allowed_tasks exatos do FinGuard). Suíte: **`296 passed, 6 skipped, 2 warnings`**.
+
+### Não alterado / não feito
+
+- Sem provider real, sem `allow_real_provider=true`, sem `.env`, sem FinGuard, sem treinamento/fine-tuning/LoRA/autoaprendizado, sem backend instalado, sem modelo baixado, sem rede em teste, sem commit/push/tag/merge.
 
 ## PEDROCORE-MODEL-FOUNDATION-01 — Fundação de inteligência própria
 

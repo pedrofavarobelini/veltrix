@@ -8,9 +8,15 @@ from app.modules.audit.service import audit_service
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
+from app.modules.evaluation.service import evaluation_service
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
-from app.modules.orchestration.schemas import OrchestrationOutcome
+from app.modules.orchestration.schemas import (
+    AssistantResponsePayload,
+    OrchestrationOutcome,
+)
+from app.modules.providers.local_model_provider import local_model_ready
+from app.modules.report_memory.service import report_memory_service
 from app.modules.policy_enforcement.service import policy_enforcement_service
 from app.modules.real_features import service as real_features
 from app.modules.project_context.service import (
@@ -41,6 +47,44 @@ from app.modules.task_router.service import (
 LOCAL_PROVIDERS = {"local", "local_qa"}
 LOCAL_PROVIDER_NAME = "local_qa"
 LOCAL_PROVIDER_MODEL = "local-qa-v1"
+
+# Provider generativo local opt-in (PEDROCORE-LOCAL-MODEL-01).
+# local_model NÃO é local_qa e nunca aprova release gate.
+LOCAL_MODEL_PROVIDER_NAME = "local_model"
+
+FINANCE_ADVICE_TASK_TYPE = "finance_advice"
+
+FINANCIAL_DISCLAIMER_TEXT = (
+    "Aviso: esta resposta é informativa e conservadora, não é aconselhamento "
+    "financeiro definitivo, não executa nenhuma ação financeira e não altera "
+    "dados. Decisões financeiras exigem validação humana."
+)
+
+# Tasks de memória de relatório: sempre acompanhadas do aviso de que
+# relatórios não treinam IA.
+REPORT_MEMORY_TASK_TYPES = {
+    "report_ingestion",
+    "project_memory_summary",
+    "report_memory_query",
+}
+
+REPORT_NOT_TRAINING_WARNING = (
+    "Relatórios técnicos não treinam IA; alimentam apenas sinais e memória "
+    "técnica consultável."
+)
+
+LOCAL_MODEL_NOT_AUTHORIZED_WARNING = (
+    "local_model exige allow_local_model=true explícito no payload; "
+    "fallback seguro aplicado."
+)
+LOCAL_MODEL_DISABLED_WARNING = (
+    "local_model desabilitado (PEDROCORE_ENABLE_LOCAL_MODEL=false ou backend "
+    "não configurado); fallback seguro aplicado."
+)
+LOCAL_MODEL_TASK_BLOCKED_WARNING = (
+    "local_model não pode ser usado em release gate ou tarefa crítica; "
+    "fallback seguro aplicado."
+)
 
 PROVIDER_REAL_BLOCKED_WARNING = (
     "Provider real bloqueado pelo safe mode (allow_real_provider=false); "
@@ -98,6 +142,18 @@ class OrchestrationService:
             strategy=strategy, project=project
         )
 
+        # ECOSYSTEM-INTELLIGENCE-SUITE-01: memória técnica opcional por request.
+        # Default context_from_memory=false; snapshot limitado/sanitizado,
+        # nunca leitura de arquivo ou repositório externo.
+        memory_used = False
+        memory_block: str | None = None
+        memory_items: list[WarningItem] = []
+        if payload.context_from_memory:
+            memory_block, memory_items = report_memory_service.context_block(
+                project.project_id
+            )
+            memory_used = memory_block is not None
+
         effective_artifacts, reader_items = self._apply_artifact_reader(payload)
         artifacts_result = artifact_service.process(effective_artifacts)
 
@@ -119,6 +175,8 @@ class OrchestrationService:
                 context=payload.context,
                 metadata=payload.metadata,
                 artifacts_text_block=artifacts_result.text_block,
+                intelligence_instructions=intelligence_plan.instructions,
+                memory_block=memory_block,
             )
         )
 
@@ -126,6 +184,7 @@ class OrchestrationService:
         safe_mode_blocked = False
         error: str | None = None
         error_code: str | None = None
+        local_model_items: list[WarningItem] = []
 
         if requested_provider in LOCAL_PROVIDERS:
             analysis = qa_text_analyzer.analyze(
@@ -152,6 +211,16 @@ class OrchestrationService:
                     payload, requested_provider, error, prompt.enriched_system_prompt
                 )
                 fallback_used = True
+            elif requested_provider == LOCAL_MODEL_PROVIDER_NAME:
+                (
+                    answer,
+                    provider_used,
+                    model_used,
+                    fallback_used,
+                    error,
+                    error_code,
+                    local_model_items,
+                ) = await self._execute_local_model(payload, strategy, prompt)
             elif provider.real_provider and not payload.allow_real_provider:
                 safe_mode_blocked = True
                 error = PROVIDER_REAL_BLOCKED_WARNING
@@ -184,6 +253,10 @@ class OrchestrationService:
                 fallback_used=fallback_used,
                 safe_mode_blocked=safe_mode_blocked,
             )
+
+        # finance_advice é conservador: disclaimer obrigatório na resposta.
+        if strategy.task_type == FINANCE_ADVICE_TASK_TYPE:
+            answer = f"{answer}\n\n{FINANCIAL_DISCLAIMER_TEXT}"
 
         qa_skeleton = qa_response_service.build_skeleton(
             task_type=strategy.task_type,
@@ -232,6 +305,8 @@ class OrchestrationService:
             reader_items=reader_items,
             visual_qa=visual_qa,
             exploration=exploration,
+            memory_items=memory_items,
+            local_model_items=local_model_items,
         )
 
         blocked_reason: str | None = None
@@ -288,6 +363,104 @@ class OrchestrationService:
             status=status,
             blocked_reason=blocked_reason,
             intelligence_plan=intelligence_plan,
+            memory_used=memory_used,
+        )
+
+    async def _execute_local_model(
+        self,
+        payload: ChatRequest,
+        strategy,
+        prompt,
+    ) -> tuple[str, str, str, bool, str | None, str | None, list[WarningItem]]:
+        """Gate do provider generativo local opt-in (PEDROCORE-LOCAL-MODEL-01).
+
+        Só executa quando TODAS as condições valem: allow_local_model=true no
+        payload, flag/backend habilitados no ambiente e task não crítica.
+        Nunca aprova release gate, nunca usa chave externa e, sem transport
+        injetado, nunca faz chamada de rede (fallback Mock controlado).
+        """
+        items: list[WarningItem] = []
+
+        async def blocked(code: str, message: str):
+            items.append(make_warning(code, message))
+            answer, provider_used, model_used = await self._mock_fallback(
+                payload, LOCAL_MODEL_PROVIDER_NAME, message,
+                prompt.enriched_system_prompt,
+            )
+            return answer, provider_used, model_used, True, message, code, items
+
+        if not payload.allow_local_model:
+            return await blocked(
+                codes.LOCAL_MODEL_NOT_AUTHORIZED, LOCAL_MODEL_NOT_AUTHORIZED_WARNING
+            )
+        if not local_model_ready():
+            return await blocked(
+                codes.LOCAL_MODEL_DISABLED, LOCAL_MODEL_DISABLED_WARNING
+            )
+        if (
+            strategy.task_type == RELEASE_GATE_TASK_TYPE
+            or strategy.criticality == "critical"
+        ):
+            return await blocked(
+                codes.LOCAL_MODEL_TASK_BLOCKED, LOCAL_MODEL_TASK_BLOCKED_WARNING
+            )
+
+        provider = provider_registry.get(LOCAL_MODEL_PROVIDER_NAME)
+        try:
+            result = await provider.generate_response(
+                message=payload.message,
+                mode=payload.mode,
+                model=payload.model,
+                system_prompt=prompt.enriched_system_prompt,
+            )
+            items.append(
+                make_warning(
+                    codes.LOCAL_MODEL_USED,
+                    "Resposta gerada por modelo local opt-in; não usar como "
+                    "validação de release gate.",
+                )
+            )
+            return result.answer, result.provider, result.model, False, None, None, items
+        except Exception as exc:
+            error = str(exc)
+            items.append(
+                make_warning(codes.LOCAL_MODEL_TRANSPORT_UNAVAILABLE, error)
+            )
+            answer, provider_used, model_used = await self._mock_fallback(
+                payload, LOCAL_MODEL_PROVIDER_NAME, error,
+                prompt.enriched_system_prompt,
+            )
+            return answer, provider_used, model_used, True, error, None, items
+
+    def build_assistant_payload(
+        self, outcome: OrchestrationOutcome
+    ) -> AssistantResponsePayload:
+        """Projeção de assistente para sistemas consumidores do ecossistema."""
+        plan = outcome.intelligence_plan
+        evaluation = (
+            evaluation_service.evaluate_intelligence_plan(plan).model_dump()
+            if plan is not None
+            else None
+        )
+        suggestions: list[str] = []
+        if outcome.qa_skeleton is not None:
+            suggestions = list(outcome.qa_skeleton.suggested_fixes)
+
+        return AssistantResponsePayload(
+            answer=outcome.answer,
+            suggestions=suggestions,
+            disclaimer=(
+                FINANCIAL_DISCLAIMER_TEXT
+                if outcome.task_type == FINANCE_ADVICE_TASK_TYPE
+                else None
+            ),
+            safety_flags=list(plan.safety_flags) if plan is not None else [],
+            provider_used=outcome.provider_used,
+            model=outcome.model,
+            audit_id=outcome.audit.audit_id,
+            memory_used=outcome.memory_used,
+            evaluation=evaluation,
+            warnings=outcome.warning_items,
         )
 
     def _apply_artifact_reader(
@@ -470,6 +643,8 @@ class OrchestrationService:
         reader_items: list[WarningItem] | None = None,
         visual_qa=None,
         exploration=None,
+        memory_items: list[WarningItem] | None = None,
+        local_model_items: list[WarningItem] | None = None,
     ) -> list[WarningItem]:
         items: list[WarningItem] = []
         seen: set[tuple[str, str]] = set()
@@ -552,6 +727,24 @@ class OrchestrationService:
         if exploration is not None:
             for code, message in zip(exploration.warning_codes, exploration.warnings):
                 add(code, message)
+
+        if memory_items:
+            for item in memory_items:
+                add(item.code, item.message, item.severity)
+
+        if local_model_items:
+            for item in local_model_items:
+                add(item.code, item.message, item.severity)
+
+        if strategy.task_type == FINANCE_ADVICE_TASK_TYPE:
+            add(
+                codes.FINANCIAL_DISCLAIMER,
+                "Resposta financeira conservadora com disclaimer obrigatório; "
+                "nenhuma ação financeira é executada.",
+            )
+
+        if strategy.task_type in REPORT_MEMORY_TASK_TYPES:
+            add(codes.REPORT_MEMORY_IS_NOT_TRAINING, REPORT_NOT_TRAINING_WARNING)
 
         return items
 

@@ -16,6 +16,9 @@ class ChatRequest(BaseModel):
     metadata: dict | None = None
     artifacts: list[ArtifactInput] | None = None
     allow_real_provider: bool = False
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01: opt-ins explícitos, sempre False por padrão.
+    allow_local_model: bool = False
+    context_from_memory: bool = False
 
 
 class ChatResponse(BaseModel):

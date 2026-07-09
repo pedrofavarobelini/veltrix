@@ -106,6 +106,52 @@ _STRATEGIES: dict[str, dict[str, object]] = {
         "criticality": "medium",
         "allow_mock": True,
     },
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01: tasks de assistente/ecossistema.
+    # Todas read-only, sem execução; provider real segue bloqueado por padrão.
+    "assistant_chat": {
+        "response_style": "assistant_text",
+        "requires_structured_response": False,
+        "criticality": "low",
+        "allow_mock": True,
+    },
+    "ecosystem_assistant": {
+        "response_style": "assistant_text",
+        "requires_structured_response": False,
+        "criticality": "low",
+        "allow_mock": True,
+    },
+    # finance_advice é conservador: read-only, com disclaimer obrigatório,
+    # nunca executa ação financeira nem altera dados.
+    "finance_advice": {
+        "response_style": "financial_cautious",
+        "requires_structured_response": False,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "project_status": {
+        "response_style": "report_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "report_memory_query": {
+        "response_style": "report_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "local_model_chat": {
+        "response_style": "free_text",
+        "requires_structured_response": False,
+        "criticality": "low",
+        "allow_mock": True,
+    },
+    "evaluation_run": {
+        "response_style": "plan_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
     UNKNOWN_TASK_TYPE: {
         "response_style": "free_text",
         "requires_structured_response": False,

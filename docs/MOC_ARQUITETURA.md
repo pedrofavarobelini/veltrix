@@ -15,6 +15,9 @@ Mapa de arquitetura atual e historico de planejamento.
 - `POST /api/chat` - `apps/api/app/modules/chat/router.py`
 - `GET /api/providers` - `apps/api/app/modules/chat/router.py`
 - `POST /api/orchestrate` - `apps/api/app/modules/orchestration/router.py`
+- `POST /api/reports/analyze` - `apps/api/app/modules/report_memory/router.py`
+- `POST /api/reports/ingest` - `apps/api/app/modules/report_memory/router.py`
+- `GET /api/project-memory/{project_id}/summary` - `apps/api/app/modules/report_memory/router.py`
 
 ## Modulos backend
 
@@ -40,6 +43,9 @@ Mapa de arquitetura atual e historico de planejamento.
 - `report_intelligence` - sinais de relatorios tecnicos, sem persistencia (MODEL-FOUNDATION-01).
 - `evaluation` - checks deterministicos de seguranca/coerencia (MODEL-FOUNDATION-01).
 - `providers/local_model_contract` - contrato futuro do provider generativo local (MODEL-FOUNDATION-01).
+- `report_memory` - memoria tecnica controlada + rotas de relatorios (ECOSYSTEM-SUITE-01).
+- `providers/local_model_provider` - provider generativo local opt-in, sem rede (ECOSYSTEM-SUITE-01).
+- `eval_harness` - harness deterministico de avaliacao (ECOSYSTEM-SUITE-01).
 
 ## Fundação de inteligência própria
 

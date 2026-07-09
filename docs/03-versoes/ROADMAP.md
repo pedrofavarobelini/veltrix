@@ -155,6 +155,21 @@ Testes: `257 passed, 6 skipped, 2 warnings` (41 novos, zero regressões). Contra
 4. `PEDROCORE-LOCAL-MODEL-01` — provider generativo local opt-in (backend instalado manualmente, flag default-off, fora do release gate).
 5. `PEDROCORE-EVAL-HARNESS-01` — harness de avaliação/benchmark.
 
+## PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01 — Inteligência de ecossistema (pacote)
+
+Status: **implementada e validada; commit pendente de autorização**. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+
+Consolidou quatro trilhas do roadmap anterior em uma frente:
+
+- **Fase A (`PEDROCORE-ECOSYSTEM-FINALIZE-01`)** — contrato externo consolidado (`CONTRATO_ECOSYSTEM_ASSISTANT.md`), 7 task types de assistente/ecossistema (`finance_advice` com disclaimer obrigatório), FinGuard como consumidor read-only, Intelligence Layer conectada ao Prompt Builder (`[Plano de inteligência]`), `AssistantResponsePayload`, `OrchestrateResponse.memory_used`.
+- **Fase B (`PEDROCORE-REPORT-MEMORY-01`)** — memória técnica controlada (`report_memory/`): rotas `POST /api/reports/analyze`, `POST /api/reports/ingest`, `GET /api/project-memory/{id}/summary`; persistência default OFF (`off|memory|local_json`); `context_from_memory` opt-in com snapshot limitado. Relatórios não treinam IA.
+- **Fase C (`PEDROCORE-LOCAL-MODEL-01`)** — `local_model` registrado como provider opt-in default-off, gate cumulativo, fora do release gate, **sem rede nesta frente** (transport real é frente futura).
+- **Fase D (`PEDROCORE-EVAL-HARNESS-01`)** — eval harness determinístico com 11 fixtures e executor local; não é benchmark de LLM.
+
+Testes: `296 passed, 6 skipped, 2 warnings` (39 novos, zero regressões). Contratos públicos preservados (mudanças aditivas).
+
+Próximas frentes recomendadas: `FINGUARD-PEDROCORE-ASSISTANT-01` (integração do assistente via PedroCore), `PEDROCORE-LOCAL-MODEL-02` (transport real opt-in), `PEDROCORE-EVAL-HARNESS-02`, `PEDROCORE-REPORT-MEMORY-02`.
+
 ## Opcionais pós-fechamento (sem ordem de data fixa)
 
 Itens que permanecem opcionais após `v7.0.0`:

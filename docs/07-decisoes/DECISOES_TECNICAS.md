@@ -277,3 +277,19 @@ O futuro provider generativo local (`local_model`, backends possíveis: Ollama, 
 ## Decisão 069 — Nenhuma melhoria de inteligência sem avaliação determinística prévia
 
 Qualquer evolução da inteligência própria do PedroCore (memória, prompts, provider local) deve passar pela Evaluation Foundation (`evaluation/`): checks determinísticos de segurança/coerência (provider real bloqueado, sem auto-training, sem fine-tuning, sem exposição de segredos, revisão humana para fluxos críticos, memória ≠ treinamento). A avaliação não usa provider real, não faz benchmark de LLM nesta fase e nunca substitui revisão humana.
+
+## Decisão 070 — Sistemas consumidores usam PedroCore via backend próprio; front-end nunca chama provider
+
+O contrato de ecossistema (`CONTRATO_ECOSYSTEM_ASSISTANT.md`) fixa o fluxo: front-end do consumidor → backend do consumidor → `POST /api/orchestrate` do PedroCore. Nenhum front-end chama provider externo diretamente. FinGuard participa apenas como consumidor read-only (`assistant_chat`, `finance_advice`, `project_status`, `report_memory_query`); `general_chat` e `report_ingestion` continuam fora da policy dele.
+
+## Decisão 071 — finance_advice é conservador com disclaimer obrigatório imposto pelo pipeline
+
+A task `finance_advice` nunca dá aconselhamento absoluto, nunca executa ação financeira e nunca altera dados. O disclaimer é anexado pela orquestração (não depende do provider) e sinalizado com `FINANCIAL_DISCLAIMER` — vale para mock, local e qualquer provider futuro.
+
+## Decisão 072 — Memória técnica é opt-in duplo e nunca é treinamento
+
+Nada é guardado sem `PEDROCORE_REPORT_MEMORY_PERSISTENCE` ≠ `off` (default `off`) e nada é consultado sem `context_from_memory=true` por request (default `false`). Segredos são redigidos antes de guardar; snapshot anexado ao prompt é limitado (2k chars) e sanitizado; toda ingestão emite `REPORT_MEMORY_IS_NOT_TRAINING`.
+
+## Decisão 073 — local_model é opt-in duplo, sem rede nesta fase e nunca aprova release gate
+
+O provider generativo local exige flag de ambiente (`PEDROCORE_ENABLE_LOCAL_MODEL=true` + backend) E `allow_local_model=true` por request; é bloqueado em release gate/tarefa crítica; permanece fora de `RELEASE_GATE_TRUSTED_PROVIDERS`; e nesta fase não possui transport real — testes usam fake transport e nenhuma chamada de rede existe. Backend local é responsabilidade do operador (Decisão 064 se aplica).

@@ -1,6 +1,6 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 08/07/2026
+Atualizado em: 09/07/2026
 
 ## Status oficial
 
@@ -8,7 +8,9 @@ Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag fi
 
 DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
 
-Frente atual: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence Foundation, Local Model Provider Contract, Evaluation Foundation), implementada de forma retrocompatível e ainda não commitada. O PedroCore **não** virou modelo de IA próprio: não há treinamento, fine-tuning, autoaprendizado, RAG, persistência nova nem provider local funcional. Testes: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md` e `docs/14-intelligence-layer/`.
+Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
+
+Frente atual: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote (A) contrato de ecossistema, (B) memória técnica controlada, (C) `local_model` opt-in sem rede, (D) eval harness determinístico; implementada de forma retrocompatível e ainda não commitada. O PedroCore continua **não** sendo modelo treinado: sem fine-tuning, sem autoaprendizado, sem RAG, sem provider real. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
 
 ## Versão atual de produto
 
@@ -61,9 +63,11 @@ C:\Projetos\pedrocore-ia
 
 - `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria: Intelligence Layer (`intelligence_layer/`, plano determinístico interno por task, nunca habilita provider real), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos, sem persistência), contrato futuro do Local Model Provider (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem geração), Evaluation Foundation (`evaluation/`, checks de segurança/coerência) e 4 task_types novos somente para `pedrocore`. Testes backend: `257 passed, 6 skipped, 2 warnings` (41 novos). Commit pendente de autorização.
 
+- `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — inteligência de ecossistema: contrato para consumidores + tasks de assistente (disclaimer obrigatório em `finance_advice`), memória técnica controlada (`report_memory/`, rotas `/api/reports/*` e `/api/project-memory/*`, default off, `context_from_memory` opt-in), provider `local_model` opt-in default-off (sem rede nesta frente; nunca aprova release gate) e eval harness determinístico (`eval_harness/`, 11 fixtures). Testes: `296 passed, 6 skipped, 2 warnings` (39 novos). Commit pendente de autorização.
+
 ## Em andamento
 
-`PEDROCORE-MODEL-FOUNDATION-01` implementada e validada nesta sessão; aguarda autorização humana para commit. Testes backend atuais: `257 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (cliente FinGuard, push, deploy, execução real de OCR/multimodal/Playwright, memória persistente, provider local real) são opcionais e exigem nova aprovação.
+`PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` implementada e validada nesta sessão; aguarda autorização humana para commit. Testes backend atuais: `296 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (integração do Assistente FinGuard via PedroCore, transport real do local_model, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
 
 ## Ainda não existe / permanece opcional
 

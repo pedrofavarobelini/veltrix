@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 08/07/2026
+Atualizado em: 09/07/2026
 
 ## Versão atual de produto
 
@@ -16,7 +16,9 @@ Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integra�
 
 DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 
-Frente atual: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence Foundation, Local Model Provider Contract e Evaluation Foundation), retrocompatível, sem provider real, sem treinamento/fine-tuning, sem persistência nova, sem tocar FinGuard. Testes: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
+Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
+
+Frente atual: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote com quatro trilhas: (A) contrato de ecossistema/assistente para sistemas consumidores; (B) memória técnica controlada de relatórios (default off, rotas novas, `context_from_memory` opt-in); (C) provider generativo local `local_model` opt-in default-off, sem rede nesta frente; (D) eval harness determinístico. Retrocompatível, sem provider real, sem treinamento/fine-tuning, sem tocar FinGuard. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
 
 ## Status atual
 

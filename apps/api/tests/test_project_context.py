@@ -70,6 +70,12 @@ def test_resolver_only_returns_data():
             "assisted_exploration_review",
             "artifact_summary",
             "technical_explanation",
+            # ECOSYSTEM-INTELLIGENCE-SUITE-01: FinGuard como consumidor
+            # read-only do assistente de ecossistema.
+            "assistant_chat",
+            "finance_advice",
+            "project_status",
+            "report_memory_query",
         ],
         "warnings": [],
         "notes": (

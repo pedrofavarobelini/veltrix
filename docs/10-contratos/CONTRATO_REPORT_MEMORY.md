@@ -1,0 +1,59 @@
+# Contrato — Report Memory
+
+Frente: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` (Fase B)
+Atualizado em: 09/07/2026
+
+Links: [[CONTRATO_ECOSYSTEM_ASSISTANT]] | [[../14-intelligence-layer/REPORT_MEMORY]] | [[../14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]]
+
+## 1. Princípio
+
+**Relatórios técnicos NÃO treinam IA, NÃO fazem fine-tuning e NÃO alteram comportamento automaticamente.** Eles viram sinais, histórico e contexto consultável (memória técnica). Toda resposta de ingestão carrega o warning `REPORT_MEMORY_IS_NOT_TRAINING`.
+
+## 2. Configuração (default OFF)
+
+| Flag | Default | Valores |
+|---|---|---|
+| `PEDROCORE_REPORT_MEMORY_PERSISTENCE` | `off` | `off` \| `memory` \| `local_json` |
+| `PEDROCORE_REPORT_MEMORY_DIR` | vazio | diretório para `local_json` (obrigatório nesse modo) |
+
+- `off` — nada é guardado nem consultado (ingest responde `status="disabled"`).
+- `memory` — repositório in-process volátil (máx. 50 entradas por projeto).
+- `local_json` — um arquivo JSON por projeto no diretório configurado pelo operador; conteúdo sanitizado (segredos redigidos com `[REDACTED]`); dados de runtime não devem ser commitados; nunca grava em `.env`.
+
+## 3. Rotas
+
+Autenticação: mesma regra opcional do `/api/orchestrate` (`PEDROCORE_INTERNAL_API_KEY` + `X-PedroCore-Api-Key`).
+
+### `POST /api/reports/analyze`
+
+Recebe `TechnicalReportInput`, normaliza, extrai sinais e avalia — **sem persistir nada**, mesmo com memória habilitada.
+
+Resposta: `{status, report, signals, evaluation, warnings}`.
+
+### `POST /api/reports/ingest`
+
+Normaliza, extrai sinais, avalia e grava na memória configurada.
+
+Resposta: `{status, stored, memory_id, snapshot, signals, evaluation, warnings}` — `status="disabled"`/`stored=false` quando a persistência está `off`.
+
+### `GET /api/project-memory/{project_id}/summary`
+
+Snapshot agregado (`ProjectMemorySnapshot`): `last_known_status`, `last_report_at`, `latest_commit`, `latest_branch`, `completed_milestones`, `unresolved_risks`, `recurring_signals`, `next_recommended_steps`, `confidence`, `source_count`. Sem leitura de repositório externo; memória isolada por `project_id`.
+
+## 4. Integração com /api/orchestrate
+
+`context_from_memory=true` no payload (default `false`):
+
+- consulta a memória do `project_id` resolvido pelo `origin_system`;
+- anexa snapshot **limitado (máx. 2.000 chars) e sanitizado** como seção `[Memória técnica]` do prompt;
+- marca `memory_used=true` e adiciona `REPORT_MEMORY_USED`;
+- memória desabilitada → `REPORT_MEMORY_DISABLED`; sem registros → `REPORT_MEMORY_EMPTY` (ambos com `memory_used=false`).
+
+Nunca há leitura de arquivo/repositório: só o que foi previamente ingerido por payload.
+
+## 5. Segurança
+
+- Nenhum segredo é armazenado: sanitização redige padrões `api_key/token/password/senha/secret/chave = valor`.
+- Nenhuma rota aceita path ou arquivo local.
+- Nenhum provider é chamado por essas rotas.
+- Sinais `critical`/`high` (`provider_real_used`, `database_safety_risk`, ...) exigem revisão humana (`evaluation.requires_human_review=true`).

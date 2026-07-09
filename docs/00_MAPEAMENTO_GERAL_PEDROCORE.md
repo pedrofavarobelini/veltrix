@@ -1,8 +1,10 @@
 # Mapeamento Geral PedroCore IA
 
-Atualizado em: 08/07/2026
+Atualizado em: 09/07/2026
 
-> Nota MODEL-FOUNDATION-01: a frente `PEDROCORE-MODEL-FOUNDATION-01` adicionou os módulos `intelligence_layer`, `report_intelligence`, `evaluation` e o contrato `providers/local_model_contract.py`, além de 4 task_types novos para `pedrocore`. Testes atuais: `257 passed, 6 skipped, 2 warnings`. Ver [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] e [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]].
+> Nota MODEL-FOUNDATION-01: a frente `PEDROCORE-MODEL-FOUNDATION-01` adicionou os módulos `intelligence_layer`, `report_intelligence`, `evaluation` e o contrato `providers/local_model_contract.py`, além de 4 task_types novos para `pedrocore`. Ver [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] e [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]].
+
+> Nota ECOSYSTEM-INTELLIGENCE-SUITE-01: adicionou os módulos `report_memory` e `eval_harness`, o provider `local_model` opt-in (default OFF, sem rede nesta frente), 7 task_types de assistente/ecossistema, as rotas `POST /api/reports/analyze`, `POST /api/reports/ingest` e `GET /api/project-memory/{project_id}/summary`, os campos de request `allow_local_model`/`context_from_memory` (default false) e o campo de resposta `memory_used`. Testes atuais: `296 passed, 6 skipped, 2 warnings`. Ver [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]], [[10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT]] e [[10-contratos/CONTRATO_REPORT_MEMORY]].
 
 Links centrais: [[MOC_PEDROCORE_IA]] | [[MOC_ARQUITETURA]] | [[MOC_SEGURANCA]] | [[MOC_QA_RELEASE_GATE]] | [[MOC_INTEGRACOES]] | [[MOC_TESTES]] | [[MOC_VERSOES_STATUS]]
 
@@ -55,12 +57,16 @@ FastAPI app/main.py
   /api/chat         -> ChatService -> OrchestrationService
   /api/providers    -> ProviderRegistry
   /api/orchestrate  -> auth opcional -> OrchestrationService
+  /api/reports/analyze            -> auth opcional -> ReportMemoryService (sem persistir)
+  /api/reports/ingest             -> auth opcional -> ReportMemoryService (memoria opt-in)
+  /api/project-memory/{id}/summary -> auth opcional -> ReportMemoryService
 
 OrchestrationService
   Task Router
   Project Context
   Policy Enforcement
-  Intelligence Layer (plano interno deterministico)
+  Intelligence Layer (plano -> instrucoes do prompt)
+  Report Memory opcional (context_from_memory=true)
   Artifact Reader opt-in
   Artifacts Service
   Prompt Builder
@@ -197,7 +203,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 
 - Onde: `apps/api/app/modules/task_router/`.
 - O que faz: normaliza `task_type`, define criticidade, formato de resposta e se mock e permitido.
-- Task types atuais: `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary`, `exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`, `report_ingestion`, `project_memory_summary`, `model_foundation_review`, `intelligence_planning`, `unknown`. (Os 4 de fundação de inteligência são permitidos apenas para `pedrocore`.)
+- Task types atuais: `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary`, `exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`, `report_ingestion`, `project_memory_summary`, `model_foundation_review`, `intelligence_planning`, `assistant_chat`, `ecosystem_assistant`, `finance_advice`, `project_status`, `report_memory_query`, `local_model_chat`, `evaluation_run`, `unknown`. (Fundação de inteligência e maioria das tasks de ecossistema são de `pedrocore`; FinGuard recebe apenas `assistant_chat`/`finance_advice`/`project_status`/`report_memory_query` como consumidor read-only.)
 - Status: finalizado para roteamento deterministico local.
 - Default: `general_chat`.
 - Riscos controlados: task desconhecida vira `unknown` com warning.
@@ -350,6 +356,33 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 - Riscos controlados: reprova auto-training/fine-tuning/exposição de segredos; falha sempre exige revisão humana.
 - Testes: `test_evaluation_foundation.py`.
 
+### `report_memory`
+
+- Onde: `apps/api/app/modules/report_memory/`.
+- O que faz: memória técnica controlada — ingestão de relatórios por payload, sinais, snapshot por projeto e rotas `/api/reports/*` + `/api/project-memory/*`.
+- Status: implementado (ECOSYSTEM-INTELLIGENCE-SUITE-01); relatórios não treinam IA.
+- Default: off (`PEDROCORE_REPORT_MEMORY_PERSISTENCE=off`); `context_from_memory=false` por request.
+- Riscos controlados: segredos redigidos, snapshot limitado (2k chars), isolamento por projeto, sem leitura de arquivo/repositório.
+- Testes: `test_report_memory.py`.
+
+### `eval_harness`
+
+- Onde: `apps/api/app/modules/eval_harness/`.
+- O que faz: harness determinístico de avaliação (11 fixtures contra o pipeline real; executor `python -m app.modules.eval_harness.run`).
+- Status: implementado; não é benchmark de LLM.
+- Default: uso interno/testes; sem rota pública.
+- Riscos controlados: `allow_real_provider=true` rejeitado por validação; sem rede.
+- Testes: `test_eval_harness.py`.
+
+### `providers/local_model_provider`
+
+- Onde: `apps/api/app/modules/providers/local_model_provider.py`.
+- O que faz: provider generativo local opt-in (`local_model`), registrado no registry como default OFF.
+- Status: implementado sem transport real (fake transport em teste); nenhuma rede nesta frente.
+- Default: off (`PEDROCORE_ENABLE_LOCAL_MODEL=false`, backend `disabled`); exige também `allow_local_model=true` por request.
+- Riscos controlados: bloqueado em release gate/tarefa crítica; fora de `RELEASE_GATE_TRUSTED_PROVIDERS`; fallback Mock controlado; sem chave externa.
+- Testes: `test_local_model_provider.py`.
+
 ### `providers/local_model_contract`
 
 - Onde: `apps/api/app/modules/providers/local_model_contract.py`.
@@ -465,6 +498,7 @@ Quando bloqueia, `provider_used="none"` e a requisicao nao chega ao provider, Ar
 
 - `mock`: local, seguro, default/fallback.
 - `local_qa`: pseudo-provider local deterministico para QA textual; nao chama rede.
+- `local_model`: provider generativo local opt-in (ECOSYSTEM-INTELLIGENCE-SUITE-01) — default OFF, exige `allow_local_model=true` + `PEDROCORE_ENABLE_LOCAL_MODEL=true` + backend valido; sem transport real nesta frente (fallback controlado); nunca aprova release gate.
 - `gemini`, `openai`, `claude`, `deepseek`, `grok`: providers reais estruturais; exigem chave/configuracao e `allow_real_provider=true`.
 
 Provider real e default-off. Mesmo autorizado, provider real nao aprova release gate sozinho.

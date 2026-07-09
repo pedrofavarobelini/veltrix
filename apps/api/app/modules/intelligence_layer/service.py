@@ -40,6 +40,14 @@ _TASK_PROFILES: dict[str, str] = {
     "project_memory_summary": "executive_summary",
     "model_foundation_review": "technical_direct",
     "intelligence_planning": "implementation_plan",
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01: tasks de assistente/ecossistema.
+    "assistant_chat": "general_assistant",
+    "ecosystem_assistant": "general_assistant",
+    "finance_advice": "financial_cautious",
+    "project_status": "executive_summary",
+    "report_memory_query": "executive_summary",
+    "local_model_chat": "general_assistant",
+    "evaluation_run": "technical_direct",
     "unknown": "general_assistant",
 }
 
@@ -47,6 +55,8 @@ _TASK_PROFILES: dict[str, str] = {
 _REPORT_CONTEXT_TASKS = {
     "report_ingestion",
     "project_memory_summary",
+    "report_memory_query",
+    "project_status",
     "qa_report_analysis",
     "qa_failure_diagnosis",
     "release_gate_review",
@@ -102,6 +112,12 @@ class IntelligenceLayerService:
             instructions.append(
                 "Responder em formato estruturado, conservador e explicável, "
                 "sem inferir sucesso sem evidência."
+            )
+        if profile == "financial_cautious":
+            instructions.append(
+                "Resposta financeira deve ser conservadora e informativa: "
+                "incluir disclaimer, nunca dar aconselhamento absoluto, "
+                "nunca executar ação financeira e nunca alterar dados."
             )
 
         memory_hints: list[str] = []

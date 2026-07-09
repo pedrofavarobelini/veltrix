@@ -20,6 +20,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[08_CHANGELOG]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]]
+- [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]]
 
 ## Fundação de inteligência própria (MODEL-FOUNDATION-01)
 
@@ -27,6 +28,14 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]] - sinais de relatorios tecnicos; relatorios nao treinam IA.
 - [[14-intelligence-layer/LOCAL_MODEL_PROVIDER_CONTRACT]] - contrato futuro do provider generativo local.
 - [[14-intelligence-layer/EVALUATION_FOUNDATION]] - avaliacao deterministica de seguranca/coerencia.
+
+## Inteligência de ecossistema (ECOSYSTEM-INTELLIGENCE-SUITE-01)
+
+- [[10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT]] - como sistemas consumidores usam o PedroCore.
+- [[10-contratos/CONTRATO_REPORT_MEMORY]] - rotas e regras da memoria tecnica (default off).
+- [[14-intelligence-layer/REPORT_MEMORY]] - memoria tecnica controlada; relatorios nao treinam IA.
+- [[14-intelligence-layer/LOCAL_MODEL_PROVIDER]] - provider generativo local opt-in, sem rede nesta frente.
+- [[14-intelligence-layer/EVAL_HARNESS]] - avaliacao deterministica; nao e benchmark de LLM.
 
 ## Contexto historico util
 

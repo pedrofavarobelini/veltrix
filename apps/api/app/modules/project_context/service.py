@@ -30,6 +30,13 @@ _FINGUARD_ALLOWED_TASKS = [
     "assisted_exploration_review",
     "artifact_summary",
     "technical_explanation",
+    # ECOSYSTEM-INTELLIGENCE-SUITE-01: FinGuard como CONSUMIDOR read-only do
+    # assistente de ecossistema — sem execução, sem escrita, sem leitura de
+    # repositório; a integração real pertence a FINGUARD-PEDROCORE-ASSISTANT-01.
+    "assistant_chat",
+    "finance_advice",
+    "project_status",
+    "report_memory_query",
 ]
 
 _FINGUARD_NOTES = (
@@ -58,6 +65,14 @@ _PROJECTS: dict[str, dict[str, object]] = {
             "project_memory_summary",
             "model_foundation_review",
             "intelligence_planning",
+            # ECOSYSTEM-INTELLIGENCE-SUITE-01: tasks de assistente/ecossistema.
+            "assistant_chat",
+            "ecosystem_assistant",
+            "finance_advice",
+            "project_status",
+            "report_memory_query",
+            "local_model_chat",
+            "evaluation_run",
         ],
         "notes": "Sistema local/default do próprio PedroCore.",
     },
