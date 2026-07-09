@@ -46,3 +46,10 @@ Sim, obrigatoriamente. Se `fallback_used: true`, a resposta deve ser `can_advanc
 - Por isso, a regra de bloqueio por fallback é mais rígida aqui do que em `qa_report_analysis` ou `qa_failure_diagnosis`: qualquer incerteza deve pender para `can_advance: false` e `risk_level` mais alto, nunca o contrário.
 - O PedroCore nunca executa a ação de "avançar" (merge, deploy, tag) — apenas recomenda textualmente através da resposta estruturada.
 - Este caso de uso nunca acessa o repositório do FinGuard diretamente para verificar o estado real do código ou dos testes — depende inteiramente das evidências enviadas no payload pelo sistema de origem.
+
+## Links relacionados
+
+- [[../MOC_QA_RELEASE_GATE]]
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/RELEASE_GATE_CHECKLIST]]
+- [[../16-qa-safety-hardening/PROVIDER_REAL_SAFETY]]

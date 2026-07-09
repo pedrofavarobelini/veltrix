@@ -67,3 +67,11 @@ Validacao local da auditoria:
 3. Planejar transport real do `local_model` como opt-in, com teste real separado.
 4. Configurar autenticacao interna antes de qualquer consumidor real.
 5. Manter suite padrao sem provider real, sem rede externa e sem modelo local real.
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_VEREDITO_FINAL]]
+- [[../00_MAPEAMENTO_GERAL_PEDROCORE]]
+- [[../16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]

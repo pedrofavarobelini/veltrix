@@ -33,3 +33,10 @@ Sim — se o provider real falhar e a resposta cair para `MockProvider`, a anál
 - O conteúdo do relatório pode conter dados de ambiente de teste; o sistema de origem é responsável por não enviar segredos/dados sensíveis desnecessários no payload.
 - Relatórios incompletos ou truncados devem resultar em `confidence` baixo, nunca em suposições preenchidas pelo PedroCore para "completar" a análise.
 - Esta análise nunca lê o relatório diretamente do repositório do FinGuard — apenas o conteúdo enviado no payload é considerado (Decisão Técnica 019 e 026).
+
+## Links relacionados
+
+- [[../MOC_QA_RELEASE_GATE]]
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/REPORT_MEMORY_SAFETY]]
+- [[../16-qa-safety-hardening/PROVIDER_REAL_SAFETY]]

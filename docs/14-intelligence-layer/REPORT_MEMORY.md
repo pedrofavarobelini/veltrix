@@ -47,3 +47,10 @@ POST /api/orchestrate (context_from_memory=true)
 ## 5. Testes
 
 `apps/api/tests/test_report_memory.py`: default off, analyze sem persistência, ingestão/snapshot, criticidade de provider real, isolamento por projeto, redação de segredos, `local_json` com tmp_path, integração `context_from_memory` (off/on/disabled).
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/REPORT_MEMORY_SAFETY]]
+- [[../10-contratos/CONTRATO_REPORT_MEMORY]]
+- [[EVALUATION_FOUNDATION]]

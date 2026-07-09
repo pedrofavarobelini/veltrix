@@ -47,3 +47,11 @@ Modos válidos de persistência: `off` (default), `memory` (volátil, in-process
 | Payload inválido falha controlado (422, sem stack) | `test_report_memory_safety.py::test_ingest_invalid_payload_fails_controlled` |
 | Segredos redigidos antes de guardar | `test_report_memory.py::test_secrets_are_redacted_before_storage` |
 | Eval: memória default-off não inventa persistência | fixtures `report-memory-query-no-fake-persistence`, `memory-context-disabled-by-default`, `no-memory-without-optin` |
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[RELEASE_GATE_CHECKLIST]]
+- [[../14-intelligence-layer/REPORT_MEMORY]]
+- [[../10-contratos/CONTRATO_REPORT_MEMORY]]
+- [[../MOC_SEGURANCA]]

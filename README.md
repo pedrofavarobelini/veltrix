@@ -4,7 +4,8 @@ Versão atual de produto: V5.1.9
 Tags técnicas: `v6.0.0` (MVP backend, em `ee2ac68`) e `v7.0.0` (core operacional seguro finalizado localmente).
 Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações reais controladas) e `PEDROCORE-FINALIZE-06` (enforcement final + fechamento) concluídas. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 Frente pós-fechamento: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence, contrato de Local Model Provider e Evaluation Foundation). Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
-Frente atual: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — contrato de ecossistema para consumidores, memória técnica controlada (rotas `/api/reports/*` e `/api/project-memory/*`, default off), provider generativo local opt-in (`local_model`, sem rede nesta frente) e eval harness determinístico. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+Frente commitada mais recente: `PEDROCORE-QA-SAFETY-HARDENING-01` (`d6106b7`) — endurecimento de QA/safety sem reabrir o core funcional. Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organizacao de links Markdown/Obsidian, sem alteracao de codigo.
 Mapa atual completo: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 
@@ -22,6 +23,7 @@ Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 - **Agente exploratório assistido** (Bloco 11): tasks exploratórias geram plano/checklist manual (`exploration`) com `can_execute_actions=false` sempre — nada é executado automaticamente.
 - **Fundação de inteligência própria** (`PEDROCORE-MODEL-FOUNDATION-01`): Intelligence Layer determinística (`intelligence_layer/`, plano interno por task com `allow_real_provider` sempre `false`), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos por payload, sem persistência — **relatórios não treinam IA**), contrato futuro do provider generativo local (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem backend instalado) e Evaluation Foundation (`evaluation/`, checks de segurança/coerência). O PedroCore **não** é um modelo treinado e não substitui providers externos; não há fine-tuning, autoaprendizado nem modelo local rodando.
 - **Inteligência de ecossistema** (`PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01`): contrato consolidado para sistemas consumidores (`docs/10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT.md`, tasks `assistant_chat`/`finance_advice` com disclaimer obrigatório/`project_status`/`report_memory_query`); memória técnica controlada default-off (`report_memory/`, `POST /api/reports/analyze|ingest`, `GET /api/project-memory/{id}/summary`, `context_from_memory` opt-in — **relatórios não treinam IA**); provider generativo local `local_model` opt-in default-off (fake transport em teste, **nenhuma rede nesta frente**, nunca aprova release gate); eval harness determinístico (`eval_harness/`, 11 fixtures, sem provider real). O Prompt Builder agora recebe as instruções do `IntelligencePlan` (`[Plano de inteligência]`).
+- **QA Safety Hardening** (`PEDROCORE-QA-SAFETY-HARDENING-01`): guard estrutural contra provider real em testes, Report Memory safety, policy negativa, contrato `/api/orchestrate` e eval harness estendido. Provider real e rede real nao foram chamados em testes; Report Memory segue default-off e nao e treinamento; `local_model` real, FinGuard e `qa:finalize:02` ficaram fora de escopo.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
 - Cliente HTTP no FinGuard, OCR real em ambiente configurado, QA visual real com provider multimodal, Playwright real, log persistente e deploy/push ainda são opcionais e exigem aprovação própria. Bloco 12 (dashboard) foi cancelado por decisão de produto.
@@ -72,6 +74,8 @@ Qualquer provider real sem autorização explícita cai para bloqueio de safe mo
 - `VERSION.md`
 - `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`
 - `docs/MOC_PEDROCORE_IA.md`
+- `docs/MOC_QA_SAFETY_HARDENING.md`
+- `docs/MOC_ESTUDO_PEDROCORE.md`
 - `docs/00-visao-geral/README.md`
 - `docs/00-visao-geral/OBJETIVO.md`
 - `docs/03-versoes/ROADMAP.md`

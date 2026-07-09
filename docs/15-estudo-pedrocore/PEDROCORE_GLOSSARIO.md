@@ -109,3 +109,10 @@ Codigo padronizado que explica uma condicao de seguranca ou limite, como `FINANC
 ## FinGuard como consumidor
 
 Significa que o PedroCore aceita requests com `origin_system=finguard`, mas nao le nem altera o repositorio FinGuard.
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[../MOC_SEGURANCA]]
+- [[../14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]]

@@ -168,3 +168,11 @@ Sugestao de commit, se aprovado:
 ```text
 docs: mapear auditoria e estudo do PedroCore
 ```
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[../MOC_TESTES]]
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]

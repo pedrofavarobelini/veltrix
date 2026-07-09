@@ -2,6 +2,31 @@
 
 Atualizado em: 09/07/2026
 
+## PEDROCORE-DOCS-GRAPH-LINKING-01 — Linkagem Obsidian e integracao QA Safety
+
+Status: documentacao atualizada nesta tarefa, sem alteracao de codigo, testes, `.env`, FinGuard, provider real, `local_model` real, push, tag, merge ou commit.
+
+### Motivo
+
+Integrar ao grafo Obsidian a frente `PEDROCORE-QA-SAFETY-HARDENING-01`, commitada em `d6106b7`, reduzindo notas soltas e conectando `docs/16-qa-safety-hardening/` aos MOCs principais.
+
+### Atualizado
+
+- MOCs centrais: `MOC_PEDROCORE_IA`, `MOC_QA_RELEASE_GATE`, `MOC_TESTES`, `MOC_SEGURANCA`, `MOC_VERSOES_STATUS`.
+- MOCs novos aprovados: `MOC_QA_SAFETY_HARDENING` e `MOC_ESTUDO_PEDROCORE`.
+- Mapeamento/status/roadmap atualizados para registrar `d6106b7`, pytest `341 passed, 6 skipped, 2 warnings` e eval harness `14/14 passed`, `risk_level="none"`.
+- `docs/16-qa-safety-hardening/` conectado ao mapa geral, QA/release gate, seguranca, testes e status.
+- `docs/15-estudo-pedrocore/` recebeu links de retorno minimos para MOCs e fontes tecnicas.
+
+### Confirmacoes tecnicas preservadas
+
+- PedroCore IA continua sendo orquestrador central, nao modelo treinado.
+- Sem fine-tuning, autoaprendizado ou RAG real.
+- Report Memory permanece default-off e nao e treinamento.
+- `local_model` real segue fora de escopo; provider real continua bloqueado por padrao.
+- Provider real e rede real nao foram chamados em testes da frente `d6106b7`.
+- FinGuard e `qa:finalize:02` ficaram intocados.
+
 ## PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01 — Inteligência de ecossistema (pacote A+B+C+D)
 
 Status: implementada, validada e commitada em `e0ff8e3`. Base: `689e50a`.

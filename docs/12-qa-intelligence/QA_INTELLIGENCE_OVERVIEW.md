@@ -184,3 +184,10 @@ QA Intelligence é um caso de uso que consumiria os módulos já documentados em
 - **Audit/logs** registraria a análise realizada (origem, tarefa, provider, fallback, criticidade), sem armazenar dados sensíveis do conteúdo analisado.
 
 **Estado atual:** Task Router, Project Context, Prompt Builder, Artifact Service, Artifact Reader opt-in, QA Analysis, QA Response, Orchestration e Audit já existem em código. Provider Orchestration avançada, logs persistentes e QA visual real continuam opcionais/futuros.
+
+## Links relacionados
+
+- [[../MOC_QA_RELEASE_GATE]]
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/QA_SAFETY_HARDENING_PLAN]]
+- [[../16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]

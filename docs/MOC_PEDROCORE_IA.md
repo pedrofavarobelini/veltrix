@@ -8,9 +8,11 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[MOC_ARQUITETURA]] - camadas, endpoints e modulos.
 - [[MOC_SEGURANCA]] - safe mode, policy, providers reais, reader e limites.
 - [[MOC_QA_RELEASE_GATE]] - QA textual, release gate e evidencias.
+- [[MOC_QA_SAFETY_HARDENING]] - frente `d6106b7` de endurecimento QA/safety.
 - [[MOC_INTEGRACOES]] - FinGuard e contratos externos.
 - [[MOC_TESTES]] - comandos, suite padrao e testes opt-in.
 - [[MOC_VERSOES_STATUS]] - versoes, tags, status e changelog.
+- [[MOC_ESTUDO_PEDROCORE]] - notas de estudo e auditoria.
 
 ## Documentos oficiais atuais
 
@@ -21,6 +23,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]]
+- [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]
 
 ## Fundação de inteligência própria (MODEL-FOUNDATION-01)
 
@@ -37,8 +40,19 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[14-intelligence-layer/LOCAL_MODEL_PROVIDER]] - provider generativo local opt-in, sem rede nesta frente.
 - [[14-intelligence-layer/EVAL_HARNESS]] - avaliacao deterministica; nao e benchmark de LLM.
 
+## QA Safety Hardening (PEDROCORE-QA-SAFETY-HARDENING-01)
+
+- [[MOC_QA_SAFETY_HARDENING]] - mapa da frente `d6106b7`.
+- [[16-qa-safety-hardening/QA_SAFETY_HARDENING_PLAN]] - plano e escopo.
+- [[16-qa-safety-hardening/MATRIZ_TASK_PROVIDER_POLICY]] - matriz task/provider/policy.
+- [[16-qa-safety-hardening/RELEASE_GATE_CHECKLIST]] - checklist do release gate.
+- [[16-qa-safety-hardening/REPORT_MEMORY_SAFETY]] - Report Memory default-off e nao treinamento.
+- [[16-qa-safety-hardening/PROVIDER_REAL_SAFETY]] - provider real bloqueado por padrao.
+- [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]] - fechamento, pytest `341 passed` e eval harness `14/14`.
+
 ## Estudo e auditoria (PEDROCORE-AUDIT-STUDY-MAP-01)
 
+- [[MOC_ESTUDO_PEDROCORE]] - mapa das notas de estudo.
 - [[15-estudo-pedrocore/PEDROCORE_AUDITORIA_STUDY_MAP_01]] - relatorio documental da auditoria local.
 - [[15-estudo-pedrocore/PEDROCORE_RESUMO_EXECUTIVO]] - resumo de estudo.
 - [[15-estudo-pedrocore/PEDROCORE_MAPA_MENTAL]] - mapa mental em topicos.
@@ -61,6 +75,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 
 - Para entender o sistema inteiro: [[00_MAPEAMENTO_GERAL_PEDROCORE]].
 - Para testar sem risco: [[MOC_TESTES]].
+- Para revisar QA/safety atual: [[MOC_QA_SAFETY_HARDENING]].
 - Para integracao FinGuard: [[MOC_INTEGRACOES]].
 - Para checar status/tag: [[MOC_VERSOES_STATUS]].
-- Para estudar ou importar em LLM/notebook: [[15-estudo-pedrocore/PEDROCORE_ROTEIRO_NOTEBOOKLM]].
+- Para estudar ou importar em LLM/notebook: [[MOC_ESTUDO_PEDROCORE]].

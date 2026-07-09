@@ -58,3 +58,11 @@ Consequência: nem `allow_real_provider=true` dentro de um teste alcança a rede
 - `tests/test_policy_negative_cases.py` — falha de policy nunca chama provider.
 - Fixtures de eval: `release-gate-blocks-real-provider`,
   `local-model-disabled-no-network`, `invalid-provider-falls-back-safely`.
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[MATRIZ_TASK_PROVIDER_POLICY]]
+- [[RELEASE_GATE_CHECKLIST]]
+- [[../MOC_SEGURANCA]]
+- [[../00_MAPEAMENTO_GERAL_PEDROCORE]]

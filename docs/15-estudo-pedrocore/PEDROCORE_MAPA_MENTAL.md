@@ -110,3 +110,11 @@ Atualizado em: 09/07/2026
 - Hoje: FinGuard nao foi lido nem alterado.
 - Futuro: cliente HTTP/assistente FinGuard em frente separada.
 - Regra: frontend do consumidor deve chamar seu backend; backend chama PedroCore.
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_FLUXO_COMPLETO]]
+- [[../MOC_ARQUITETURA]]
+- [[../MOC_SEGURANCA]]

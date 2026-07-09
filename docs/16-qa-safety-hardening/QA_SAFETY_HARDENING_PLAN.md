@@ -61,3 +61,11 @@ fortalecendo o release gate — sem alterar comportamento funcional.
 4. Fixtures novas do eval harness + testes estendidos.
 5. Documentação.
 6. Validação final (pytest + eval harness + `git status`).
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[MATRIZ_TASK_PROVIDER_POLICY]]
+- [[RELEASE_GATE_CHECKLIST]]
+- [[FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]
+- [[../MOC_TESTES]]

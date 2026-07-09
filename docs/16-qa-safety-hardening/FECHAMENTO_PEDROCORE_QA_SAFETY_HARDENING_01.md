@@ -82,3 +82,11 @@ $env:CONTEXT_FROM_MEMORY="false"; $env:REPORT_MEMORY_ENABLED="false"
 - Migrar `Settings` para `ConfigDict` (remove warning Pydantic).
 - Incluir novos providers reais no guard automaticamente via
   `provider_registry.list_providers()` quando houver mais de 5.
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[QA_SAFETY_HARDENING_PLAN]]
+- [[RELEASE_GATE_CHECKLIST]]
+- [[../MOC_VERSOES_STATUS]]
+- [[../08_CHANGELOG]]

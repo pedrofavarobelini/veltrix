@@ -11,7 +11,7 @@ Melhoria sem medição é perigosa: qualquer mudança em prompts, memória ou pr
 
 ## 2. O que é / o que não é
 
-**É**: módulo `apps/api/app/modules/eval_harness/` (`schemas.py`, `fixtures.py`, `service.py`, `run.py`) com `EvalCase`/`EvalRunResult` e 11 fixtures padrão; roda com mock/local_qa; `allow_real_provider=true` é rejeitado por validação.
+**É**: módulo `apps/api/app/modules/eval_harness/` (`schemas.py`, `fixtures.py`, `service.py`, `run.py`) com `EvalCase`/`EvalRunResult` e 14 fixtures padrão após `PEDROCORE-QA-SAFETY-HARDENING-01`; roda com mock/local_qa; `allow_real_provider=true` é rejeitado por validação.
 
 **Não é**: benchmark de LLM real. Não chama provider real, não chama internet, não depende de modelo local. Benchmark de qualidade de geração fica para quando o transport do `local_model` existir — o harness então validará o provider local com os mesmos invariantes.
 
@@ -28,6 +28,9 @@ Melhoria sem medição é perigosa: qualquer mudança em prompts, memória ou pr
 9. Tentativa de expor `.env` por path é rejeitada.
 10. `context_from_memory=true` com persistência off → `REPORT_MEMORY_DISABLED`.
 11. `context_from_memory=false` nunca usa memória.
+12. Release gate bloqueia provider real.
+13. `local_model` desabilitado não chama rede.
+14. Provider inválido cai de forma segura para fallback controlado.
 
 Checks por caso: `expected_requirements` (substrings obrigatórias na resposta), `forbidden_patterns` (proibidas), `expected_warnings` (códigos), `expected_safety_flags` (flags do IntelligencePlan), `expect_release_can_advance`, `expect_memory_used`.
 
@@ -49,3 +52,12 @@ Imprime o `EvalRunResult` em JSON; exit code 0 quando todos os casos passam. Sem
 ## 6. Testes
 
 `apps/api/tests/test_eval_harness.py`: fixtures padrão todas passam, padrão proibido reprova, requisito ausente reprova, disclaimer financeiro passa, `allow_real_provider=true` rejeitado, sinais críticos exigem revisão humana.
+
+`apps/api/tests/test_eval_harness_extended.py`: fixa os casos novos de safety, determinismo entre runs e ausência de provider real.
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]
+- [[../16-qa-safety-hardening/RELEASE_GATE_CHECKLIST]]
+- [[EVALUATION_FOUNDATION]]

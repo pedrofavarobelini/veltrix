@@ -73,3 +73,11 @@ Pratique respostas curtas:
 - Nao dizer que FinGuard foi alterado ou lido.
 - Nao dizer que Report Memory e RAG.
 - Nao dizer que release gate e autonomo sem revisao humana.
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_ROTEIRO_NOTEBOOKLM]]
+- [[PEDROCORE_GLOSSARIO]]
+- [[../MOC_QA_SAFETY_HARDENING]]

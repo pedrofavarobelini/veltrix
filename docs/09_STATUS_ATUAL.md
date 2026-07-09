@@ -12,7 +12,9 @@ Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência
 
 Ultima frente de implementacao: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote (A) contrato de ecossistema, (B) memória técnica controlada, (C) `local_model` opt-in sem rede, (D) eval harness determinístico; implementada de forma retrocompatível e commitada em `e0ff8e3`. O PedroCore continua **não** sendo modelo treinado: sem fine-tuning, sem autoaprendizado, sem RAG, sem provider real. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
 
-Frente documental atual: `PEDROCORE-AUDIT-STUDY-MAP-01` — auditoria fria, validação local e pacote de estudo em `docs/15-estudo-pedrocore/`, sem alteração de código.
+Ultima frente commitada: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de QA/safety sem reabrir o core funcional, commitada em `d6106b7`. Pytest: `341 passed, 6 skipped, 2 warnings`. Eval harness: `14/14 passed`, `risk_level="none"`. Provider real e rede real nao foram chamados em testes; Report Memory continua default-off e nao e treinamento; `local_model` real ficou fora de escopo; FinGuard e `qa:finalize:02` ficaram intocados. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+
+Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organizacao de links Markdown/Obsidian em `docs/`, sem alteracao de codigo.
 
 ## Versão atual de produto
 
@@ -67,9 +69,11 @@ C:\Projetos\pedrocore-ia
 
 - `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — inteligência de ecossistema: contrato para consumidores + tasks de assistente (disclaimer obrigatório em `finance_advice`), memória técnica controlada (`report_memory/`, rotas `/api/reports/*` e `/api/project-memory/*`, default off, `context_from_memory` opt-in), provider `local_model` opt-in default-off (sem rede nesta frente; nunca aprova release gate) e eval harness determinístico (`eval_harness/`, 11 fixtures). Testes: `296 passed, 6 skipped, 2 warnings` (39 novos). Commitada em `e0ff8e3`.
 
+- `PEDROCORE-QA-SAFETY-HARDENING-01` — guard estrutural contra provider real em testes, suites de safety para provider real/Report Memory/policy/contrato `/api/orchestrate`, eval harness estendido para 14 casos e docs de release gate em `docs/16-qa-safety-hardening/`. Testes: `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Commitada em `d6106b7`.
+
 ## Em andamento
 
-`PEDROCORE-AUDIT-STUDY-MAP-01` está em escopo documental: auditoria fria do estado local, validação de testes/rotas e material de estudo para Obsidian/Claude/NotebookLM. Trabalhos futuros (integração do Assistente FinGuard via PedroCore, transport real do local_model, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
+`PEDROCORE-DOCS-GRAPH-LINKING-01` esta em escopo documental: conexao dos MOCs, status, roadmap, changelog, estudo e QA safety hardening para reduzir notas soltas no Obsidian. Trabalhos futuros (integracao do Assistente FinGuard via PedroCore, transport real do local_model, push, deploy, execucao real de OCR/multimodal/Playwright) sao opcionais e exigem nova aprovacao.
 
 ## Ainda não existe / permanece opcional
 

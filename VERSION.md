@@ -18,7 +18,9 @@ DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de p
 
 Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
-Frente atual: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote com quatro trilhas: (A) contrato de ecossistema/assistente para sistemas consumidores; (B) memória técnica controlada de relatórios (default off, rotas novas, `context_from_memory` opt-in); (C) provider generativo local `local_model` opt-in default-off, sem rede nesta frente; (D) eval harness determinístico. Retrocompatível, sem provider real, sem treinamento/fine-tuning, sem tocar FinGuard. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+Frente commitada mais recente: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de QA/safety sem reabrir o core funcional, commitada em `d6106b7`. Pytest: `341 passed, 6 skipped, 2 warnings`. Eval harness: `14/14 passed`, `risk_level="none"`. Sem provider real, sem rede real em testes, sem treinamento/fine-tuning, sem tocar FinGuard ou `qa:finalize:02`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+
+Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — linkagem Markdown/Obsidian em documentacao, sem alteracao de codigo, testes, `.env`, provider real, `local_model` real, FinGuard, push, tag ou merge.
 
 ## Status atual
 
@@ -34,6 +36,7 @@ Resumo:
 
 - `v6.0.0` = MVP backend.
 - `v7.0.0` = fechamento técnico local do core operacional seguro.
+- `d6106b7` = `PEDROCORE-QA-SAFETY-HARDENING-01`, hardening QA/safety posterior ao fechamento local.
 - Pendência obrigatória de código/teste/Git = zero no estado final registrado.
 - Pendência documental obrigatória = tratada por este DOCFIX, se o diff for aceito.
 

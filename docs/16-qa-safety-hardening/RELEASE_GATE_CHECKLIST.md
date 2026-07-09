@@ -61,3 +61,11 @@ o `python` global pode não existir no PATH (alias da Microsoft Store).
    — memória de um projeto não aparece para outro.
 5. Smoke manual opcional: `POST /api/reports/ingest` sem flags deve responder
    `{"status": "disabled", "stored": false, ...}`.
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[MATRIZ_TASK_PROVIDER_POLICY]]
+- [[PROVIDER_REAL_SAFETY]]
+- [[REPORT_MEMORY_SAFETY]]
+- [[../MOC_QA_RELEASE_GATE]]

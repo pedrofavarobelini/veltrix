@@ -67,3 +67,11 @@ Nao. O PedroCore aceita FinGuard como consumidor read-only pelo contrato, mas a 
 ```text
 docs: mapear auditoria e estudo do PedroCore
 ```
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_AUDITORIA_STUDY_MAP_01]]
+- [[../MOC_VERSOES_STATUS]]
+- [[../MOC_QA_SAFETY_HARDENING]]

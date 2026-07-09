@@ -42,3 +42,10 @@ Sim — um diagnóstico gerado via fallback não pode ser tratado como diagnóst
 - Logs e saídas de terminal podem conter tokens, caminhos internos ou dados de usuário — o sistema de origem é responsável por sanitizar segredos antes de enviar.
 - `suggested_commands` nunca deve incluir comandos que alterem estado (ex.: `DROP`, `DELETE`, `rm -rf`, `migrate`, `seed`, `reset`) como se fossem seguros de rodar sem revisão — mesmo como sugestão, o texto deve deixar claro que é responsabilidade do sistema de origem avaliar antes de executar.
 - Este diagnóstico nunca executa nada no FinGuard ou em qualquer sistema externo — é estritamente análise textual do que foi enviado.
+
+## Links relacionados
+
+- [[../MOC_QA_RELEASE_GATE]]
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[../16-qa-safety-hardening/MATRIZ_TASK_PROVIDER_POLICY]]
+- [[../16-qa-safety-hardening/RELEASE_GATE_CHECKLIST]]

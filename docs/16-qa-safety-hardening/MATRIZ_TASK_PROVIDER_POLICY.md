@@ -62,3 +62,11 @@ Fonte de verdade no código: `app/modules/task_router/service.py` (strategies),
 Testes que fixam esta matriz: `test_provider_real_safety.py`,
 `test_policy_negative_cases.py`, `test_orchestrate_contract_safety.py`,
 `test_eval_harness_extended.py`.
+
+## Links relacionados
+
+- [[../MOC_QA_SAFETY_HARDENING]]
+- [[RELEASE_GATE_CHECKLIST]]
+- [[PROVIDER_REAL_SAFETY]]
+- [[../MOC_QA_RELEASE_GATE]]
+- [[../00_MAPEAMENTO_GERAL_PEDROCORE]]

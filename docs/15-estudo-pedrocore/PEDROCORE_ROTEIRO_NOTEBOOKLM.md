@@ -66,3 +66,11 @@ Resuma o PedroCore IA em uma pagina para stakeholder tecnico. Separe: estado atu
 ```text
 Analise a arquitetura do PedroCore IA a partir das fontes. Explique o fluxo interno de /api/orchestrate, identifique guardrails de seguranca e liste riscos que precisariam ser resolvidos antes de uso em producao com consumidores reais.
 ```
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_ROTEIRO_CLAUDE_OBSIDIAN]]
+- [[PEDROCORE_RESUMO_EXECUTIVO]]
+- [[../00_MAPEAMENTO_GERAL_PEDROCORE]]

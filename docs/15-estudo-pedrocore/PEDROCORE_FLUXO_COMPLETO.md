@@ -136,3 +136,11 @@ Provider real e mock nao aprovam release gate sozinhos.
 ## 11. Audit e resposta
 
 O audit registra metadados como `audit_id`, timestamp, origem, task, provider pedido/usado, fallback, safe mode, status, latencia, risco e `can_advance`. O audit nao guarda conteudo de `.env` nem artefatos secretos.
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[../MOC_ARQUITETURA]]
+- [[../00_MAPEAMENTO_GERAL_PEDROCORE]]
+- [[../10-contratos/CONTRATO_ORQUESTRACAO]]

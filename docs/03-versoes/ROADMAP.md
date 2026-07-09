@@ -170,6 +170,14 @@ Testes: `296 passed, 6 skipped, 2 warnings` (39 novos, zero regressões). Contra
 
 Próximas frentes recomendadas: `FINGUARD-PEDROCORE-ASSISTANT-01` (integração do assistente via PedroCore), `PEDROCORE-LOCAL-MODEL-02` (transport real opt-in), `PEDROCORE-EVAL-HARNESS-02`, `PEDROCORE-REPORT-MEMORY-02`.
 
+## PEDROCORE-QA-SAFETY-HARDENING-01 — Endurecimento QA/safety
+
+Status: **implementada, validada e commitada em `d6106b7`**. Ver `docs/16-qa-safety-hardening/` e `docs/MOC_QA_SAFETY_HARDENING.md`.
+
+Frente de hardening sem reabrir o core funcional: guard estrutural contra provider real em testes, suites de safety para provider real/Report Memory/policy/contrato `/api/orchestrate`, eval harness estendido para 14 casos e checklist de release gate.
+
+Resultados: pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Provider real e rede real nao foram chamados em testes; Report Memory segue default-off e nao e treinamento; `local_model` real, FinGuard e `qa:finalize:02` ficaram fora de escopo.
+
 ## Opcionais pós-fechamento (sem ordem de data fixa)
 
 Itens que permanecem opcionais após `v7.0.0`:

@@ -4,21 +4,26 @@ Atualizado em: 09/07/2026
 
 > Nota MODEL-FOUNDATION-01: a frente `PEDROCORE-MODEL-FOUNDATION-01` adicionou os módulos `intelligence_layer`, `report_intelligence`, `evaluation` e o contrato `providers/local_model_contract.py`, além de 4 task_types novos para `pedrocore`. Ver [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] e [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]].
 
-> Nota ECOSYSTEM-INTELLIGENCE-SUITE-01: adicionou os módulos `report_memory` e `eval_harness`, o provider `local_model` opt-in (default OFF, sem rede nesta frente), 7 task_types de assistente/ecossistema, as rotas `POST /api/reports/analyze`, `POST /api/reports/ingest` e `GET /api/project-memory/{project_id}/summary`, os campos de request `allow_local_model`/`context_from_memory` (default false) e o campo de resposta `memory_used`. Testes atuais: `296 passed, 6 skipped, 2 warnings`. Ver [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]], [[10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT]] e [[10-contratos/CONTRATO_REPORT_MEMORY]].
+> Nota ECOSYSTEM-INTELLIGENCE-SUITE-01: adicionou os módulos `report_memory` e `eval_harness`, o provider `local_model` opt-in (default OFF, sem rede nesta frente), 7 task_types de assistente/ecossistema, as rotas `POST /api/reports/analyze`, `POST /api/reports/ingest` e `GET /api/project-memory/{project_id}/summary`, os campos de request `allow_local_model`/`context_from_memory` (default false) e o campo de resposta `memory_used`. Testes da frente: `296 passed, 6 skipped, 2 warnings`. Ver [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]], [[10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT]] e [[10-contratos/CONTRATO_REPORT_MEMORY]].
 
-Links centrais: [[MOC_PEDROCORE_IA]] | [[MOC_ARQUITETURA]] | [[MOC_SEGURANCA]] | [[MOC_QA_RELEASE_GATE]] | [[MOC_INTEGRACOES]] | [[MOC_TESTES]] | [[MOC_VERSOES_STATUS]]
+> Nota QA-SAFETY-HARDENING-01: a frente `PEDROCORE-QA-SAFETY-HARDENING-01`, commitada em `d6106b7`, endureceu QA/safety sem reabrir o core funcional. Resultado validado: `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Provider real e rede real nao foram chamados em testes; Report Memory continua default-off e nao e treinamento; `local_model` real e FinGuard seguem fora de escopo. Ver [[MOC_QA_SAFETY_HARDENING]] e [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]].
+
+Links centrais: [[MOC_PEDROCORE_IA]] | [[MOC_ARQUITETURA]] | [[MOC_SEGURANCA]] | [[MOC_QA_RELEASE_GATE]] | [[MOC_QA_SAFETY_HARDENING]] | [[MOC_INTEGRACOES]] | [[MOC_TESTES]] | [[MOC_VERSOES_STATUS]] | [[MOC_ESTUDO_PEDROCORE]]
 
 ## 1. Visao geral
 
 O PedroCore IA esta finalizado localmente como core operacional seguro. O estado tecnico local verificado nesta tarefa e:
 
 - Branch: `main`.
-- HEAD: `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
-- Tag no HEAD: `v7.0.0`.
+- HEAD atual: `d6106b750bbd0b0cf87ca8a2f8a0a2f3cc0b29da` (`d6106b7`).
+- Ultimo commit: `test: endurecer QA e safety do PedroCore`.
+- Tag final local `v7.0.0`: aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
 - `v6.0.0`: tag do MVP backend, apontando para `ee2ac68679feea6ac108abba8726d11da101576c`.
 - Working tree inicial: sem arquivos alterados no `git status --short`; o Git exibiu apenas warning de permissao ao ler `C:\Users\USUARIO/.config/git/ignore`.
 - Push: nao realizado.
-- Testes finais ja registrados no fechamento: `216 passed`, `6 skipped`, `2 warnings`.
+- Testes finais do core `v7.0.0`: `216 passed`, `6 skipped`, `2 warnings`.
+- Testes finais da frente `PEDROCORE-QA-SAFETY-HARDENING-01`: `341 passed`, `6 skipped`, `2 warnings`.
+- Eval harness da frente safety: `14/14 passed`, `risk_level="none"`.
 - Warnings conhecidos: deprecations Starlette/httpx e Pydantic class `Config`.
 
 Este documento consolida o mapa atual do projeto sem alterar codigo de producao.
@@ -157,7 +162,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
     {
       "type": "qa_report",
       "name": "qa.txt",
-      "content": "216 passed, 6 skipped, 2 warnings. Build successful. 0 failed."
+      "content": "341 passed, 6 skipped, 2 warnings. Build successful. 0 failed."
     }
   ]
 }
@@ -368,7 +373,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 ### `eval_harness`
 
 - Onde: `apps/api/app/modules/eval_harness/`.
-- O que faz: harness determinístico de avaliação (11 fixtures contra o pipeline real; executor `python -m app.modules.eval_harness.run`).
+- O que faz: harness determinístico de avaliação (14 fixtures após `PEDROCORE-QA-SAFETY-HARDENING-01`; executor `python -m app.modules.eval_harness.run`).
 - Status: implementado; não é benchmark de LLM.
 - Default: uso interno/testes; sem rota pública.
 - Riscos controlados: `allow_real_provider=true` rejeitado por validação; sem rede.
@@ -672,7 +677,7 @@ $body = @{
     @{
       type = "qa_report"
       name = "qa.txt"
-      content = "216 passed, 6 skipped, 2 warnings. Build successful. 0 failed."
+      content = "341 passed, 6 skipped, 2 warnings. Build successful. 0 failed."
     }
   )
 } | ConvertTo-Json -Depth 5
@@ -698,6 +703,17 @@ cd C:\Projetos\pedrocore-ia\apps\api
 uv run pytest -q
 ```
 
+Resultado registrado em `d6106b7`: `341 passed, 6 skipped, 2 warnings`.
+
+Eval harness:
+
+```powershell
+cd C:\Projetos\pedrocore-ia\apps\api
+.\.venv\Scripts\python.exe -m app.modules.eval_harness.run
+```
+
+Resultado registrado em `d6106b7`: `14/14 passed`, `risk_level="none"`.
+
 Testes que usem provider real, OCR real, multimodal real ou Playwright real sao opt-in e nao fazem parte do teste padrao. Exigem flags `PEDROCORE_RUN_REAL_*_TESTS=true`, dependencias/chaves reais e aprovacao humana.
 
 ## 22. Comandos uteis
@@ -716,6 +732,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 ## 23. Estado Git/versionamento
 
 - `v7.0.0`: fechamento tecnico local do core operacional seguro.
+- `d6106b7`: `PEDROCORE-QA-SAFETY-HARDENING-01`, endurecimento QA/safety sem reabrir core.
 - `v6.0.0`: MVP backend.
 - Pendencia obrigatoria de codigo/teste/Git: zero no estado final registrado.
 - Push/tag/merge: nao realizados nesta tarefa.
@@ -734,6 +751,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 - OCR/Playwright/multimodal como guards/opt-in.
 - Testes padrao finais registrados.
 - Tag local `v7.0.0`.
+- QA Safety Hardening documentado e validado em `d6106b7`.
 
 ## 25. Pendencias obrigatorias
 

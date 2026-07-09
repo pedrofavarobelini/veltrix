@@ -145,3 +145,10 @@ Resposta: API interna sem chave configurada, operando em modo local/dev.
 
 Pergunta: O que significa `LOCAL_MODEL_NOT_AUTHORIZED`?
 Resposta: `local_model` foi pedido sem `allow_local_model=true`.
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_GLOSSARIO]]
+- [[PEDROCORE_PERGUNTAS_E_RESPOSTAS]]

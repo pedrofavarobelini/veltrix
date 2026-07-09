@@ -73,3 +73,11 @@ Explique que o projeto implementa uma arquitetura segura de orquestracao de IA: 
 ## 18. Como explicar para portfolio?
 
 "PedroCore IA e um backend FastAPI de orquestracao segura de IA para projetos consumidores, com contratos, guardrails, QA textual local, release gate conservador e estudo de evolucao para memoria e modelo local opt-in."
+
+## Links relacionados
+
+- [[../MOC_ESTUDO_PEDROCORE]]
+- [[../MOC_PEDROCORE_IA]]
+- [[PEDROCORE_RESUMO_EXECUTIVO]]
+- [[PEDROCORE_GLOSSARIO]]
+- [[../MOC_QA_SAFETY_HARDENING]]
