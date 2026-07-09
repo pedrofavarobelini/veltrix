@@ -1,12 +1,14 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 05/07/2026
+Atualizado em: 08/07/2026
 
 ## Status oficial
 
 Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag final local e aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`. `v6.0.0` permanece como tag do MVP backend e aponta para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`). Este é o documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
 
-DOCFIX atual: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
+DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
+
+Frente atual: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence Foundation, Local Model Provider Contract, Evaluation Foundation), implementada de forma retrocompatível e ainda não commitada. O PedroCore **não** virou modelo de IA próprio: não há treinamento, fine-tuning, autoaprendizado, RAG, persistência nova nem provider local funcional. Testes: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md` e `docs/14-intelligence-layer/`.
 
 ## Versão atual de produto
 
@@ -57,9 +59,11 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-IMPLEMENT-05` — flags/guards/testes opt-in, FinGuard controlado com policy enforcement forte, reader consolidado, OCR local opt-in, multimodal guard e Playwright read-only opt-in. Commitada nas subfrentes `33a7dc2`, `790e1b4`, `70afba1`, `b3f1be5`, `2670040`, `3bcfa05`.
 - `PEDROCORE-FINALIZE-06` — enforcement final do release gate, documentação final e tag local `v7.0.0`. HEAD esperado: `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
 
+- `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria: Intelligence Layer (`intelligence_layer/`, plano determinístico interno por task, nunca habilita provider real), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos, sem persistência), contrato futuro do Local Model Provider (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem geração), Evaluation Foundation (`evaluation/`, checks de segurança/coerência) e 4 task_types novos somente para `pedrocore`. Testes backend: `257 passed, 6 skipped, 2 warnings` (41 novos). Commit pendente de autorização.
+
 ## Em andamento
 
-Nenhuma frente em andamento — projeto finalizado localmente. Testes backend finais: `216 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (cliente FinGuard, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
+`PEDROCORE-MODEL-FOUNDATION-01` implementada e validada nesta sessão; aguarda autorização humana para commit. Testes backend atuais: `257 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (cliente FinGuard, push, deploy, execução real de OCR/multimodal/Playwright, memória persistente, provider local real) são opcionais e exigem nova aprovação.
 
 ## Ainda não existe / permanece opcional
 
@@ -69,6 +73,9 @@ Nenhuma frente em andamento — projeto finalizado localmente. Testes backend fi
 - QA visual real multimodal — artefatos visuais geram stub conservador; OCR e Playwright existem como recursos opt-in/controlados, não como teste padrão nem release gate automático.
 - Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim provider real nunca aprova release gate sozinho.
 - Provider Orchestration avançada por custo/qualidade/task.
+- Memória técnica persistente e RAG — a Report Intelligence Foundation extrai sinais em memória volátil; persistência é frente futura (`PEDROCORE-REPORT-MEMORY-01`).
+- Provider generativo local funcional — existe apenas o contrato (`local_model`); nenhum backend (Ollama/llama.cpp/LM Studio) instalado ou chamado (`PEDROCORE-LOCAL-MODEL-01`).
+- Treinamento, fine-tuning ou autoaprendizado — fora do escopo do projeto; a fundação de inteligência é determinística e avaliada (`evaluation/`).
 - Persistência em banco de dados / log persistente (audit é não persistente, devolvido só na resposta). Dashboard (Bloco 12): **cancelado por decisão de produto**, não é pendência.
 - Qualquer mudança de frontend/design — preservados sem alteração.
 

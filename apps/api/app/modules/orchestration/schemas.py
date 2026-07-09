@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from app.modules.audit.schemas import AuditMetadata
 from app.modules.contracts.codes import WarningItem
 from app.modules.exploration.schemas import ExplorationPlan
+from app.modules.intelligence_layer.schemas import IntelligencePlan
 from app.modules.qa_response.schemas import QAResponseSkeleton, ReleaseGateResult
 from app.modules.visual_qa.schemas import VisualQAAnalysis
 
@@ -40,6 +41,9 @@ class OrchestrationOutcome(BaseModel):
     status: str = "ok"
     blocked_reason: str | None = None
     error_code: str | None = None
+    # PEDROCORE-MODEL-FOUNDATION-01: plano interno da Intelligence Layer.
+    # Não é exposto em ChatResponse/OrchestrateResponse nesta frente.
+    intelligence_plan: IntelligencePlan | None = None
 
     @property
     def task_warnings(self) -> list[str]:

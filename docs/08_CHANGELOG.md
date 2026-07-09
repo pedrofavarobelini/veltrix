@@ -1,6 +1,26 @@
 # PedroCore IA — Changelog
 
-Atualizado em: 05/07/2026
+Atualizado em: 08/07/2026
+
+## PEDROCORE-MODEL-FOUNDATION-01 — Fundação de inteligência própria
+
+Status: implementada e validada nesta frente; commit pendente de autorização humana.
+
+### Implementado
+
+- **Intelligence Layer** (`apps/api/app/modules/intelligence_layer/`): `IntelligenceContextPolicy` (validação rejeita `allow_real_provider=true`), `IntelligencePlan` (task_type, response_profile, safety_flags, instructions, memory_hints, evaluation_hints) e `IntelligenceLayerService.build_plan()` determinístico. Integração retrocompatível: `OrchestrationService` calcula o plano após policy e o anexa a `OrchestrationOutcome.intelligence_plan` como metadado **interno** — não exposto em `ChatResponse`/`OrchestrateResponse`.
+- **Report Intelligence Foundation** (`apps/api/app/modules/report_intelligence/`): `TechnicalReportInput`/`ReportSignal`/`ReportMemorySummary` e serviço determinístico (`normalize_report`, `extract_signals`, `summarize_memory`), sem persistência, sem embeddings/RAG, sem rota nova. Relatórios não treinam IA — geram sinais explicáveis com severidade (`provider_real_used`/`database_safety_risk` = `critical`; `provider_real_blocked` = `info`; `QA_RISK_CRITICAL` não invalida suíte passed).
+- **Local Model Provider Contract** (`apps/api/app/modules/providers/local_model_contract.py`): contrato futuro do provider generativo local (`local_model` ≠ `local_qa`), `generation_supported=false` e `requires_external_api_key=false` impostos por validação; não registrado no `provider_registry`; nenhum backend instalado, nenhuma rede.
+- **Evaluation Foundation** (`apps/api/app/modules/evaluation/`): `EvaluationCheck`/`EvaluationResult`; `evaluate_intelligence_plan` (checks: provider real bloqueado, sem auto-training, sem fine-tuning, sem exposição de `.env`/segredo, revisão humana para release gate, memória ≠ treinamento) e `evaluate_report_signals` (sinais críticos/altos exigem revisão humana).
+- **Task types novos** no Task Router (`report_ingestion`, `project_memory_summary`, `model_foundation_review`, `intelligence_planning`; criticidade `medium`, `allow_mock=true`), permitidos apenas para `origin_system=pedrocore` — FinGuard não recebeu tasks novas.
+- **Documentação**: `docs/14-intelligence-layer/` (4 documentos) + `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`; README/VERSION/status/roadmap/mapeamento/MOCs/decisões atualizados.
+- **Testes**: `test_intelligence_layer.py`, `test_report_intelligence.py`, `test_local_model_contract.py`, `test_evaluation_foundation.py` — 41 novos. Suíte: `257 passed, 6 skipped, 2 warnings` (skips/warnings pré-existentes).
+
+### Não alterado / não feito
+
+- Nenhuma rota nova; contratos `ChatResponse`/`OrchestrateResponse` intactos (teste dedicado confirma).
+- Sem provider real, sem `allow_real_provider=true`, sem `.env`, sem FinGuard, sem treinamento/fine-tuning/autoaprendizado, sem download de modelo, sem banco persistente novo, sem RAG.
+- Sem commit, push, tag ou merge.
 
 ## PEDROCORE-DOCFIX-OBSIDIAN-07 — Mapeamento completo e saneamento documental
 

@@ -36,6 +36,17 @@ Mapa de arquitetura atual e historico de planejamento.
 - `contracts` - warning/error codes.
 - `audit` - audit nao persistente.
 - `real_features` - flags de recursos reais.
+- `intelligence_layer` - plano cognitivo deterministico interno (MODEL-FOUNDATION-01).
+- `report_intelligence` - sinais de relatorios tecnicos, sem persistencia (MODEL-FOUNDATION-01).
+- `evaluation` - checks deterministicos de seguranca/coerencia (MODEL-FOUNDATION-01).
+- `providers/local_model_contract` - contrato futuro do provider generativo local (MODEL-FOUNDATION-01).
+
+## Fundação de inteligência própria
+
+- [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]]
+- [[14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]]
+- [[14-intelligence-layer/LOCAL_MODEL_PROVIDER_CONTRACT]]
+- [[14-intelligence-layer/EVALUATION_FOUNDATION]]
 
 ## Planejamento historico
 

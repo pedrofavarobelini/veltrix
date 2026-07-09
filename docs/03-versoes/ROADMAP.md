@@ -133,6 +133,28 @@ Status: **concluídas**. Subfrentes commitadas individualmente: 05A flags/guards
 
 Resultado: core operacional seguro finalizado localmente — recursos reais 100% opt-in e desabilitados por padrão; somente `local_qa` aprova release gate; tasks perigosas bloqueadas incondicionalmente; testes `216 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
+## PEDROCORE-MODEL-FOUNDATION-01 — Fundação de inteligência própria
+
+Status: **implementada e validada; commit pendente de autorização**. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md` e `docs/14-intelligence-layer/`.
+
+Primeira frente pós-`v7.0.0`. Prepara o PedroCore para evoluir de orquestrador multi-provider para **núcleo de inteligência operacional do ecossistema**, sem virar modelo treinado:
+
+- **Intelligence Layer** — plano cognitivo determinístico por task (`response_profile`, política de contexto, safety flags, instruções), integrado ao pipeline como metadado interno; nunca chama provider, nunca habilita provider real, nunca persiste memória.
+- **Report Intelligence Foundation** — ingestão futura de relatórios técnicos: normalização, sinais explicáveis com severidade e resumo de memória técnica volátil. Relatórios não treinam IA.
+- **Local Model Provider Contract** — contrato do futuro provider generativo local (`local_model`, distinto do `local_qa` determinístico); sem backend, sem rede, sem geração nesta fase.
+- **Evaluation Foundation** — avaliação determinística de segurança/coerência de planos e sinais; sinais críticos exigem revisão humana.
+- Task types novos (`report_ingestion`, `project_memory_summary`, `model_foundation_review`, `intelligence_planning`) apenas para `pedrocore`.
+
+Testes: `257 passed, 6 skipped, 2 warnings` (41 novos, zero regressões). Contratos públicos intactos.
+
+### Roadmap recomendado a partir desta frente
+
+1. `PEDROCORE-ECOSYSTEM-FINALIZE-01` — consolidação do PedroCore como serviço central do ecossistema.
+2. `FINGUARD-PEDROCORE-ASSISTANT-01` — integração do Assistente FinGuard via PedroCore. O FinGuard já possui estrutura de assistente/tela/botão no repositório próprio, mas a integração do Assistente FinGuard via PedroCore ainda não foi implementada nesta frente; pertence a esta frente futura (lado cliente fora deste repositório).
+3. `PEDROCORE-REPORT-MEMORY-01` — persistência controlada da memória técnica.
+4. `PEDROCORE-LOCAL-MODEL-01` — provider generativo local opt-in (backend instalado manualmente, flag default-off, fora do release gate).
+5. `PEDROCORE-EVAL-HARNESS-01` — harness de avaliação/benchmark.
+
 ## Opcionais pós-fechamento (sem ordem de data fixa)
 
 Itens que permanecem opcionais após `v7.0.0`:

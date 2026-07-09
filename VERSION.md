@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 05/07/2026
+Atualizado em: 08/07/2026
 
 ## Versão atual de produto
 
@@ -14,7 +14,9 @@ V5.1.9
 
 Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
-DOCFIX atual: saneamento documental/Obsidian desta tarefa, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
+DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
+
+Frente atual: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence Foundation, Local Model Provider Contract e Evaluation Foundation), retrocompatível, sem provider real, sem treinamento/fine-tuning, sem persistência nova, sem tocar FinGuard. Testes: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
 ## Status atual
 

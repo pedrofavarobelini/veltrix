@@ -9,6 +9,7 @@ from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
 from app.modules.exploration.service import exploration_service
+from app.modules.intelligence_layer.service import intelligence_layer_service
 from app.modules.orchestration.schemas import OrchestrationOutcome
 from app.modules.policy_enforcement.service import policy_enforcement_service
 from app.modules.real_features import service as real_features
@@ -88,6 +89,14 @@ class OrchestrationService:
                 requested_provider=requested_provider,
                 started=started,
             )
+
+        # PEDROCORE-MODEL-FOUNDATION-01: plano determinístico da Intelligence
+        # Layer, calculado após policy e antes do Prompt Builder. Nesta frente
+        # o plano é apenas metadado interno do outcome; não altera prompt,
+        # resposta, warnings nem contratos públicos.
+        intelligence_plan = intelligence_layer_service.build_plan(
+            strategy=strategy, project=project
+        )
 
         effective_artifacts, reader_items = self._apply_artifact_reader(payload)
         artifacts_result = artifact_service.process(effective_artifacts)
@@ -278,6 +287,7 @@ class OrchestrationService:
             audit=audit,
             status=status,
             blocked_reason=blocked_reason,
+            intelligence_plan=intelligence_plan,
         )
 
     def _apply_artifact_reader(

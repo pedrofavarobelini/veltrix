@@ -80,6 +80,32 @@ _STRATEGIES: dict[str, dict[str, object]] = {
         "criticality": "high",
         "allow_mock": True,
     },
+    # PEDROCORE-MODEL-FOUNDATION-01: tasks de fundação de inteligência.
+    # Planejamento/documentação, sem execução; mock permitido.
+    "report_ingestion": {
+        "response_style": "report_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "project_memory_summary": {
+        "response_style": "report_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "model_foundation_review": {
+        "response_style": "technical_text",
+        "requires_structured_response": False,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
+    "intelligence_planning": {
+        "response_style": "plan_structured",
+        "requires_structured_response": True,
+        "criticality": "medium",
+        "allow_mock": True,
+    },
     UNKNOWN_TASK_TYPE: {
         "response_style": "free_text",
         "requires_structured_response": False,

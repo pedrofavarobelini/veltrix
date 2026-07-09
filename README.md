@@ -3,6 +3,7 @@
 Versão atual de produto: V5.1.9
 Tags técnicas: `v6.0.0` (MVP backend, em `ee2ac68`) e `v7.0.0` (core operacional seguro finalizado localmente).
 Status: **finalizado localmente** — `PEDROCORE-IMPLEMENT-05` (integrações reais controladas) e `PEDROCORE-FINALIZE-06` (enforcement final + fechamento) concluídas. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
+Frente pós-fechamento: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria (Intelligence Layer, Report Intelligence, contrato de Local Model Provider e Evaluation Foundation). Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 Mapa atual completo: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 
@@ -18,6 +19,7 @@ Entrada Obsidian: `docs/MOC_PEDROCORE_IA.md`.
 - **Contrato FinGuard → PedroCore** (Bloco 8) definido por payload fake: `origin_system` `finguard`/`finguard-local` read-only, sem qualquer acesso ao repositório real (ver `docs/11-integracoes/CONTRATO_FINGUARD_PEDROCORE.md`).
 - **QA visual stub** (Bloco 10): artefatos visuais geram `visual_qa_analysis` conservador exigindo revisão humana — sem OCR, sem provider multimodal, sem Playwright; release gate nunca avança só com evidência visual.
 - **Agente exploratório assistido** (Bloco 11): tasks exploratórias geram plano/checklist manual (`exploration`) com `can_execute_actions=false` sempre — nada é executado automaticamente.
+- **Fundação de inteligência própria** (`PEDROCORE-MODEL-FOUNDATION-01`): Intelligence Layer determinística (`intelligence_layer/`, plano interno por task com `allow_real_provider` sempre `false`), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos por payload, sem persistência — **relatórios não treinam IA**), contrato futuro do provider generativo local (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem backend instalado) e Evaluation Foundation (`evaluation/`, checks de segurança/coerência). O PedroCore **não** é um modelo treinado e não substitui providers externos; não há fine-tuning, autoaprendizado nem modelo local rodando.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
 - Cliente HTTP no FinGuard, OCR real em ambiente configurado, QA visual real com provider multimodal, Playwright real, log persistente e deploy/push ainda são opcionais e exigem aprovação própria. Bloco 12 (dashboard) foi cancelado por decisão de produto.

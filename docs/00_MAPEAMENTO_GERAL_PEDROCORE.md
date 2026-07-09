@@ -1,6 +1,8 @@
 # Mapeamento Geral PedroCore IA
 
-Atualizado em: 05/07/2026
+Atualizado em: 08/07/2026
+
+> Nota MODEL-FOUNDATION-01: a frente `PEDROCORE-MODEL-FOUNDATION-01` adicionou os módulos `intelligence_layer`, `report_intelligence`, `evaluation` e o contrato `providers/local_model_contract.py`, além de 4 task_types novos para `pedrocore`. Testes atuais: `257 passed, 6 skipped, 2 warnings`. Ver [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] e [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]].
 
 Links centrais: [[MOC_PEDROCORE_IA]] | [[MOC_ARQUITETURA]] | [[MOC_SEGURANCA]] | [[MOC_QA_RELEASE_GATE]] | [[MOC_INTEGRACOES]] | [[MOC_TESTES]] | [[MOC_VERSOES_STATUS]]
 
@@ -58,6 +60,7 @@ OrchestrationService
   Task Router
   Project Context
   Policy Enforcement
+  Intelligence Layer (plano interno deterministico)
   Artifact Reader opt-in
   Artifacts Service
   Prompt Builder
@@ -194,7 +197,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 
 - Onde: `apps/api/app/modules/task_router/`.
 - O que faz: normaliza `task_type`, define criticidade, formato de resposta e se mock e permitido.
-- Task types atuais: `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary`, `exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`, `unknown`.
+- Task types atuais: `general_chat`, `technical_explanation`, `code_help`, `qa_report_analysis`, `qa_failure_diagnosis`, `release_gate_review`, `artifact_summary`, `exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`, `report_ingestion`, `project_memory_summary`, `model_foundation_review`, `intelligence_planning`, `unknown`. (Os 4 de fundação de inteligência são permitidos apenas para `pedrocore`.)
 - Status: finalizado para roteamento deterministico local.
 - Default: `general_chat`.
 - Riscos controlados: task desconhecida vira `unknown` com warning.
@@ -319,6 +322,42 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 - Default: on.
 - Riscos controlados: nao guarda conteudo de artefatos nem segredos.
 - Testes: `test_orchestrate_api.py`.
+
+### `intelligence_layer`
+
+- Onde: `apps/api/app/modules/intelligence_layer/`.
+- O que faz: gera `IntelligencePlan` determinístico (response_profile, política de contexto, safety flags, instruções) antes do provider.
+- Status: fundação (`PEDROCORE-MODEL-FOUNDATION-01`); plano é metadado interno do `OrchestrationOutcome`, não exposto nos contratos públicos.
+- Default: on (interno, sem efeito no contrato).
+- Riscos controlados: nunca chama provider; `allow_real_provider=true` rejeitado por validação; nunca persiste memória.
+- Testes: `test_intelligence_layer.py`.
+
+### `report_intelligence`
+
+- Onde: `apps/api/app/modules/report_intelligence/`.
+- O que faz: normaliza relatórios técnicos por payload, extrai sinais determinísticos com severidade e agrega memória técnica volátil.
+- Status: fundação; sem rota pública, sem persistência, sem RAG. Relatórios não treinam IA.
+- Default: consumível internamente/por testes.
+- Riscos controlados: sinais críticos exigem revisão humana; nenhum arquivo/repositório é lido.
+- Testes: `test_report_intelligence.py`.
+
+### `evaluation`
+
+- Onde: `apps/api/app/modules/evaluation/`.
+- O que faz: checks determinísticos de segurança/coerência para `IntelligencePlan` e sinais de relatório.
+- Status: fundação; não é benchmark de LLM e não chama IA externa.
+- Default: consumível internamente/por testes.
+- Riscos controlados: reprova auto-training/fine-tuning/exposição de segredos; falha sempre exige revisão humana.
+- Testes: `test_evaluation_foundation.py`.
+
+### `providers/local_model_contract`
+
+- Onde: `apps/api/app/modules/providers/local_model_contract.py`.
+- O que faz: contrato do futuro provider generativo local (`local_model`), distinto do `local_qa`.
+- Status: contrato apenas; não registrado no `provider_registry`; `generation_supported=false` imposto por validação.
+- Default: inexistente como provider funcional (pedir `local_model` cai no fallback Mock).
+- Riscos controlados: sem rede, sem backend, sem download de modelo.
+- Testes: `test_local_model_contract.py`.
 
 ### `real_features`
 

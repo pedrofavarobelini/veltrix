@@ -52,6 +52,12 @@ _PROJECTS: dict[str, dict[str, object]] = {
             "exploratory_test_plan",
             "manual_exploration_report",
             "assisted_exploration_review",
+            # PEDROCORE-MODEL-FOUNDATION-01: tasks de fundação de inteligência
+            # (somente pedrocore; FinGuard não recebe essas tasks nesta frente).
+            "report_ingestion",
+            "project_memory_summary",
+            "model_foundation_review",
+            "intelligence_planning",
         ],
         "notes": "Sistema local/default do próprio PedroCore.",
     },

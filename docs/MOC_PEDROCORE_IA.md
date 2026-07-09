@@ -19,6 +19,14 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[09_STATUS_ATUAL]]
 - [[08_CHANGELOG]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]
+- [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]]
+
+## Fundação de inteligência própria (MODEL-FOUNDATION-01)
+
+- [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] - visao geral e glossario (provider externo/real/mock/local_qa/local_model, memoria, RAG, fine-tuning).
+- [[14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]] - sinais de relatorios tecnicos; relatorios nao treinam IA.
+- [[14-intelligence-layer/LOCAL_MODEL_PROVIDER_CONTRACT]] - contrato futuro do provider generativo local.
+- [[14-intelligence-layer/EVALUATION_FOUNDATION]] - avaliacao deterministica de seguranca/coerencia.
 
 ## Contexto historico util
 

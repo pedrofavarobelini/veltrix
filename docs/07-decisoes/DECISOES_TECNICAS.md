@@ -261,3 +261,19 @@ OCR local e Playwright read-only foram implementados como guard + adapter: se a 
 ## Decisão 065 — v7.0.0 fecha o core operacional seguro local; integração no FinGuard é repositório separado
 
 A tag `v7.0.0` marca o fechamento local do PedroCore IA como core operacional seguro (Blocos 1–11 + IMPLEMENT-05 + FINALIZE-06). O cliente HTTP no repositório do FinGuard, push/deploy e qualquer recurso real em produção são frentes futuras com aprovação própria. Bloco 12 (dashboard/admin) permanece cancelado (Decisão 060).
+
+## Decisão 066 — Intelligence Layer é determinística, interna e nunca habilita provider real
+
+A Intelligence Layer (`intelligence_layer/`) produz um `IntelligencePlan` determinístico antes do provider e é integrada ao pipeline apenas como metadado interno (`OrchestrationOutcome.intelligence_plan`), sem alterar contratos públicos. Ela nunca chama provider, nunca persiste memória, nunca altera prompt de produção automaticamente e o schema `IntelligenceContextPolicy` **rejeita por validação** qualquer tentativa de `allow_real_provider=true`. A conexão do plano ao Prompt Builder é frente futura.
+
+## Decisão 067 — Relatórios técnicos alimentam sinais/memória técnica, nunca treinamento
+
+A Report Intelligence Foundation (`report_intelligence/`) extrai sinais determinísticos e explicáveis de relatórios enviados por payload e agrega memória técnica **volátil**. Relatórios nunca são usados para treinamento, fine-tuning ou autoaprendizado; sinais `critical`/`high` sempre exigem revisão humana; persistência/RAG dependem de frente futura própria (`PEDROCORE-REPORT-MEMORY-01`).
+
+## Decisão 068 — local_model é contrato futuro generativo, distinto do local_qa determinístico
+
+O futuro provider generativo local (`local_model`, backends possíveis: Ollama, llama.cpp, LM Studio, custom) existe nesta fase apenas como contrato (`providers/local_model_contract.py`), com `generation_supported=false` imposto por validação e sem registro no `provider_registry`. Ele não se confunde com `local_qa` (determinístico de QA, único confiável para release gate) e, quando implementado, continuará fora de `RELEASE_GATE_TRUSTED_PROVIDERS` e atrás de flag opt-in default-off.
+
+## Decisão 069 — Nenhuma melhoria de inteligência sem avaliação determinística prévia
+
+Qualquer evolução da inteligência própria do PedroCore (memória, prompts, provider local) deve passar pela Evaluation Foundation (`evaluation/`): checks determinísticos de segurança/coerência (provider real bloqueado, sem auto-training, sem fine-tuning, sem exposição de segredos, revisão humana para fluxos críticos, memória ≠ treinamento). A avaliação não usa provider real, não faz benchmark de LLM nesta fase e nunca substitui revisão humana.
