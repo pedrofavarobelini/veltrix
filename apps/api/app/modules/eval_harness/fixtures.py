@@ -129,4 +129,30 @@ DEFAULT_EVAL_CASES: list[EvalCase] = [
         context_from_memory=False,
         expect_memory_used=False,
     ),
+    # PEDROCORE-QA-SAFETY-HARDENING-01: casos negativos determinísticos.
+    EvalCase(
+        case_id="invalid-provider-falls-back-safely",
+        description="Provider inexistente cai em fallback mock controlado, sem erro.",
+        task_type="assistant_chat",
+        provider="provider_inexistente",
+        input="Teste de provider inválido.",
+        expected_requirements=["fallback acionado"],
+        forbidden_patterns=["traceback"],
+    ),
+    EvalCase(
+        case_id="unknown-task-type-warned-not-crashed",
+        description="task_type desconhecido gera warning controlado e resposta segura.",
+        task_type="task_type_totalmente_desconhecido",
+        input="Teste de task desconhecida.",
+        expected_warnings=["UNKNOWN_TASK_TYPE"],
+    ),
+    EvalCase(
+        case_id="local-qa-deterministic-assistant",
+        description="local_qa responde determinístico sem chave e sem rede.",
+        task_type="assistant_chat",
+        provider="local_qa",
+        input="Como está o ecossistema?",
+        expected_requirements=["processamento local determinístico"],
+        expect_memory_used=False,
+    ),
 ]
