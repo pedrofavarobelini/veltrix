@@ -25,6 +25,11 @@ cd C:\Projetos\pedrocore-ia\apps\api
 uv run python -m app.modules.eval_harness.run
 ```
 
+Auditoria local documentada:
+
+- [[15-estudo-pedrocore/PEDROCORE_AUDITORIA_STUDY_MAP_01]] - resultado de pytest, eval harness e rotas locais.
+- [[15-estudo-pedrocore/PEDROCORE_VEREDITO_FINAL]] - veredito de readiness e riscos restantes.
+
 ## Testes opt-in
 
 - `apps/api/tests/test_real_optin.py`

@@ -37,6 +37,19 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[14-intelligence-layer/LOCAL_MODEL_PROVIDER]] - provider generativo local opt-in, sem rede nesta frente.
 - [[14-intelligence-layer/EVAL_HARNESS]] - avaliacao deterministica; nao e benchmark de LLM.
 
+## Estudo e auditoria (PEDROCORE-AUDIT-STUDY-MAP-01)
+
+- [[15-estudo-pedrocore/PEDROCORE_AUDITORIA_STUDY_MAP_01]] - relatorio documental da auditoria local.
+- [[15-estudo-pedrocore/PEDROCORE_RESUMO_EXECUTIVO]] - resumo de estudo.
+- [[15-estudo-pedrocore/PEDROCORE_MAPA_MENTAL]] - mapa mental em topicos.
+- [[15-estudo-pedrocore/PEDROCORE_FLUXO_COMPLETO]] - fluxo completo do ecossistema.
+- [[15-estudo-pedrocore/PEDROCORE_GLOSSARIO]] - glossario simples.
+- [[15-estudo-pedrocore/PEDROCORE_PERGUNTAS_E_RESPOSTAS]] - perguntas e respostas.
+- [[15-estudo-pedrocore/PEDROCORE_FLASHCARDS]] - flashcards.
+- [[15-estudo-pedrocore/PEDROCORE_ROTEIRO_NOTEBOOKLM]] - roteiro NotebookLM.
+- [[15-estudo-pedrocore/PEDROCORE_ROTEIRO_CLAUDE_OBSIDIAN]] - roteiro Claude + Obsidian.
+- [[15-estudo-pedrocore/PEDROCORE_VEREDITO_FINAL]] - vereditos e proximos passos.
+
 ## Contexto historico util
 
 - [[13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01]]
@@ -50,3 +63,4 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - Para testar sem risco: [[MOC_TESTES]].
 - Para integracao FinGuard: [[MOC_INTEGRACOES]].
 - Para checar status/tag: [[MOC_VERSOES_STATUS]].
+- Para estudar ou importar em LLM/notebook: [[15-estudo-pedrocore/PEDROCORE_ROTEIRO_NOTEBOOKLM]].

@@ -10,6 +10,8 @@ Mapa de versao, status, changelog e fechamento.
 - [[08_CHANGELOG]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]]
+- [[15-estudo-pedrocore/PEDROCORE_AUDITORIA_STUDY_MAP_01]]
+- [[15-estudo-pedrocore/PEDROCORE_VEREDITO_FINAL]]
 
 ## Tags
 

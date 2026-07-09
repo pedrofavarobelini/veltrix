@@ -19,6 +19,12 @@ Mapa de arquitetura atual e historico de planejamento.
 - `POST /api/reports/ingest` - `apps/api/app/modules/report_memory/router.py`
 - `GET /api/project-memory/{project_id}/summary` - `apps/api/app/modules/report_memory/router.py`
 
+## Estudo arquitetural
+
+- [[15-estudo-pedrocore/PEDROCORE_FLUXO_COMPLETO]] - fluxo ponta a ponta do consumidor ate resposta/audit.
+- [[15-estudo-pedrocore/PEDROCORE_MAPA_MENTAL]] - mapa mental de modulos, rotas, providers e seguranca.
+- [[15-estudo-pedrocore/PEDROCORE_AUDITORIA_STUDY_MAP_01]] - validacao local da arquitetura atual.
+
 ## Modulos backend
 
 - `chat` - compatibilidade de `/api/chat`.

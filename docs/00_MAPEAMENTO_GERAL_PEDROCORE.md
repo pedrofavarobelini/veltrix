@@ -387,8 +387,8 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 
 - Onde: `apps/api/app/modules/providers/local_model_contract.py`.
 - O que faz: contrato do futuro provider generativo local (`local_model`), distinto do `local_qa`.
-- Status: contrato apenas; não registrado no `provider_registry`; `generation_supported=false` imposto por validação.
-- Default: inexistente como provider funcional (pedir `local_model` cai no fallback Mock).
+- Status: contrato de fundação; o provider registrado atual fica em `providers/local_model_provider`.
+- Default: o contrato isolado não executa; pedir `local_model` passa pelo provider default-off e cai em fallback seguro quando falta opt-in, backend ou transport real.
 - Riscos controlados: sem rede, sem backend, sem download de modelo.
 - Testes: `test_local_model_contract.py`.
 

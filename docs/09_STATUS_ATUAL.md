@@ -10,7 +10,9 @@ DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `doc
 
 Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
-Frente atual: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote (A) contrato de ecossistema, (B) memória técnica controlada, (C) `local_model` opt-in sem rede, (D) eval harness determinístico; implementada de forma retrocompatível e ainda não commitada. O PedroCore continua **não** sendo modelo treinado: sem fine-tuning, sem autoaprendizado, sem RAG, sem provider real. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+Ultima frente de implementacao: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote (A) contrato de ecossistema, (B) memória técnica controlada, (C) `local_model` opt-in sem rede, (D) eval harness determinístico; implementada de forma retrocompatível e commitada em `e0ff8e3`. O PedroCore continua **não** sendo modelo treinado: sem fine-tuning, sem autoaprendizado, sem RAG, sem provider real. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+
+Frente documental atual: `PEDROCORE-AUDIT-STUDY-MAP-01` — auditoria fria, validação local e pacote de estudo em `docs/15-estudo-pedrocore/`, sem alteração de código.
 
 ## Versão atual de produto
 
@@ -61,13 +63,13 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-IMPLEMENT-05` — flags/guards/testes opt-in, FinGuard controlado com policy enforcement forte, reader consolidado, OCR local opt-in, multimodal guard e Playwright read-only opt-in. Commitada nas subfrentes `33a7dc2`, `790e1b4`, `70afba1`, `b3f1be5`, `2670040`, `3bcfa05`.
 - `PEDROCORE-FINALIZE-06` — enforcement final do release gate, documentação final e tag local `v7.0.0`. HEAD esperado: `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
 
-- `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria: Intelligence Layer (`intelligence_layer/`, plano determinístico interno por task, nunca habilita provider real), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos, sem persistência), contrato futuro do Local Model Provider (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem geração), Evaluation Foundation (`evaluation/`, checks de segurança/coerência) e 4 task_types novos somente para `pedrocore`. Testes backend: `257 passed, 6 skipped, 2 warnings` (41 novos). Commit pendente de autorização.
+- `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria: Intelligence Layer (`intelligence_layer/`, plano determinístico interno por task, nunca habilita provider real), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos, sem persistência), contrato futuro do Local Model Provider (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem geração), Evaluation Foundation (`evaluation/`, checks de segurança/coerência) e 4 task_types novos somente para `pedrocore`. Testes backend: `257 passed, 6 skipped, 2 warnings` (41 novos). Commitada em `689e50a`.
 
-- `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — inteligência de ecossistema: contrato para consumidores + tasks de assistente (disclaimer obrigatório em `finance_advice`), memória técnica controlada (`report_memory/`, rotas `/api/reports/*` e `/api/project-memory/*`, default off, `context_from_memory` opt-in), provider `local_model` opt-in default-off (sem rede nesta frente; nunca aprova release gate) e eval harness determinístico (`eval_harness/`, 11 fixtures). Testes: `296 passed, 6 skipped, 2 warnings` (39 novos). Commit pendente de autorização.
+- `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — inteligência de ecossistema: contrato para consumidores + tasks de assistente (disclaimer obrigatório em `finance_advice`), memória técnica controlada (`report_memory/`, rotas `/api/reports/*` e `/api/project-memory/*`, default off, `context_from_memory` opt-in), provider `local_model` opt-in default-off (sem rede nesta frente; nunca aprova release gate) e eval harness determinístico (`eval_harness/`, 11 fixtures). Testes: `296 passed, 6 skipped, 2 warnings` (39 novos). Commitada em `e0ff8e3`.
 
 ## Em andamento
 
-`PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` implementada e validada nesta sessão; aguarda autorização humana para commit. Testes backend atuais: `296 passed, 6 skipped (opt-in), 2 warnings`. Trabalhos futuros (integração do Assistente FinGuard via PedroCore, transport real do local_model, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
+`PEDROCORE-AUDIT-STUDY-MAP-01` está em escopo documental: auditoria fria do estado local, validação de testes/rotas e material de estudo para Obsidian/Claude/NotebookLM. Trabalhos futuros (integração do Assistente FinGuard via PedroCore, transport real do local_model, push, deploy, execução real de OCR/multimodal/Playwright) são opcionais e exigem nova aprovação.
 
 ## Ainda não existe / permanece opcional
 
@@ -77,8 +79,8 @@ C:\Projetos\pedrocore-ia
 - QA visual real multimodal — artefatos visuais geram stub conservador; OCR e Playwright existem como recursos opt-in/controlados, não como teste padrão nem release gate automático.
 - Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim provider real nunca aprova release gate sozinho.
 - Provider Orchestration avançada por custo/qualidade/task.
-- Memória técnica persistente e RAG — a Report Intelligence Foundation extrai sinais em memória volátil; persistência é frente futura (`PEDROCORE-REPORT-MEMORY-01`).
-- Provider generativo local funcional — existe apenas o contrato (`local_model`); nenhum backend (Ollama/llama.cpp/LM Studio) instalado ou chamado (`PEDROCORE-LOCAL-MODEL-01`).
+- Memória técnica persistente por default e RAG — `report_memory` existe com persistência default off e modos opt-in (`memory`/`local_json`); RAG/embeddings ainda não existem.
+- Provider generativo local funcional — `local_model` está registrado como provider opt-in default-off, mas sem transport real; nenhum backend (Ollama/llama.cpp/LM Studio) foi instalado ou chamado.
 - Treinamento, fine-tuning ou autoaprendizado — fora do escopo do projeto; a fundação de inteligência é determinística e avaliada (`evaluation/`).
 - Persistência em banco de dados / log persistente (audit é não persistente, devolvido só na resposta). Dashboard (Bloco 12): **cancelado por decisão de produto**, não é pendência.
 - Qualquer mudança de frontend/design — preservados sem alteração.

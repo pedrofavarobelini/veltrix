@@ -4,7 +4,7 @@ Atualizado em: 09/07/2026
 
 ## PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01 — Inteligência de ecossistema (pacote A+B+C+D)
 
-Status: implementada e validada; commit pendente de autorização humana. Base: `689e50a`.
+Status: implementada, validada e commitada em `e0ff8e3`. Base: `689e50a`.
 
 ### Fase A — Ecosystem finalize
 
@@ -39,17 +39,17 @@ Status: implementada e validada; commit pendente de autorização humana. Base: 
 
 ### Não alterado / não feito
 
-- Sem provider real, sem `allow_real_provider=true`, sem `.env`, sem FinGuard, sem treinamento/fine-tuning/LoRA/autoaprendizado, sem backend instalado, sem modelo baixado, sem rede em teste, sem commit/push/tag/merge.
+- Sem provider real, sem `allow_real_provider=true`, sem `.env`, sem FinGuard, sem treinamento/fine-tuning/LoRA/autoaprendizado, sem backend instalado, sem modelo baixado, sem rede em teste, sem push/tag/merge.
 
 ## PEDROCORE-MODEL-FOUNDATION-01 — Fundação de inteligência própria
 
-Status: implementada e validada nesta frente; commit pendente de autorização humana.
+Status: implementada, validada e commitada em `689e50a`.
 
 ### Implementado
 
 - **Intelligence Layer** (`apps/api/app/modules/intelligence_layer/`): `IntelligenceContextPolicy` (validação rejeita `allow_real_provider=true`), `IntelligencePlan` (task_type, response_profile, safety_flags, instructions, memory_hints, evaluation_hints) e `IntelligenceLayerService.build_plan()` determinístico. Integração retrocompatível: `OrchestrationService` calcula o plano após policy e o anexa a `OrchestrationOutcome.intelligence_plan` como metadado **interno** — não exposto em `ChatResponse`/`OrchestrateResponse`.
 - **Report Intelligence Foundation** (`apps/api/app/modules/report_intelligence/`): `TechnicalReportInput`/`ReportSignal`/`ReportMemorySummary` e serviço determinístico (`normalize_report`, `extract_signals`, `summarize_memory`), sem persistência, sem embeddings/RAG, sem rota nova. Relatórios não treinam IA — geram sinais explicáveis com severidade (`provider_real_used`/`database_safety_risk` = `critical`; `provider_real_blocked` = `info`; `QA_RISK_CRITICAL` não invalida suíte passed).
-- **Local Model Provider Contract** (`apps/api/app/modules/providers/local_model_contract.py`): contrato futuro do provider generativo local (`local_model` ≠ `local_qa`), `generation_supported=false` e `requires_external_api_key=false` impostos por validação; não registrado no `provider_registry`; nenhum backend instalado, nenhuma rede.
+- **Local Model Provider Contract** (`apps/api/app/modules/providers/local_model_contract.py`): contrato futuro do provider generativo local (`local_model` ≠ `local_qa`), `generation_supported=false` e `requires_external_api_key=false` impostos por validação; naquela frente ainda não registrado no `provider_registry` (registrado default-off na suíte posterior); nenhum backend instalado, nenhuma rede.
 - **Evaluation Foundation** (`apps/api/app/modules/evaluation/`): `EvaluationCheck`/`EvaluationResult`; `evaluate_intelligence_plan` (checks: provider real bloqueado, sem auto-training, sem fine-tuning, sem exposição de `.env`/segredo, revisão humana para release gate, memória ≠ treinamento) e `evaluate_report_signals` (sinais críticos/altos exigem revisão humana).
 - **Task types novos** no Task Router (`report_ingestion`, `project_memory_summary`, `model_foundation_review`, `intelligence_planning`; criticidade `medium`, `allow_mock=true`), permitidos apenas para `origin_system=pedrocore` — FinGuard não recebeu tasks novas.
 - **Documentação**: `docs/14-intelligence-layer/` (4 documentos) + `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`; README/VERSION/status/roadmap/mapeamento/MOCs/decisões atualizados.
@@ -59,7 +59,7 @@ Status: implementada e validada nesta frente; commit pendente de autorização h
 
 - Nenhuma rota nova; contratos `ChatResponse`/`OrchestrateResponse` intactos (teste dedicado confirma).
 - Sem provider real, sem `allow_real_provider=true`, sem `.env`, sem FinGuard, sem treinamento/fine-tuning/autoaprendizado, sem download de modelo, sem banco persistente novo, sem RAG.
-- Sem commit, push, tag ou merge.
+- Sem push, tag ou merge.
 
 ## PEDROCORE-DOCFIX-OBSIDIAN-07 — Mapeamento completo e saneamento documental
 
