@@ -103,7 +103,7 @@ export type ExecutionFilters = {
   fallback?: "" | "true" | "false";
 };
 
-const API_URL = "http://localhost:3333/api";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3333/api";
 
 export async function sendChatMessage(payload: ChatRequest): Promise<ChatResponse> {
   const response = await fetch(`${API_URL}/chat`, {

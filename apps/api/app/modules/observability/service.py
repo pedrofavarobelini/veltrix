@@ -19,6 +19,7 @@ from app.modules.observability.schemas import (
 
 FLAG_ENABLED = "PEDROCORE_OBSERVABILITY_ENABLED"
 FLAG_MAX_ENTRIES = "PEDROCORE_OBSERVABILITY_MAX_ENTRIES"
+FLAG_QA_FORCE_TOTAL_FAILURE = "PEDROCORE_QA_FORCE_TOTAL_PROVIDER_FAILURE"
 
 LOCAL_ENVS = {"dev", "development", "local", "qa", "test", "testing"}
 PRODUCTION_ENVS = {"prod", "production"}
@@ -72,6 +73,14 @@ class ObservabilityService:
 
     def max_entries(self) -> int:
         return _max_entries()
+
+    def force_total_provider_failure(self, payload: Any) -> bool:
+        return (
+            self.enabled()
+            and _environment() in {"qa", "test", "testing"}
+            and _flag_true(FLAG_QA_FORCE_TOTAL_FAILURE)
+            and str(getattr(payload, "origin_system", "")).lower() == "finguard"
+        )
 
     def reset(self) -> None:
         with self._lock:

@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,9 +14,18 @@ app = FastAPI(
     description="API multi-provider de IA para testar respostas, contexto e qualidade.",
 )
 
+cors_origins = [
+    item.strip().rstrip("/")
+    for item in (
+        os.environ.get("PEDROCORE_CORS_ORIGINS")
+        or "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",")
+    if item.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

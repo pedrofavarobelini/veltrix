@@ -11,6 +11,7 @@ from app.modules.observability.sanitizer import sanitize_payload
 from app.modules.observability.service import (
     FLAG_ENABLED,
     FLAG_MAX_ENTRIES,
+    FLAG_QA_FORCE_TOTAL_FAILURE,
     observability_service,
 )
 from app.modules.report_memory.service import FLAG_PERSISTENCE, report_memory_service
@@ -272,3 +273,36 @@ def test_unexpected_pipeline_error_is_recorded_sanitized(monkeypatch):
     assert detail["status"] == "error"
     assert "segredo-erro" not in (detail["error"] or "")
     assert "[REDACTED]" in (detail["error"] or "")
+
+
+def test_total_provider_failure_hook_is_qa_only_and_diagnosed(monkeypatch):
+    monkeypatch.setenv(FLAG_QA_FORCE_TOTAL_FAILURE, "true")
+    error_client = TestClient(app, raise_server_exceptions=False)
+    response = error_client.post(
+        "/api/orchestrate",
+        json={
+            "origin_system": "finguard",
+            "task_type": "finance_advice",
+            "message": "Cenário sintético",
+            "provider": "mock",
+        },
+    )
+    assert response.status_code == 500
+    detail = _latest_detail()
+    assert detail["status"] == "error"
+    assert detail["origin_system"] == "finguard"
+    assert detail["provider_requested"] == "mock"
+    assert "QA_TOTAL_PROVIDER_FAILURE" in (detail["error"] or "")
+
+    observability_service.reset()
+    monkeypatch.setenv("APP_ENV", "production")
+    response = client.post(
+        "/api/orchestrate",
+        json={
+            "origin_system": "finguard",
+            "task_type": "finance_advice",
+            "message": "Cenário sintético",
+            "provider": "mock",
+        },
+    )
+    assert response.status_code == 200

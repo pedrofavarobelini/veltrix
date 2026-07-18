@@ -137,6 +137,14 @@ class OrchestrationService:
         ring buffer local quando a observabilidade estiver explicitamente ativa.
         """
         started = time.perf_counter()
+        if observability_service.force_total_provider_failure(payload):
+            error = RuntimeError(
+                "QA_TOTAL_PROVIDER_FAILURE: providers e fallback indisponíveis no cenário controlado."
+            )
+            observability_service.record_exception(
+                payload, error, (time.perf_counter() - started) * 1_000
+            )
+            raise error
         try:
             outcome = await self._execute_pipeline(payload)
         except Exception as exc:
