@@ -4,6 +4,7 @@ Mapa de QA textual, release gate e evidencias.
 
 ## Referencias atuais
 
+- [[13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01]] - painel local, provider/fallback, memória, avaliação, release gate e replay FinGuard.
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 9 e 10.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - regras finais do release gate.
 - [[MOC_QA_SAFETY_HARDENING]] - endurecimento QA/safety commitado em `d6106b7`.
@@ -39,6 +40,8 @@ Estes documentos nasceram como planejamento e agora devem ser lidos com a nota d
 
 ## Testes relacionados
 
+- `apps/api/tests/test_observability.py`
+- `apps/api/tests/test_gemini_smoke.py`
 - `apps/api/tests/test_qa_analysis.py`
 - `apps/api/tests/test_qa_response.py`
 - `apps/api/tests/test_qa_flow.py`

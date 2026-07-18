@@ -2,6 +2,14 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
+## Resultado atual — 2026-07-18
+
+- Fechamento: [[13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01]].
+- Backend integral: `368 passed, 7 skipped, 2 warnings` com `-p no:cacheprovider`.
+- Frontend: `npm.cmd run build`, exit 0.
+- Novos contratos: observability store/sanitização, painel/API, provider timeout/fallback, Gemini smoke com duplo opt-in e replay FinGuard → PedroCore.
+- Gemini real: 0 chamadas nesta execução; os dois opt-ins estavam desligados e os skips reais permaneceram explícitos.
+
 ## Comandos seguros
 
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secao 21.
@@ -28,6 +36,15 @@ cd C:\Projetos\pedrocore-ia\apps\api
 ```
 
 Resultado local: `28 passed, 7 skipped, 2 warnings`. Gemini real nao roda nesse comando.
+
+Suite integral atual:
+
+```powershell
+cd C:\Projetos\pedrocore-ia\apps\api
+.\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
+```
+
+Resultado: `368 passed, 7 skipped, 2 warnings`.
 
 Eval harness deterministico (sem provider real, sem rede):
 
@@ -63,3 +80,4 @@ Auditoria local documentada:
 - Fundacao de inteligencia: `test_intelligence_layer.py`, `test_report_intelligence.py`, `test_local_model_contract.py`, `test_evaluation_foundation.py`.
 - Ecossistema/memoria/local model/eval: `test_ecosystem_contract.py`, `test_report_memory.py`, `test_local_model_provider.py`, `test_eval_harness.py`.
 - Safety hardening: `test_provider_real_safety.py`, `test_report_memory_safety.py`, `test_policy_negative_cases.py`, `test_orchestrate_contract_safety.py`, `test_eval_harness_extended.py`.
+- Observabilidade/Gemini opt-in: `test_observability.py`, `test_gemini_smoke.py`.

@@ -1,5 +1,11 @@
 # MOC PedroCore IA
 
+## Fechamento atual — 2026-07-18
+
+- [[13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01]] - observabilidade visual técnica local/QA, provider/fallback, memória, avaliação, release gate e replay FinGuard.
+- Suite atual: `368 passed, 7 skipped, 2 warnings`; frontend build verde; Gemini real não executado porque os dois opt-ins estavam desligados.
+- Memória técnica não altera pesos do modelo; treinamento/fine-tuning continuam não implementados.
+
 Entrada principal do grafo Obsidian do PedroCore IA.
 
 ## Mapas centrais

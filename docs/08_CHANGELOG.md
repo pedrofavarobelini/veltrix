@@ -1,5 +1,17 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-OBSERVABILIDADE-LOCAL-01 — 2026-07-18
+
+Status: **implementado e validado localmente**.
+
+- Ring buffer sanitizado, limitado e default-off; habilitação somente local/QA/test, bloqueio em produção e acesso HTTP por loopback.
+- Pipeline real instrumentado com provider solicitado/selecionado/efetivo, tentativas, timeout, fallback, timeline, resposta pública, QA, release gate, avaliação, sinais, memória e audit ID.
+- Painel técnico em `#/observability` com lista, filtros, detalhe e smoke Gemini; nenhuma UI técnica adicionada ao FinGuard.
+- Smoke Gemini protegido por duplo opt-in, confirmações de rede/custo/chave e payload sintético imutável; nesta execução houve 0 chamadas reais porque as flags estavam desligadas.
+- Replay local FinGuard → PedroCore → FinGuard aprovado em sucesso, relatório/memória, fallback e falha total, com cleanup.
+- Pytest integral: `368 passed, 7 skipped, 2 warnings`; frontend build exit 0.
+- Commits: `b22338a`, `df6d72f`, `f995d5e`, `3b11b36`. Ver [[13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01]].
+
 ## FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01 - Fechamento: fallback seguro + validacao real com Gemini
 
 Status: **validado localmente com Gemini real** (`provider=auto`, `allow_real_provider=true`), sem push/tag/merge, sem alterar `.env`/chave, sem rodar Gemini real na suite padrao.
