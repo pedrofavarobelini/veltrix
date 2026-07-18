@@ -83,6 +83,18 @@ export type ObservabilityStatus = {
   notice: string;
 };
 
+export type GeminiSmokeResponse = {
+  status: "ok" | "blocked" | "fallback";
+  executed: boolean;
+  call_count: number;
+  provider: string;
+  model?: string | null;
+  fallback: boolean;
+  reason?: string | null;
+  public_response?: string | null;
+  notices: string[];
+};
+
 export type ExecutionFilters = {
   origin?: string;
   task?: string;
@@ -145,6 +157,27 @@ export async function getExecutionDetail(executionId: string): Promise<Execution
   const response = await fetch(`${API_URL}/observability/executions/${encodeURIComponent(executionId)}`);
   if (!response.ok) {
     throw new Error("Não foi possível carregar o detalhe da execução.");
+  }
+  return response.json();
+}
+
+export async function runGeminiSmoke(confirmations: {
+  network: boolean;
+  cost: boolean;
+  keyIntegrity: boolean;
+}): Promise<GeminiSmokeResponse> {
+  const response = await fetch(`${API_URL}/observability/gemini-smoke`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      synthetic_payload: "PEDROCORE_GEMINI_SMOKE_V1",
+      confirm_network: confirmations.network,
+      confirm_possible_cost: confirmations.cost,
+      confirm_key_not_compromised: confirmations.keyIntegrity,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error("Smoke Gemini indisponível neste ambiente.");
   }
   return response.json();
 }

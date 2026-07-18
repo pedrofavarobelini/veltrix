@@ -72,3 +72,22 @@ class ObservabilityStatusResponse(BaseModel):
     local_only: bool = True
     training_implemented: bool = False
     notice: str
+
+
+class GeminiSmokeRequest(BaseModel):
+    synthetic_payload: str
+    confirm_network: bool = False
+    confirm_possible_cost: bool = False
+    confirm_key_not_compromised: bool = False
+
+
+class GeminiSmokeResponse(BaseModel):
+    status: str
+    executed: bool
+    call_count: int = 0
+    provider: str = "gemini"
+    model: str | None = None
+    fallback: bool = False
+    reason: str | None = None
+    public_response: str | None = None
+    notices: list[str] = Field(default_factory=list)

@@ -1,9 +1,12 @@
+import asyncio
 import json
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.providers.base import BaseAIProvider, ProviderResponse
+from app.modules.providers.registry import provider_registry
 from app.modules.observability.sanitizer import sanitize_payload
 from app.modules.observability.service import (
     FLAG_ENABLED,
@@ -104,6 +107,40 @@ def test_local_qa_and_fallback_are_visible_and_filterable():
     assert detail["provider_effective"] == "mock"
     assert detail["provider_attempts"][-1]["result"] == "fallback_success"
     assert detail["fallback_reason"]
+
+
+def test_provider_timeout_uses_visible_safe_fallback(monkeypatch):
+    class SlowProvider(BaseAIProvider):
+        name = "slow_qa"
+        label = "Slow QA"
+        default_model = "slow-qa-v1"
+        real_provider = False
+
+        @property
+        def is_configured(self) -> bool:
+            return True
+
+        async def generate_response(self, **_kwargs) -> ProviderResponse:
+            await asyncio.sleep(0.2)
+            return ProviderResponse(answer="tarde", provider=self.name, model=self.default_model)
+
+    monkeypatch.setitem(provider_registry._providers, "slow_qa", SlowProvider())
+    monkeypatch.setenv("PEDROCORE_PROVIDER_TIMEOUT_SECONDS", "0.05")
+
+    response = client.post(
+        "/api/orchestrate",
+        json={"message": "Teste sintético", "provider": "slow_qa"},
+    )
+    data = response.json()
+    assert response.status_code == 200
+    assert data["fallback_used"] is True
+    assert data["provider_used"] == "mock"
+    assert data["error_code"] == "PROVIDER_TIMEOUT"
+
+    detail = _latest_detail()
+    assert detail["provider_attempts"][0]["result"] == "timeout"
+    assert detail["provider_attempts"][-1]["result"] == "fallback_success"
+    assert detail["fallback_reason"] == "Provider excedeu o tempo limite; fallback seguro aplicado."
 
 
 def test_payload_and_errors_are_sanitized_without_full_financial_context():

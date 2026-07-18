@@ -1286,6 +1286,37 @@ body {
 
 .obs-summary-grid strong { font-size: 18px; word-break: break-word; }
 
+.obs-gemini-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 28px;
+  margin: 0 24px 20px;
+  padding: 22px;
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.22), rgba(15, 23, 42, 0.88));
+}
+
+.obs-gemini-card > div > span {
+  color: #fbbf24;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.obs-gemini-card h2 { margin: 7px 0; }
+.obs-gemini-card p { color: #cbd5e1; line-height: 1.5; }
+.obs-gemini-card > div > strong { color: #fde68a; font-size: 0.86rem; }
+.obs-gemini-controls { display: grid; gap: 9px; }
+.obs-gemini-controls label { color: #e2e8f0; font-size: 0.83rem; }
+.obs-gemini-controls input { margin-right: 7px; accent-color: #f59e0b; }
+.obs-gemini-controls button { justify-self: start; }
+.obs-gemini-result { padding: 10px 12px; border-radius: 8px; background: rgba(15, 23, 42, 0.72); }
+.obs-gemini-result.success { border-left: 3px solid #34d399; }
+.obs-gemini-result.warning { border-left: 3px solid #fbbf24; }
+.obs-gemini-result.danger { border-left: 3px solid #fb7185; }
+.obs-gemini-result p { margin: 4px 0 0; }
+
 .obs-filters {
   max-width: 1700px;
   margin: 0 auto 14px;
@@ -1404,6 +1435,10 @@ body {
   .obs-detail-grid { grid-template-columns: 1fr 1fr; }
   .obs-filters button { margin-top: 0; }
   .observability-link { display: none; }
+}
+
+@media (max-width: 900px) {
+  .obs-gemini-card { grid-template-columns: 1fr; }
 }
 
 .window-title img {

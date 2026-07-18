@@ -1,3 +1,5 @@
+import asyncio
+import os
 import time
 
 from app.core.config import settings
@@ -101,6 +103,8 @@ PROVIDER_REAL_UNAVAILABLE_WARNING = (
     "Provider real autorizado, mas nenhum provider real configurado esta disponivel; "
     "fallback Mock seguro aplicado."
 )
+PROVIDER_TIMEOUT_ENV = "PEDROCORE_PROVIDER_TIMEOUT_SECONDS"
+PROVIDER_TIMEOUT_WARNING = "Provider excedeu o tempo limite; fallback seguro aplicado."
 
 # Resposta segura e conservadora usada por _mock_fallback(). Nunca deve conter
 # erro tecnico bruto, nome de classe de provider/exception, nem rotulo de
@@ -269,18 +273,21 @@ class OrchestrationService:
                         fallback_used = True
                     else:
                         try:
-                            result = await provider.generate_response(
-                                message=payload.message,
-                                mode=payload.mode,
-                                model=payload.model,
-                                system_prompt=prompt.enriched_system_prompt,
+                            result = await self._generate_with_timeout(
+                                provider, payload, prompt.enriched_system_prompt
                             )
                             answer = result.answer
                             provider_used = result.provider
                             model_used = result.model
                         except Exception as exc:
                             error = str(exc)
-                            if isinstance(exc, ProviderConfigError):
+                            if isinstance(exc, TimeoutError):
+                                error = PROVIDER_TIMEOUT_WARNING
+                                error_code = codes.PROVIDER_TIMEOUT
+                                provider_items.append(
+                                    make_warning(codes.PROVIDER_TIMEOUT, error)
+                                )
+                            elif isinstance(exc, ProviderConfigError):
                                 error_code = codes.PROVIDER_REAL_UNAVAILABLE
                                 provider_items.append(
                                     make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
@@ -315,18 +322,19 @@ class OrchestrationService:
                 fallback_used = True
             else:
                 try:
-                    result = await provider.generate_response(
-                        message=payload.message,
-                        mode=payload.mode,
-                        model=payload.model,
-                        system_prompt=prompt.enriched_system_prompt,
+                    result = await self._generate_with_timeout(
+                        provider, payload, prompt.enriched_system_prompt
                     )
                     answer = result.answer
                     provider_used = result.provider
                     model_used = result.model
                 except Exception as exc:
                     error = str(exc)
-                    if provider.real_provider and isinstance(exc, ProviderConfigError):
+                    if isinstance(exc, TimeoutError):
+                        error = PROVIDER_TIMEOUT_WARNING
+                        error_code = codes.PROVIDER_TIMEOUT
+                        provider_items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
+                    elif provider.real_provider and isinstance(exc, ProviderConfigError):
                         error_code = codes.PROVIDER_REAL_UNAVAILABLE
                         provider_items.append(
                             make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
@@ -497,11 +505,8 @@ class OrchestrationService:
 
         provider = provider_registry.get(LOCAL_MODEL_PROVIDER_NAME)
         try:
-            result = await provider.generate_response(
-                message=payload.message,
-                mode=payload.mode,
-                model=payload.model,
-                system_prompt=prompt.enriched_system_prompt,
+            result = await self._generate_with_timeout(
+                provider, payload, prompt.enriched_system_prompt
             )
             items.append(
                 make_warning(
@@ -534,6 +539,30 @@ class OrchestrationService:
             if provider is not None and provider.real_provider and provider.is_configured:
                 return provider
         return None
+
+    @staticmethod
+    def _provider_timeout_seconds() -> float:
+        raw = (os.environ.get(PROVIDER_TIMEOUT_ENV) or "30").strip()
+        try:
+            return min(120.0, max(0.05, float(raw)))
+        except ValueError:
+            return 30.0
+
+    async def _generate_with_timeout(
+        self,
+        provider,
+        payload: ChatRequest,
+        enriched_system_prompt: str,
+    ):
+        return await asyncio.wait_for(
+            provider.generate_response(
+                message=payload.message,
+                mode=payload.mode,
+                model=payload.model,
+                system_prompt=enriched_system_prompt,
+            ),
+            timeout=self._provider_timeout_seconds(),
+        )
 
     def build_assistant_payload(
         self, outcome: OrchestrationOutcome

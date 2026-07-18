@@ -2,9 +2,12 @@ import ipaddress
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
+from app.modules.observability.gemini_smoke import gemini_smoke_service
 from app.modules.observability.schemas import (
     ExecutionListResponse,
     ExecutionRecord,
+    GeminiSmokeRequest,
+    GeminiSmokeResponse,
     ObservabilityStatusResponse,
 )
 from app.modules.observability.service import NOTICE, observability_service
@@ -76,3 +79,15 @@ def execution_detail(execution_id: str, request: Request):
     if record is None:
         raise HTTPException(status_code=404, detail="Execução não encontrada.")
     return record
+
+
+@router.post("/observability/gemini-smoke", response_model=GeminiSmokeResponse)
+async def gemini_smoke(payload: GeminiSmokeRequest, request: Request):
+    if not _is_loopback(request):
+        raise HTTPException(status_code=404, detail="Not found")
+    if not observability_service.enabled() and observability_service.mode() not in {
+        "prod",
+        "production",
+    }:
+        raise HTTPException(status_code=404, detail="Not found")
+    return await gemini_smoke_service.execute(payload)

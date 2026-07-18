@@ -4,10 +4,12 @@ import {
   getExecutionDetail,
   getExecutions,
   getObservabilityStatus,
+  runGeminiSmoke,
   type ExecutionDetail,
   type ExecutionFilters,
   type ExecutionSummary,
   type ObservabilityStatus,
+  type GeminiSmokeResponse,
 } from "../services/api";
 
 const EMPTY_FILTERS: ExecutionFilters = {
@@ -70,6 +72,9 @@ export function ObservabilityPage() {
   const [detail, setDetail] = useState<ExecutionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [geminiChecks, setGeminiChecks] = useState({ network: false, cost: false, keyIntegrity: false });
+  const [geminiRunning, setGeminiRunning] = useState(false);
+  const [geminiResult, setGeminiResult] = useState<GeminiSmokeResponse | null>(null);
 
   const loadExecutions = useCallback(async () => {
     try {
@@ -131,6 +136,20 @@ export function ObservabilityPage() {
     setFilters((current) => ({ ...current, [name]: value }));
   }
 
+  async function executeGeminiSmoke() {
+    setGeminiRunning(true);
+    try {
+      const result = await runGeminiSmoke(geminiChecks);
+      setGeminiResult(result);
+      setError("");
+      await loadExecutions();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Falha no smoke Gemini.");
+    } finally {
+      setGeminiRunning(false);
+    }
+  }
+
   return (
     <main className="observability-shell">
       <header className="obs-brandbar">
@@ -161,6 +180,33 @@ export function ObservabilityPage() {
         <article><span>Relatórios visíveis</span><strong>{reportCount}</strong></article>
         <article><span>Store</span><strong>{status?.storage ?? "—"}</strong></article>
         <article><span>Limite</span><strong>{status?.max_entries ?? "—"}</strong></article>
+      </section>
+
+      <section className="obs-gemini-card" aria-labelledby="gemini-smoke-title">
+        <div>
+          <span>PROVIDER REAL · OPT-IN DUPLO</span>
+          <h2 id="gemini-smoke-title">Smoke Gemini sintético</h2>
+          <p>Desativado por padrão. Envia somente “Responda apenas com a palavra OK.”, sem dado financeiro, relatório ou arquivo do usuário.</p>
+          <strong>Esta ação faz uma chamada de rede e pode gerar custo. No máximo uma chamada por execução.</strong>
+        </div>
+        <div className="obs-gemini-controls">
+          <label><input type="checkbox" checked={geminiChecks.network} onChange={(event) => setGeminiChecks((current) => ({ ...current, network: event.target.checked }))} /> Confirmo a chamada de rede</label>
+          <label><input type="checkbox" checked={geminiChecks.cost} onChange={(event) => setGeminiChecks((current) => ({ ...current, cost: event.target.checked }))} /> Confirmo o possível custo</label>
+          <label><input type="checkbox" checked={geminiChecks.keyIntegrity} onChange={(event) => setGeminiChecks((current) => ({ ...current, keyIntegrity: event.target.checked }))} /> Confirmei que a chave não foi comprometida pelo ZIP anterior</label>
+          <button
+            type="button"
+            disabled={!status?.enabled || geminiRunning || !Object.values(geminiChecks).every(Boolean)}
+            onClick={() => void executeGeminiSmoke()}
+          >
+            {geminiRunning ? "Executando…" : "Executar uma chamada sintética"}
+          </button>
+          {geminiResult && (
+            <div className={`obs-gemini-result ${statusTone(geminiResult.status)}`} role="status">
+              <strong>{geminiResult.status} · chamadas: {geminiResult.call_count}</strong>
+              <p>{geminiResult.reason ?? geminiResult.public_response ?? "Concluído sem conteúdo público."}</p>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="obs-filters" aria-label="Filtros de execuções">

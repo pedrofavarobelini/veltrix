@@ -308,6 +308,60 @@ class ObservabilityService:
             )
         )
 
+    def record_gemini_smoke(self, payload: Any, response: Any, duration_ms: float) -> None:
+        if not self.enabled():
+            return
+        payload_sanitized, removed_fields = sanitize_payload(payload)
+        execution_id = str(uuid.uuid4())
+        reason = sanitize_text(response.reason, 500) if response.reason else None
+        attempt_result = (
+            "success"
+            if response.status == "ok"
+            else "failed" if response.executed else "blocked"
+        )
+        attempts = [
+            ProviderAttempt(provider="gemini", result=attempt_result, detail=reason)
+        ]
+        if response.fallback:
+            attempts.append(ProviderAttempt(provider="safe_local", result="fallback_success"))
+        self._append(
+            ExecutionRecord(
+                execution_id=execution_id,
+                audit_id=execution_id,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                origin_system="pedrocore",
+                task="gemini_real_smoke",
+                status=response.status,
+                payload_sanitized=payload_sanitized,
+                removed_fields=removed_fields,
+                provider_requested="gemini",
+                provider_selected="gemini" if response.executed else None,
+                provider_effective=response.provider if response.executed else None,
+                provider_attempts=attempts,
+                fallback=response.fallback,
+                fallback_reason=reason,
+                duration_ms=round(duration_ms, 2),
+                public_response=sanitize_text(response.public_response, 500),
+                error=reason if response.status != "ok" else None,
+                retry={"attempted": False, "count": 0},
+                timeline=[
+                    TimelineEvent(stage="gemini_smoke_guard", status="completed"),
+                    TimelineEvent(stage="gemini_call", status=attempt_result),
+                    TimelineEvent(
+                        stage="gemini_smoke_completed",
+                        status=response.status,
+                        offset_ms=round(duration_ms, 2),
+                    ),
+                ],
+                result_returned={
+                    "status": response.status,
+                    "executed": response.executed,
+                    "call_count": response.call_count,
+                    "fallback": response.fallback,
+                },
+            )
+        )
+
     @staticmethod
     def _selected_provider(outcome: Any) -> str | None:
         requested = outcome.provider_requested
@@ -334,7 +388,12 @@ class ObservabilityService:
                     result="success",
                 )
             ]
-        first_result = "blocked" if outcome.safe_mode_blocked else "failed_or_unavailable"
+        if outcome.safe_mode_blocked:
+            first_result = "blocked"
+        elif outcome.error_code == "PROVIDER_TIMEOUT":
+            first_result = "timeout"
+        else:
+            first_result = "failed_or_unavailable"
         attempts = [
             ProviderAttempt(
                 provider=selected_provider or outcome.provider_requested,
