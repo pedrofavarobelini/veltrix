@@ -358,6 +358,9 @@ export function ChatPage() {
                 <h1>Chat com PedroCore <span>IA</span></h1>
                 <p>{UI.subtitle}</p>
               </div>
+              <a className="observability-link" href="#/observability">
+                Observabilidade QA/local
+              </a>
             </header>
 
             <div className="provider-strip" aria-label="Providers disponíveis">
