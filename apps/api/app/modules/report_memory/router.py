@@ -1,4 +1,5 @@
 import os
+import time
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -12,6 +13,7 @@ from app.modules.orchestration.router import (
     AUTH_MISSING_REASON,
     AUTH_NOT_CONFIGURED_WARNING,
 )
+from app.modules.observability.service import observability_service
 from app.modules.report_intelligence.schemas import TechnicalReportInput
 from app.modules.report_memory.schemas import (
     ProjectMemorySummaryResponse,
@@ -56,6 +58,7 @@ def _check_auth(request: Request) -> tuple[JSONResponse | None, list[WarningItem
 @router.post("/reports/analyze", response_model=ReportAnalyzeResponse)
 def analyze_report(payload: TechnicalReportInput, request: Request):
     """Analisa um relatório técnico sem persistir nada."""
+    started = time.perf_counter()
     error, warnings = _check_auth(request)
     if error is not None:
         return error
@@ -67,18 +70,26 @@ def analyze_report(payload: TechnicalReportInput, request: Request):
             "Relatórios não treinam IA; esta análise gera apenas sinais.",
         )
     )
-    return ReportAnalyzeResponse(
+    response = ReportAnalyzeResponse(
         status="ok",
         report=normalized,
         signals=signals,
         evaluation=evaluation,
         warnings=warnings,
     )
+    observability_service.record_report(
+        task="qa_report_analysis",
+        payload=payload,
+        response=response,
+        duration_ms=(time.perf_counter() - started) * 1_000,
+    )
+    return response
 
 
 @router.post("/reports/ingest", response_model=ReportIngestResponse)
 def ingest_report(payload: TechnicalReportInput, request: Request):
     """Ingere um relatório na memória técnica (se habilitada)."""
+    started = time.perf_counter()
     error, warnings = _check_auth(request)
     if error is not None:
         return error
@@ -88,7 +99,7 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
     )
     warnings.extend(ingest_warnings)
 
-    return ReportIngestResponse(
+    response = ReportIngestResponse(
         status="ok" if entry is not None else "disabled",
         stored=entry is not None,
         memory_id=entry.memory_id if entry is not None else None,
@@ -97,6 +108,13 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
         evaluation=evaluation,
         warnings=warnings,
     )
+    observability_service.record_report(
+        task="report_ingestion",
+        payload=payload,
+        response=response,
+        duration_ms=(time.perf_counter() - started) * 1_000,
+    )
+    return response
 
 
 @router.get(

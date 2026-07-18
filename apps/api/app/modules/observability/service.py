@@ -1,0 +1,390 @@
+from __future__ import annotations
+
+import os
+import threading
+import time
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from app.core.config import settings
+from app.modules.evaluation.service import evaluation_service
+from app.modules.observability.sanitizer import sanitize_payload, sanitize_text
+from app.modules.observability.schemas import (
+    ExecutionRecord,
+    ExecutionSummary,
+    ProviderAttempt,
+    TimelineEvent,
+)
+
+FLAG_ENABLED = "PEDROCORE_OBSERVABILITY_ENABLED"
+FLAG_MAX_ENTRIES = "PEDROCORE_OBSERVABILITY_MAX_ENTRIES"
+
+LOCAL_ENVS = {"dev", "development", "local", "qa", "test", "testing"}
+PRODUCTION_ENVS = {"prod", "production"}
+
+NOTICE = (
+    "MODO DE OBSERVABILIDADE QA/LOCAL. Não é painel público. "
+    "Memória técnica não altera os pesos do modelo e não constitui treinamento ou fine-tuning. "
+    "Treinamento de modelo: não implementado."
+)
+
+
+def _flag_true(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() == "true"
+
+
+def _environment() -> str:
+    return (os.environ.get("APP_ENV") or settings.app_env or "development").strip().lower()
+
+
+def _max_entries() -> int:
+    raw = (os.environ.get(FLAG_MAX_ENTRIES) or "200").strip()
+    try:
+        return min(1_000, max(10, int(raw)))
+    except ValueError:
+        return 200
+
+
+def _model_dump(value: Any) -> Any:
+    if value is None:
+        return None
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    return value
+
+
+class ObservabilityService:
+    def __init__(self) -> None:
+        self._records: list[ExecutionRecord] = []
+        self._lock = threading.RLock()
+
+    def enabled(self) -> bool:
+        environment = _environment()
+        return (
+            _flag_true(FLAG_ENABLED)
+            and environment in LOCAL_ENVS
+            and environment not in PRODUCTION_ENVS
+        )
+
+    def mode(self) -> str:
+        return _environment()
+
+    def max_entries(self) -> int:
+        return _max_entries()
+
+    def reset(self) -> None:
+        with self._lock:
+            self._records.clear()
+
+    def _append(self, record: ExecutionRecord) -> None:
+        if not self.enabled():
+            return
+        with self._lock:
+            self._records.append(record)
+            overflow = len(self._records) - self.max_entries()
+            if overflow > 0:
+                del self._records[:overflow]
+
+    def list(
+        self,
+        *,
+        origin: str | None = None,
+        task: str | None = None,
+        status: str | None = None,
+        provider: str | None = None,
+        fallback: bool | None = None,
+        limit: int = 100,
+    ) -> list[ExecutionSummary]:
+        with self._lock:
+            records = list(reversed(self._records))
+
+        def matches(record: ExecutionRecord) -> bool:
+            return (
+                (not origin or record.origin_system == origin)
+                and (not task or record.task == task)
+                and (not status or record.status == status)
+                and (not provider or record.provider_effective == provider)
+                and (fallback is None or record.fallback is fallback)
+            )
+
+        return [
+            ExecutionSummary(
+                execution_id=record.execution_id,
+                audit_id=record.audit_id,
+                timestamp=record.timestamp,
+                origin_system=record.origin_system,
+                task=record.task,
+                status=record.status,
+                provider_effective=record.provider_effective,
+                fallback=record.fallback,
+                duration_ms=record.duration_ms,
+            )
+            for record in records
+            if matches(record)
+        ][: min(500, max(1, limit))]
+
+    def get(self, execution_id: str) -> ExecutionRecord | None:
+        with self._lock:
+            return next(
+                (record for record in self._records if record.execution_id == execution_id),
+                None,
+            )
+
+    def record_orchestration(self, payload: Any, outcome: Any, duration_ms: float) -> None:
+        if not self.enabled():
+            return
+
+        payload_sanitized, removed_fields = sanitize_payload(payload)
+        error = sanitize_text(outcome.error, 1_000) if outcome.error else None
+        blocked_reason = (
+            sanitize_text(outcome.blocked_reason, 1_000)
+            if outcome.blocked_reason
+            else None
+        )
+        provider_selected = self._selected_provider(outcome)
+        attempts = self._provider_attempts(outcome, provider_selected, error)
+        evaluation = (
+            evaluation_service.evaluate_intelligence_plan(
+                outcome.intelligence_plan
+            ).model_dump(mode="json")
+            if outcome.intelligence_plan is not None
+            else None
+        )
+        signals = self._orchestration_signals(outcome)
+        timeline = [
+            TimelineEvent(stage="pipeline_started", status="ok", offset_ms=0.0),
+            TimelineEvent(stage="routing_and_policy", status="completed"),
+        ]
+        if attempts:
+            timeline.append(
+                TimelineEvent(
+                    stage="provider",
+                    status=attempts[0].result,
+                    detail=attempts[0].detail,
+                )
+            )
+        if outcome.fallback_used:
+            timeline.append(
+                TimelineEvent(
+                    stage="fallback",
+                    status="completed",
+                    detail=f"provider efetivo: {outcome.provider_used}",
+                )
+            )
+        timeline.append(
+            TimelineEvent(
+                stage="pipeline_completed",
+                status=outcome.status,
+                detail=blocked_reason,
+                offset_ms=round(duration_ms, 2),
+            )
+        )
+
+        record = ExecutionRecord(
+            execution_id=str(uuid.uuid4()),
+            audit_id=outcome.audit.audit_id,
+            timestamp=outcome.audit.timestamp,
+            origin_system=outcome.origin_system,
+            task=outcome.task_type,
+            status=outcome.status,
+            payload_sanitized=payload_sanitized,
+            removed_fields=removed_fields,
+            provider_requested=outcome.provider_requested,
+            provider_selected=provider_selected,
+            provider_effective=outcome.provider_used,
+            provider_attempts=attempts,
+            fallback=outcome.fallback_used,
+            fallback_reason=error,
+            duration_ms=round(duration_ms, 2),
+            public_response=sanitize_text(outcome.answer),
+            release_gate=_model_dump(outcome.release_gate),
+            evaluation=evaluation,
+            signals=signals,
+            memory_consulted=outcome.memory_used,
+            memory_created=False,
+            error=error,
+            retry={"attempted": False, "count": 0},
+            timeline=timeline,
+            result_returned={
+                "status": outcome.status,
+                "provider_used": outcome.provider_used,
+                "fallback_used": outcome.fallback_used,
+                "audit_id": outcome.audit.audit_id,
+                "warning_codes": outcome.warning_codes,
+                "blocked_reason": blocked_reason,
+            },
+        )
+        self._append(record)
+
+    def record_exception(self, payload: Any, error: Exception, duration_ms: float) -> None:
+        if not self.enabled():
+            return
+        payload_sanitized, removed_fields = sanitize_payload(payload)
+        safe_error = sanitize_text(error, 1_000)
+        execution_id = str(uuid.uuid4())
+        self._append(
+            ExecutionRecord(
+                execution_id=execution_id,
+                audit_id=execution_id,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                origin_system=str(getattr(payload, "origin_system", "unknown")),
+                task=str(getattr(payload, "task_type", "unknown")),
+                status="error",
+                payload_sanitized=payload_sanitized,
+                removed_fields=removed_fields,
+                provider_requested=str(getattr(payload, "provider", "unknown")),
+                duration_ms=round(duration_ms, 2),
+                error=safe_error,
+                retry={"attempted": False, "count": 0},
+                timeline=[
+                    TimelineEvent(stage="pipeline_started", status="ok", offset_ms=0.0),
+                    TimelineEvent(
+                        stage="pipeline_exception",
+                        status="error",
+                        detail=safe_error,
+                        offset_ms=round(duration_ms, 2),
+                    ),
+                ],
+                result_returned={"status": "error"},
+            )
+        )
+
+    def record_report(
+        self,
+        *,
+        task: str,
+        payload: Any,
+        response: Any,
+        duration_ms: float,
+    ) -> None:
+        if not self.enabled():
+            return
+        payload_sanitized, removed_fields = sanitize_payload(payload)
+        response_dump = _model_dump(response) or {}
+        response_sanitized, response_removed = sanitize_payload(response_dump)
+        removed_fields.extend(f"response.{item}" for item in response_removed)
+        execution_id = str(uuid.uuid4())
+        status = str(response_sanitized.get("status") or "ok")
+        signals = list(response_sanitized.get("signals") or [])
+        evaluation = response_sanitized.get("evaluation")
+        memory_created = bool(response_sanitized.get("stored"))
+        memory_id = response_sanitized.get("memory_id")
+        release_gate = self._release_gate_from_signals(signals)
+        origin = str(
+            payload_sanitized.get("source")
+            or payload_sanitized.get("project_id")
+            or "unknown"
+        )
+        self._append(
+            ExecutionRecord(
+                execution_id=execution_id,
+                audit_id=execution_id,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                origin_system=origin,
+                task=task,
+                status=status,
+                payload_sanitized=payload_sanitized,
+                removed_fields=list(dict.fromkeys(removed_fields)),
+                duration_ms=round(duration_ms, 2),
+                public_response=sanitize_text(payload_sanitized.get("summary") or ""),
+                release_gate=release_gate,
+                evaluation=evaluation,
+                signals=signals,
+                memory_consulted=False,
+                memory_created=memory_created,
+                memory_id=str(memory_id) if memory_id else None,
+                retry={"attempted": False, "count": 0},
+                timeline=[
+                    TimelineEvent(stage="report_received", status="ok", offset_ms=0.0),
+                    TimelineEvent(stage="sanitization", status="completed"),
+                    TimelineEvent(
+                        stage="report_completed",
+                        status=status,
+                        offset_ms=round(duration_ms, 2),
+                    ),
+                ],
+                result_returned=response_sanitized,
+            )
+        )
+
+    @staticmethod
+    def _selected_provider(outcome: Any) -> str | None:
+        requested = outcome.provider_requested
+        if outcome.provider_used == "none":
+            return None
+        if requested == "auto":
+            return outcome.provider_used if not outcome.fallback_used else None
+        if requested in {"local", "local_qa"}:
+            return "local_qa"
+        return requested
+
+    @staticmethod
+    def _provider_attempts(
+        outcome: Any,
+        selected_provider: str | None,
+        error: str | None,
+    ) -> list[ProviderAttempt]:
+        if outcome.provider_used == "none":
+            return []
+        if not outcome.fallback_used:
+            return [
+                ProviderAttempt(
+                    provider=outcome.provider_used,
+                    result="success",
+                )
+            ]
+        first_result = "blocked" if outcome.safe_mode_blocked else "failed_or_unavailable"
+        attempts = [
+            ProviderAttempt(
+                provider=selected_provider or outcome.provider_requested,
+                result=first_result,
+                detail=error,
+            )
+        ]
+        attempts.append(
+            ProviderAttempt(provider=outcome.provider_used, result="fallback_success")
+        )
+        return attempts
+
+    @staticmethod
+    def _orchestration_signals(outcome: Any) -> list[dict[str, Any]]:
+        signals = [
+            {
+                "type": "warning",
+                "code": item.code,
+                "severity": item.severity,
+                "summary": sanitize_text(item.message, 1_000),
+            }
+            for item in outcome.warning_items
+        ]
+        if outcome.qa_skeleton is not None:
+            qa = outcome.qa_skeleton
+            signals.append(
+                {
+                    "type": "qa",
+                    "status": qa.status,
+                    "risk_level": qa.risk_level,
+                    "can_advance": qa.can_advance,
+                    "analysis_source": qa.analysis_source,
+                    "findings": [sanitize_text(item, 1_000) for item in qa.findings],
+                    "failures": [sanitize_text(item, 1_000) for item in qa.failures],
+                }
+            )
+        return signals
+
+    @staticmethod
+    def _release_gate_from_signals(signals: list[dict[str, Any]]) -> dict[str, Any] | None:
+        signal_types = {str(item.get("signal_type")) for item in signals}
+        if "release_gate_blocked" in signal_types:
+            return {"can_advance": False, "source": "technical_report_signal"}
+        if "release_gate_passed" in signal_types:
+            return {"can_advance": True, "source": "technical_report_signal"}
+        return None
+
+
+observability_service = ObservabilityService()
+
+
+def elapsed_ms(started: float) -> float:
+    return (time.perf_counter() - started) * 1_000

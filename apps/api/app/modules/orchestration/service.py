@@ -11,6 +11,7 @@ from app.modules.contracts.codes import WarningItem, make_warning
 from app.modules.evaluation.service import evaluation_service
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
+from app.modules.observability.service import observability_service
 from app.modules.orchestration.schemas import (
     AssistantResponsePayload,
     OrchestrationOutcome,
@@ -128,6 +129,24 @@ class OrchestrationService:
     Provider (com safe mode) → QA Text Analyzer local → QA Response/Release Gate → Audit."""
 
     async def execute(self, payload: ChatRequest) -> OrchestrationOutcome:
+        """Executa o pipeline real e publica somente uma projeção sanitizada no
+        ring buffer local quando a observabilidade estiver explicitamente ativa.
+        """
+        started = time.perf_counter()
+        try:
+            outcome = await self._execute_pipeline(payload)
+        except Exception as exc:
+            observability_service.record_exception(
+                payload, exc, (time.perf_counter() - started) * 1_000
+            )
+            raise
+
+        observability_service.record_orchestration(
+            payload, outcome, (time.perf_counter() - started) * 1_000
+        )
+        return outcome
+
+    async def _execute_pipeline(self, payload: ChatRequest) -> OrchestrationOutcome:
         started = time.perf_counter()
 
         strategy = task_router.resolve(payload.task_type)
