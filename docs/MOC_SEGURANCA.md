@@ -12,6 +12,9 @@ Mapa dos limites de seguranca do PedroCore IA.
 - [[16-qa-safety-hardening/MATRIZ_TASK_PROVIDER_POLICY]] - matriz de policy por task/provider.
 - [[11-integracoes/CONTRATO_FINGUARD_PEDROCORE_REAL_CONTROLADO]] - bloqueios para FinGuard.
 - [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros.
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - segurança ponta a ponta das Etapas 1–7.
+- [[17-multi-provider-safe-evolution/FIX_CREDENCIAL_COMPARTILHADA]] - credencial global não concede identidade privilegiada.
+- [[17-multi-provider-safe-evolution/FIX_HOMOLOGACAO_CONFIGURACAO_MODELOS]] - configuração runtime não homologa modelo.
 
 ## Controles principais
 
@@ -28,6 +31,10 @@ Mapa dos limites de seguranca do PedroCore IA.
 - Guard de testes: provider real bloqueado por construcao na suite padrao; `allow_real_provider=true` nao e usado em testes padrao.
 - finance_advice: read-only, disclaimer obrigatorio, sem acao financeira.
 - Eval harness: rejeita `allow_real_provider=true` por validacao; sem rede.
+- Identidade/autorização: credencial compartilhada fica ambígua e a matriz nega por padrão.
+- Binding: provider e modelo devem formar par explícito, homologado e autorizado; configuração não promove catálogo.
+- Circuit breaker: local por processo, default-off, separado por environment/provider/model.
+- Fallback real: default-off, somente para `provider_pre_dispatch + not_dispatched + external_dispatch=false`, no máximo um secundário; timeout nunca qualifica.
 
 ## Codigo relacionado
 

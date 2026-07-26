@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 09/07/2026
+Atualizado em: 26/07/2026
 
 ## Versão atual de produto
 
@@ -12,17 +12,19 @@ V5.1.9
 
 ## Frente atual
 
+`PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01`: fechamento documental das Etapas 1–7 da evolução multi-provider segura, tomando `e389b2c` como último commit de implementação. Catálogo, identidade/autorização, binding, shadow, enforced, health/circuit breaker e fallback pre-dispatch estão concluídos. A arquitetura multi-provider está concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível. Última validação integral: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`, sem chamadas externas reais.
+
 Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
 DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 
 Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
-Frente commitada mais recente: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de QA/safety sem reabrir o core funcional, commitada em `d6106b7`. Pytest: `341 passed, 6 skipped, 2 warnings`. Eval harness: `14/14 passed`, `risk_level="none"`. Sem provider real, sem rede real em testes, sem treinamento/fine-tuning, sem tocar FinGuard ou `qa:finalize:02`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+Checkpoint histórico: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento QA/safety commitado em `d6106b7`. Naquele checkpoint: Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
 
-Frente documental atual: `PEDROCORE-DOCS-GRAPH-LINKING-01` — linkagem Markdown/Obsidian em documentacao, sem alteracao de codigo, testes, `.env`, provider real, `local_model` real, FinGuard, push, tag ou merge.
+Frente documental anterior: `PEDROCORE-DOCS-GRAPH-LINKING-01` — linkagem Markdown/Obsidian em documentação, sem alteração de código.
 
-Frente local em andamento: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` - adiciona selecao segura `provider=auto|gemini` em `/api/orchestrate`, preserva mock default e `local_qa`, e mantem Gemini real fora dos testes padrao (`PEDROCORE_RUN_REAL_GEMINI_TESTS=true` para execucao manual).
+O histórico de `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` permanece registrado no changelog; o contrato comum atual do consumidor é `provider=auto` sem modelo, com decisão final no PedroCore.
 
 ## Status atual
 
@@ -39,8 +41,9 @@ Resumo:
 - `v6.0.0` = MVP backend.
 - `v7.0.0` = fechamento técnico local do core operacional seguro.
 - `d6106b7` = `PEDROCORE-QA-SAFETY-HARDENING-01`, hardening QA/safety posterior ao fechamento local.
+- `62beff1` a `e389b2c` = Etapas 1–7 e correções da evolução multi-provider segura.
 - Pendência obrigatória de código/teste/Git = zero no estado final registrado.
-- Pendência documental obrigatória = tratada por este DOCFIX, se o diff for aceito.
+- Pendência operacional multi-provider = homologar um segundo provider/modelo real em frente separada.
 
 ## Observação sobre versionamento
 
@@ -53,7 +56,7 @@ Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 
 ## Próximos passos (opcionais, pós-fechamento)
 
-- Cliente HTTP no repositório do FinGuard (frente separada, com aprovação própria).
+- Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI mediante decisão explícita.
 - Push para GitHub/portfólio e deploy — decisões humanas futuras.
 - Execução real de OCR/multimodal/Playwright somente com flags, dependências instaladas manualmente e revisão humana.
 - Saneamento adicional de documentos históricos duplicados, se o usuário quiser reduzir ruído do vault.

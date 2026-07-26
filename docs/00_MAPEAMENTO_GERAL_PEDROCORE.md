@@ -1,6 +1,8 @@
 # Mapeamento Geral PedroCore IA
 
-Atualizado em: 09/07/2026
+Atualizado em: 26/07/2026
+
+> Nota MULTI-PROVIDER-SAFE-EVOLUTION: as Etapas 1–7 e as correções estão consolidadas em [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]. Arquitetura multi-provider concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível. Última validação integral: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`; zero chamadas externas reais.
 
 > Nota MODEL-FOUNDATION-01: a frente `PEDROCORE-MODEL-FOUNDATION-01` adicionou os módulos `intelligence_layer`, `report_intelligence`, `evaluation` e o contrato `providers/local_model_contract.py`, além de 4 task_types novos para `pedrocore`. Ver [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] e [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]].
 
@@ -8,22 +10,23 @@ Atualizado em: 09/07/2026
 
 > Nota QA-SAFETY-HARDENING-01: a frente `PEDROCORE-QA-SAFETY-HARDENING-01`, commitada em `d6106b7`, endureceu QA/safety sem reabrir o core funcional. Resultado validado: `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Provider real e rede real nao foram chamados em testes; Report Memory continua default-off e nao e treinamento; `local_model` real e FinGuard seguem fora de escopo. Ver [[MOC_QA_SAFETY_HARDENING]] e [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]].
 
-Links centrais: [[MOC_PEDROCORE_IA]] | [[MOC_ARQUITETURA]] | [[MOC_SEGURANCA]] | [[MOC_QA_RELEASE_GATE]] | [[MOC_QA_SAFETY_HARDENING]] | [[MOC_INTEGRACOES]] | [[MOC_TESTES]] | [[MOC_VERSOES_STATUS]] | [[MOC_ESTUDO_PEDROCORE]]
+Links centrais: [[MOC_PEDROCORE_IA]] | [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] | [[MOC_ARQUITETURA]] | [[MOC_SEGURANCA]] | [[MOC_QA_RELEASE_GATE]] | [[MOC_QA_SAFETY_HARDENING]] | [[MOC_INTEGRACOES]] | [[MOC_TESTES]] | [[MOC_VERSOES_STATUS]] | [[MOC_ESTUDO_PEDROCORE]]
 
 ## 1. Visao geral
 
 O PedroCore IA esta finalizado localmente como core operacional seguro. O estado tecnico local verificado nesta tarefa e:
 
 - Branch: `main`.
-- HEAD atual: `d6106b750bbd0b0cf87ca8a2f8a0a2f3cc0b29da` (`d6106b7`).
-- Ultimo commit: `test: endurecer QA e safety do PedroCore`.
+- Base de implementação desta consolidação: `e389b2cd8b7c04aacaa895303320a0b278ea4d26` (`e389b2c`).
+- Último commit técnico da série: Etapa 7, fallback real controlado.
 - Tag final local `v7.0.0`: aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
 - `v6.0.0`: tag do MVP backend, apontando para `ee2ac68679feea6ac108abba8726d11da101576c`.
 - Working tree inicial: sem arquivos alterados no `git status --short`; o Git exibiu apenas warning de permissao ao ler `C:\Users\USUARIO/.config/git/ignore`.
 - Push: nao realizado.
 - Testes finais do core `v7.0.0`: `216 passed`, `6 skipped`, `2 warnings`.
-- Testes finais da frente `PEDROCORE-QA-SAFETY-HARDENING-01`: `341 passed`, `6 skipped`, `2 warnings`.
-- Eval harness da frente safety: `14/14 passed`, `risk_level="none"`.
+- Testes integrais mais recentes: `570 passed`, `7 skipped`, `2 warnings`.
+- Eval harness: `14/14 passed`, `risk_level="none"`.
+- Ruff: aprovado; chamadas externas reais na validação: zero.
 - Warnings conhecidos: deprecations Starlette/httpx e Pydantic class `Config`.
 
 Este documento consolida o mapa atual do projeto sem alterar codigo de producao.
@@ -69,13 +72,18 @@ FastAPI app/main.py
 OrchestrationService
   Task Router
   Project Context
+  Caller Identity
+  Provider Catalog + Authorization + Binding
   Policy Enforcement
   Intelligence Layer (plano -> instrucoes do prompt)
   Report Memory opcional (context_from_memory=true)
   Artifact Reader opt-in
   Artifacts Service
   Prompt Builder
+  Shadow Routing / Enforced Routing
+  Provider Health / Circuit Breaker
   Provider Registry / local_qa / fallback Mock
+  Fallback real pre-dispatch controlado
   QA Text Analyzer
   QA Response / Release Gate
   Visual QA stub
@@ -203,6 +211,27 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 - Default: on.
 - Riscos controlados: policy hard block antes de provider/reader/QA; safe mode; release gate conservador.
 - Testes: `test_orchestration_flow.py`, `test_orchestrate_api.py`, `test_release_hardening.py`.
+
+### `caller_identity`
+
+- Onde: `apps/api/app/modules/caller_identity/`.
+- O que faz: resolve identidade confiável, papel, ambiente e projeto; credencial compartilhada não concede identidade privilegiada.
+- Status: concluído e fail-closed.
+- Testes: `test_caller_identity_authorization.py`, `test_shared_credential_privilege.py`.
+
+### `provider_catalog`, `provider_authorization` e `provider_binding`
+
+- Onde: `apps/api/app/modules/provider_catalog/`, `provider_authorization/` e `provider_binding/`.
+- O que fazem: catalogam providers/modelos, aplicam autorização por identidade/projeto e exigem binding total antes do adapter.
+- Status: concluídos; configuração runtime escolhe identificador, mas não cadastra nem homologa modelo.
+- Testes: `test_provider_catalog.py`, `test_provider_model_binding.py`.
+
+### `shadow_routing` e `provider_health`
+
+- Onde: `apps/api/app/modules/shadow_routing/` e `provider_health/`.
+- O que fazem: calculam candidatos/eliminações, aplicam roteamento determinístico e mantêm circuit breaker local por environment/provider/model.
+- Status: shadow/enforced concluídos; circuit breaker local/default-off. Somente Gemini é elegível no catálogo real.
+- Testes: `test_shadow_routing.py`, `test_routing_enforced.py`, `test_provider_health.py`, `test_real_provider_fallback.py`.
 
 ### `task_router`
 
@@ -408,24 +437,27 @@ Invoke-RestMethod -Uri "http://127.0.0.1:3333/api/providers" -Method GET
 
 ## 8. Fluxo `/api/orchestrate`
 
-1. O router valida auth interna opcional.
+1. O router valida autenticação interna opcional e resolve `CallerIdentity`.
 2. O payload usa o mesmo schema de `ChatRequest`.
 3. `TaskRouter` normaliza `task_type`.
 4. `ProjectContextResolver` resolve `origin_system`.
-5. `PolicyEnforcementService` aplica bloqueio forte. Se bloquear, retorna `status="blocked"` sem provider, sem reader e sem QA.
-6. `_apply_artifact_reader` tenta converter path allowlisted em artefato textual apenas se reader habilitado e origem nao FinGuard.
-7. `ArtifactService` processa artefatos por payload e aplica limites.
-8. `PromptBuilder` monta prompt enriquecido.
-9. Provider:
+5. Catálogo, autorização e binding calculam os pares provider/modelo elegíveis.
+6. Shadow routing registra candidatos/eliminações; `enforced` seleciona no máximo um binding inicial.
+7. `PolicyEnforcementService` aplica bloqueio forte. Se bloquear, retorna `status="blocked"` sem provider, reader ou QA.
+8. `_apply_artifact_reader` tenta converter path allowlisted em artefato textual apenas se reader habilitado e origem nao FinGuard.
+9. `ArtifactService` processa artefatos por payload e aplica limites.
+10. `PromptBuilder` monta prompt enriquecido.
+11. Provider:
    - `local`/`local_qa`: pseudo-provider deterministico, sem rede.
    - `mock`: resposta simulada local.
-   - provider real: so se `allow_real_provider=true`; caso contrario safe mode bloqueia e cai para mock.
-10. `QATextAnalyzer` analisa artefatos textuais se task critica.
-11. `QAResponseService` monta QA skeleton e release gate se aplicavel.
-12. `VisualQAService` monta stub visual se houver artefato visual.
-13. `ExplorationService` monta plano manual se task exploratoria.
-14. Warnings sao coletados com codigos/severidades.
-15. Audit e completado com latencia, provider usado, status, risco e `can_advance`.
+   - provider real: somente com opt-in, identidade autorizada, binding válido e circuito elegível.
+12. Falha comprovadamente pre-dispatch pode tentar um único secundário distinto se o fallback real estiver habilitado; timeout é ambíguo, afeta health e termina em Mock sem secundário.
+13. `QATextAnalyzer` analisa artefatos textuais se task critica.
+14. `QAResponseService` monta QA skeleton e release gate se aplicavel.
+15. `VisualQAService` monta stub visual se houver artefato visual.
+16. `ExplorationService` monta plano manual se task exploratoria.
+17. Warnings sao coletados com codigos/severidades.
+18. Audit registra identidade, seleção, tentativas, circuitos, dispatch, certeza, classificação, fallback, latência, risco e `can_advance`.
 
 ## 9. QA textual
 
@@ -504,9 +536,13 @@ Quando bloqueia, `provider_used="none"` e a requisicao nao chega ao provider, Ar
 - `mock`: local, seguro, default/fallback.
 - `local_qa`: pseudo-provider local deterministico para QA textual; nao chama rede.
 - `local_model`: provider generativo local opt-in (ECOSYSTEM-INTELLIGENCE-SUITE-01) — default OFF, exige `allow_local_model=true` + `PEDROCORE_ENABLE_LOCAL_MODEL=true` + backend valido; sem transport real nesta frente (fallback controlado); nunca aprova release gate.
-- `gemini`, `openai`, `claude`, `deepseek`, `grok`: providers reais estruturais; exigem chave/configuracao e `allow_real_provider=true`.
+- `gemini`: `gemini-3.5-flash` homologado e autorizado para auto conforme identidade/policy.
+- `claude`: `claude-sonnet-4-5` catalogado, não homologado e não autorizado para auto.
+- `openai`: `gpt-5.2-mini` catalogado, não homologado e não autorizado para auto.
+- `deepseek`: `deepseek-chat` catalogado, não homologado e não autorizado para auto.
+- `grok`: `grok-4.3` catalogado, não homologado e não autorizado para auto.
 
-Provider real e default-off. Mesmo autorizado, provider real nao aprova release gate sozinho.
+Provider real é default-off. Mesmo autorizado, provider real não aprova release gate sozinho. Multi-provider automático real continua indisponível até a homologação de um segundo provider/modelo.
 
 ## 13. Safe mode
 
@@ -565,7 +601,7 @@ Exploration e assistida/manual. O PedroCore gera plano, passos manuais, riscos, 
 
 ## 19. Audit
 
-Audit e nao persistente. Ele inclui `audit_id`, `timestamp`, `origin_system`, `task_type`, `provider_requested`, `provider_used`, `fallback_used`, `safe_mode_blocked`, `status`, `latency_ms`, `risk_level` e `can_advance`. Nao grava banco, arquivo ou log persistente; tambem nao inclui conteudo de artefatos.
+Audit é não persistente. Inclui identidade/origem, provider/modelo solicitado e selecionado, modo de roteamento, shadow/candidatos, tentativas, circuitos, dispatch externo, certeza de conclusão, classificação de falha, fallback, latência, risco e `can_advance`. Não grava banco, arquivo ou log persistente; também não inclui conteúdo de artefatos ou segredos.
 
 ## 20. Integracao com FinGuard pelo lado PedroCore
 
@@ -593,6 +629,9 @@ Bloqueios obrigatorios:
 - comandos bloqueados;
 - escrita/delecao/deploy bloqueados;
 - provider real bloqueado por padrao;
+- consumidor comum pede `provider=auto` sem modelo;
+- credencial compartilhada nunca autoriza provider real;
+- provider/modelo final é decidido pelo PedroCore;
 - release gate conservador.
 
 Documentos oficiais:
@@ -600,7 +639,7 @@ Documentos oficiais:
 - [[11-integracoes/CONTRATO_FINGUARD_PEDROCORE]]
 - [[11-integracoes/CONTRATO_FINGUARD_PEDROCORE_REAL_CONTROLADO]]
 
-O cliente HTTP dentro do FinGuard ainda e trabalho fora deste repositorio e exige aprovacao propria.
+O cliente HTTP do Assistente no FinGuard já consome `/api/orchestrate`. Esta consolidação não altera o repositório FinGuard nem executa qualquer ação nele.
 
 ## 21. Como testar
 
@@ -703,7 +742,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 uv run pytest -q
 ```
 
-Resultado registrado em `d6106b7`: `341 passed, 6 skipped, 2 warnings`.
+Resultado integral mais recente, após a Etapa 7: `570 passed, 7 skipped, 2 warnings`.
 
 Eval harness:
 
@@ -712,7 +751,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 .\.venv\Scripts\python.exe -m app.modules.eval_harness.run
 ```
 
-Resultado registrado em `d6106b7`: `14/14 passed`, `risk_level="none"`.
+Resultado integral mais recente: `14/14 passed`, `risk_level="none"`.
 
 Testes que usem provider real, OCR real, multimodal real ou Playwright real sao opt-in e nao fazem parte do teste padrao. Exigem flags `PEDROCORE_RUN_REAL_*_TESTS=true`, dependencias/chaves reais e aprovacao humana.
 
@@ -733,6 +772,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 
 - `v7.0.0`: fechamento tecnico local do core operacional seguro.
 - `d6106b7`: `PEDROCORE-QA-SAFETY-HARDENING-01`, endurecimento QA/safety sem reabrir core.
+- `62beff1` a `e389b2c`: Etapas 1–7 e correções da evolução multi-provider segura.
 - `v6.0.0`: MVP backend.
 - Pendencia obrigatoria de codigo/teste/Git: zero no estado final registrado.
 - Push/tag/merge: nao realizados nesta tarefa.
@@ -752,18 +792,19 @@ cd C:\Projetos\pedrocore-ia\apps\api
 - Testes padrao finais registrados.
 - Tag local `v7.0.0`.
 - QA Safety Hardening documentado e validado em `d6106b7`.
+- Arquitetura multi-provider segura das Etapas 1–7, incluindo catálogo, identidade, binding, shadow/enforced, health e fallback pre-dispatch.
 
 ## 25. Pendencias obrigatorias
 
-Apos este DOCFIX, nao ha pendencia obrigatoria de codigo, teste, Git ou documentacao central conhecida dentro do escopo local. O repositorio ainda pode manter documentos historicos/legados para contexto, mas eles agora devem ser lidos atraves dos MOCs e deste mapeamento.
+Após esta consolidação, não há pendência arquitetural nas Etapas 1–7. Há uma pendência operacional explícita: homologar um segundo provider/modelo real em frente separada. O repositório ainda pode manter documentos históricos/legados para contexto, que devem ser lidos pelos MOCs e por este mapeamento.
 
 ## 26. Melhorias opcionais
 
-- Cliente HTTP no repositorio FinGuard.
+- Homologação de um segundo provider/modelo real, após escolha explícita entre Claude e OpenAI.
 - Push para GitHub/portfolio.
 - Deploy.
 - Logs persistentes se a decisao de produto mudar.
-- Provider orchestration avancada por custo/qualidade/task.
+- Otimização dinâmica de provider por custo/qualidade/task; o roteamento determinístico já existe.
 - Execucao real de OCR/Playwright/multimodal com aprovacao, flags e dependencias.
 - Saneamento mais agressivo de documentos historicos duplicados, sem apagar historico util.
 
@@ -773,6 +814,10 @@ Apos este DOCFIX, nao ha pendencia obrigatoria de codigo, teste, Git ou document
 - Detecao de segredo por regex nao e exaustiva.
 - Provider real pode gerar custo/chamada externa se autorizado explicitamente e configurado.
 - Fallback Mock pode mascarar erro se consumidor ignorar `fallback_used`.
+- Timeout de provider executado em thread tem conclusão ambígua: não é cancelamento comprovado e nunca permite tentativa secundária.
+- Circuit breaker é local por processo, usa relógio monotônico e fica default-off; não substitui health distribuído.
+- Fallback real é default-off e só aceita `provider_pre_dispatch + not_dispatched + external_dispatch=false`.
+- Apenas um provider/modelo externo está homologado e elegível; a arquitetura não equivale a operação multi-provider.
 - Artifact Reader e seguro por allowlist, mas deve permanecer default-off.
 - OCR/Playwright/multimodal dependem de dependencias e revisao humana.
 - Audit nao persistente nao substitui trilha operacional duravel.

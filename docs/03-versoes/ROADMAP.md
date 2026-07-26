@@ -6,6 +6,11 @@
 
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION
 
+Status documental: Etapas 1–7 e correções consolidadas em
+[[../17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e
+[[../MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]. Última validação integral:
+`570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`.
+
 - **Etapas 1–4:** concluídas; identidade/autorização, catálogo explícito,
   binding total e shadow mode estão implementados.
 - **Etapa 5:** motor `legacy`/`shadow`/`enforced` com chamada única concluído e
@@ -26,6 +31,10 @@ e
 [[../17-multi-provider-safe-evolution/ETAPA_6_HEALTH_STATE_CIRCUIT_BREAKER]]
 e
 [[../17-multi-provider-safe-evolution/ETAPA_7_FALLBACK_REAL_CONTROLADO]].
+
+Próxima frente recomendada: escolher explicitamente Claude ou OpenAI e
+homologar um segundo provider/modelo real. Essa homologação não faz parte do
+fechamento arquitetural das Etapas 1–7.
 
 ## Entregas concluídas
 
@@ -205,8 +214,8 @@ Resultados: pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 pass
 
 Itens que permanecem opcionais após `v7.0.0`:
 
-- Cliente HTTP no repositório FinGuard consumindo o contrato do PedroCore.
-- Provider Orchestration avançada por custo/qualidade/task.
+- Evoluções futuras do cliente HTTP já integrado no FinGuard, sempre em frente própria.
+- Otimização dinâmica de provider por custo/qualidade/task; shadow/enforced determinístico já existe.
 - Persistência/histórico backend e logs persistentes, se a decisão de produto mudar.
 - Execução real de OCR/Playwright/multimodal com flags, dependências instaladas manualmente e revisão humana.
 - Push para GitHub/portfólio e deploy.

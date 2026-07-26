@@ -1,5 +1,7 @@
 # PedroCore IA — Status Atual
 
+Checkpoint documental atual: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] consolidam as Etapas 1–7. Arquitetura multi-provider: concluída. Multi-provider automático operacional: não. Motivo: somente `gemini + gemini-3.5-flash` está homologado e elegível. Próximo passo: homologar um segundo provider real em frente separada.
+
 Atualizado em: 26/07/2026
 
 ## Status oficial
@@ -133,7 +135,7 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 - Execução de comandos pelo PedroCore — `suggested_commands` são apenas strings seguras, nada é executado; o agente exploratório é assistido (plano/manual) e nunca executa ações.
 - QA visual real multimodal — artefatos visuais geram stub conservador; OCR e Playwright existem como recursos opt-in/controlados, não como teste padrão nem release gate automático.
 - Provider real liberado em fluxo crítico — safe mode bloqueia por padrão; liberação exige `allow_real_provider=true` explícito e ainda assim provider real nunca aprova release gate sozinho.
-- Provider Orchestration avançada por custo/qualidade/task.
+- Otimização dinâmica de provider por custo/qualidade/task; o roteamento determinístico shadow/enforced já existe.
 - Memória técnica persistente por default e RAG — `report_memory` existe com persistência default off e modos opt-in (`memory`/`local_json`); RAG/embeddings ainda não existem.
 - Provider generativo local funcional — `local_model` está registrado como provider opt-in default-off, mas sem transport real; nenhum backend (Ollama/llama.cpp/LM Studio) foi instalado ou chamado.
 - Treinamento, fine-tuning ou autoaprendizado — fora do escopo do projeto; a fundação de inteligência é determinística e avaliada (`evaluation/`).
@@ -157,12 +159,12 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 - **Documentação duplicada:** ainda existem pares de arquivos conflitantes em `docs/` (ex.: `docs/03_ROADMAP.md` vs `docs/03-versoes/ROADMAP.md`, `docs/09-status/STATUS_ATUAL.md` desatualizado) que não foram removidos nesta etapa, apenas sinalizados.
 - **Provider real autorizado explicitamente:** qualquer execução manual com provider real, chave/configuração disponível e `allow_real_provider=true` pode gerar chamada externa/custo. Testes padrão devem usar `mock` ou `local_qa`.
 - **Fallback Mock silencioso:** o fallback automático para `MockProvider` evita quebrar a interface, mas pode mascarar falhas reais de provider se o consumidor não checar explicitamente o campo `fallback_used` — especialmente relevante para futuros consumidores externos e para qualquer caso de uso de QA (ver Decisão Técnica 014).
-- **Structured response parcial:** `/api/orchestrate` já retorna `qa`, `release_gate`, `visual_qa_analysis`, `exploration`, `warnings` e `audit`, mas `answer` continua texto livre e provider orchestration avançada ainda não existe.
+- **Structured response parcial:** `/api/orchestrate` já retorna `qa`, `release_gate`, `visual_qa_analysis`, `exploration`, `warnings` e `audit`, mas `answer` continua texto livre; otimização dinâmica por custo/qualidade/task ainda não existe.
 
 ## Próximos passos opcionais
 
 - Cliente HTTP no repositório FinGuard (frente separada, com aprovação própria).
 - Push para GitHub/portfólio e deploy.
 - Execução real de OCR, QA visual multimodal e Playwright somente com flags, dependências instaladas manualmente e revisão humana.
-- Provider real em fluxo crítico somente com autorização explícita (`allow_real_provider=true`) e revisão específica; ainda assim não aprova release gate sozinho.
+- Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI explicitamente; fluxo crítico continua exigindo autorização e revisão específica.
 - Saneamento adicional de documentação histórica/duplicada, se o usuário quiser reduzir ruído do vault.

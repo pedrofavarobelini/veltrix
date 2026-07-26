@@ -7,6 +7,8 @@ Mapa de arquitetura atual e historico de planejamento.
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 5 a 8 documentam arquitetura, endpoints, modulos e fluxo `/api/orchestrate`.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - fechamento final do core operacional seguro.
 - [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros de `/api/chat` e `/api/orchestrate`.
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - visão integrada da arquitetura multi-provider atual.
+- [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] - pipeline normal, timeout ambíguo e fallback seguro.
 
 ## Endpoints
 
@@ -29,6 +31,12 @@ Mapa de arquitetura atual e historico de planejamento.
 
 - `chat` - compatibilidade de `/api/chat`.
 - `providers` - registry, mock e providers reais.
+- `caller_identity` - identidade confiável, papel, ambiente e projeto.
+- `provider_catalog` - catálogo estático de providers e modelos.
+- `provider_authorization` - matriz fail-closed por identidade/projeto.
+- `provider_binding` - binding total entre provider e modelo.
+- `shadow_routing` - candidatos e eliminações sem executar provider.
+- `provider_health` - circuit breaker local, monotônico e default-off.
 - `orchestration` - pipeline central.
 - `task_router` - estrategias por `task_type`.
 - `project_context` - contexto por `origin_system`.

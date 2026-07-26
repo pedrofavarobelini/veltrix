@@ -1,5 +1,17 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01
+
+- Consolidação documental das Etapas 1–7 e das correções de credencial compartilhada e homologação/configuração de modelos.
+- Novo fechamento mestre: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]].
+- Novo MOC central: [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]].
+- Nova nota autônoma para os commits `8c97004` e `0daa34b`: [[17-multi-provider-safe-evolution/FIX_HOMOLOGACAO_CONFIGURACAO_MODELOS]].
+- Commits técnicos reconciliados: `62beff1`, `64e6c59`, `c67ec6a`, `be56a7e`, `d93a4ff`, `8c97004`, `0daa34b`, `f7afff8`, `30d308f` e `e389b2c`.
+- Última validação integral registrada: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`; Ruff aprovado; zero chamadas externas reais.
+- Veredito: arquitetura multi-provider concluída; multi-provider automático operacional, não. Somente Gemini/modelo homologado é elegível.
+- Próximo passo: homologar um segundo provider/modelo real em frente separada, após escolha explícita entre Claude e OpenAI.
+- Escopo desta entrada: documentação apenas; sem código, testes, configuração, credenciais, chamada real, FinGuard, tag ou mudança de versão.
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 7: fallback real controlado
 
 Status: **mecanismo pre-dispatch implementado e validado; default-off e não

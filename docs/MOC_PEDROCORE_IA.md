@@ -1,10 +1,11 @@
 # MOC PedroCore IA
 
-## Fechamento atual — 2026-07-18
+## Fechamento atual — 2026-07-26
 
-- [[13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01]] - observabilidade visual técnica local/QA, provider/fallback, memória, avaliação, release gate e replay FinGuard.
-- Suite atual: `368 passed, 7 skipped, 2 warnings`; frontend build verde; Gemini real não executado porque os dois opt-ins estavam desligados.
-- Memória técnica não altera pesos do modelo; treinamento/fine-tuning continuam não implementados.
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - mapa central das Etapas 1–7, correções e próximo passo.
+- [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] - fechamento técnico e documental consolidado.
+- Suite integral mais recente: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`; zero chamadas externas reais.
+- Arquitetura multi-provider concluída; automação multi-provider real ainda indisponível porque há somente um provider/modelo homologado e elegível.
 
 Entrada principal do grafo Obsidian do PedroCore IA.
 
@@ -19,6 +20,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[MOC_TESTES]] - comandos, suite padrao e testes opt-in.
 - [[MOC_VERSOES_STATUS]] - versoes, tags, status e changelog.
 - [[MOC_ESTUDO_PEDROCORE]] - notas de estudo e auditoria.
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - catálogo, identidade, binding, roteamento, health e fallback.
 
 ## Documentos oficiais atuais
 
@@ -30,6 +32,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]]
 - [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]
+- [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]]
 
 ## Fundação de inteligência própria (MODEL-FOUNDATION-01)
 
@@ -85,3 +88,4 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - Para integracao FinGuard: [[MOC_INTEGRACOES]].
 - Para checar status/tag: [[MOC_VERSOES_STATUS]].
 - Para estudar ou importar em LLM/notebook: [[MOC_ESTUDO_PEDROCORE]].
+- Para entender a evolução multi-provider atual: [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]].

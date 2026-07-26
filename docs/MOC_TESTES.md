@@ -2,13 +2,13 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
-## Resultado atual — 2026-07-18
+## Resultado atual — 2026-07-26
 
-- Fechamento: [[13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01]].
-- Backend integral: `368 passed, 7 skipped, 2 warnings` com `-p no:cacheprovider`.
-- Frontend: `npm.cmd run build`, exit 0.
-- Novos contratos: observability store/sanitização, painel/API, provider timeout/fallback, Gemini smoke com duplo opt-in e replay FinGuard → PedroCore.
-- Gemini real: 0 chamadas nesta execução; os dois opt-ins estavam desligados e os skips reais permaneceram explícitos.
+- Fechamento: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]].
+- Backend integral: `570 passed, 7 skipped, 2 warnings`.
+- Eval harness: `14/14 passed`, `risk_level="none"`.
+- Ruff aprovado; zero chamadas externas reais.
+- Esta frente de consolidação altera somente documentação, portanto a suíte não foi reexecutada.
 
 ## Comandos seguros
 
@@ -26,7 +26,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado atual (`PEDROCORE-QA-SAFETY-HARDENING-01`, commit `d6106b7`): `341 passed, 6 skipped, 2 warnings`. Apos a correcao de fallback seguro da frente `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` (2026-07-09): `351 passed, 7 skipped, 2 warnings` — ver `docs/08_CHANGELOG.md`.
+Resultados históricos permanecem no [[08_CHANGELOG]]. O checkpoint integral atual das Etapas 1–7 é `570 passed, 7 skipped, 2 warnings`.
 
 Teste direcionado da frente `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`:
 
@@ -44,7 +44,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 ```
 
-Resultado: `368 passed, 7 skipped, 2 warnings`.
+Resultado mais recente: `570 passed, 7 skipped, 2 warnings`.
 
 Eval harness deterministico (sem provider real, sem rede):
 
@@ -81,3 +81,4 @@ Auditoria local documentada:
 - Ecossistema/memoria/local model/eval: `test_ecosystem_contract.py`, `test_report_memory.py`, `test_local_model_provider.py`, `test_eval_harness.py`.
 - Safety hardening: `test_provider_real_safety.py`, `test_report_memory_safety.py`, `test_policy_negative_cases.py`, `test_orchestrate_contract_safety.py`, `test_eval_harness_extended.py`.
 - Observabilidade/Gemini opt-in: `test_observability.py`, `test_gemini_smoke.py`.
+- Multi-provider seguro: `test_provider_catalog.py`, `test_caller_identity_authorization.py`, `test_shared_credential_privilege.py`, `test_provider_model_binding.py`, `test_shadow_routing.py`, `test_provider_routing_enforced.py`, `test_provider_health_circuit_breaker.py`, `test_provider_real_fallback_controlled.py`.
