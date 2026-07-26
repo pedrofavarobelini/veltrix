@@ -55,7 +55,12 @@ def test_observability_is_default_off_and_blocked_in_production(monkeypatch):
 def test_mock_success_records_audit_public_response_and_evaluation():
     response = client.post(
         "/api/orchestrate",
-        json={"message": "Teste local", "provider": "mock", "task_type": "general_chat"},
+        json={
+            "message": "Teste local",
+            "provider": "mock",
+            "task_type": "finance_advice",
+            "origin_system": "finguard",
+        },
     )
     assert response.status_code == 200
 
@@ -69,6 +74,9 @@ def test_mock_success_records_audit_public_response_and_evaluation():
     assert detail["public_response"] == response.json()["answer"]
     assert detail["evaluation"] is not None
     assert detail["retry"] == {"attempted": False, "count": 0}
+    assert response.json()["project_id"] == "finguard"
+    assert detail["result_returned"]["project_id"] == "finguard"
+    assert detail["result_returned"]["model"] == response.json()["model"]
 
 
 def test_local_qa_and_fallback_are_visible_and_filterable():

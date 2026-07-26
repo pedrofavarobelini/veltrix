@@ -217,7 +217,9 @@ class ObservabilityService:
             timeline=timeline,
             result_returned={
                 "status": outcome.status,
+                "project_id": outcome.project_id,
                 "provider_used": outcome.provider_used,
+                "model": outcome.model,
                 "fallback_used": outcome.fallback_used,
                 "audit_id": outcome.audit.audit_id,
                 "warning_codes": outcome.warning_codes,
