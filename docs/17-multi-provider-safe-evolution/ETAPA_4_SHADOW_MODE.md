@@ -2,7 +2,8 @@
 
 Frente: `PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION`.
 
-Status: **implementado, com efeito nulo comprovado sobre a execução real**.
+Status: **concluída e reconciliada com a correção `8c97004`, com efeito nulo
+comprovado sobre a execução real**.
 
 ## Objetivo
 
@@ -42,11 +43,27 @@ Avaliados nesta ordem, produzindo o motivo mais informativo:
 
 `not_registered` → `not_implemented` → `not_configured` → `not_homologated` →
 `ambiguous_identity` → `not_authorized` → `task_incompatible` →
-`project_policy_blocked` → `model_incompatible` → `safe_mode_blocked`.
+`project_policy_blocked` → `model_incompatible` →
+`model_not_homologated` → `model_not_authorized` → `safe_mode_blocked`.
 
 Ter chave configurada **não** torna um candidato elegível: com chave, Claude e
 OpenAI são eliminados por `not_homologated`; sem chave, por `not_configured`.
 Identidade `ambiguous` não produz nenhum candidato real elegível.
+
+Depois da correção `8c97004`, os filtros de modelo consultam somente entradas
+explícitas de `_MODEL_CATALOG`:
+
+- modelo configurado desconhecido é eliminado como `model_incompatible`;
+- modelo conhecido, mas não homologado, é eliminado como
+  `model_not_homologated`;
+- modelo conhecido, homologado, mas não autorizado, é eliminado como
+  `model_not_authorized`;
+- incompatibilidade com a task também elimina o candidato antes de qualquer
+  execução.
+
+Configuração runtime não cria candidato shadow e não promove homologação. O
+binding é consultado apenas como validação da combinação; sua resposta nunca
+entra no caminho de execução real.
 
 ### Prioridade estática e desempate
 
@@ -79,6 +96,11 @@ observabilidade internas ganham informação.
 `would_differ_from_actual` é calculado **apenas** comparando identificadores,
 depois da execução real. O candidato planejado nunca é executado.
 
+As sondas específicas comprovam que modelo configurado arbitrário não se torna
+conhecido/homologado e que modelo explicitamente conhecido, porém não
+homologado, é eliminado. O fechamento após `8c97004` registrou
+`515 passed, 7 skipped`, eval harness `14/14` e zero chamadas reais.
+
 ## Observabilidade e auditoria
 
 A observabilidade distingue `provider_shadow_planned` / `model_shadow_planned`
@@ -96,4 +118,5 @@ projeção do frontend segue limitada a `answer`, `suggestions`, `disclaimer`.
 - não altera `AUTO_REAL_PROVIDER_CANDIDATES` (segue `("gemini",)`);
 - não autoriza Claude/OpenAI, não executa candidato planejado;
 - não implementa multi-provider real, health, circuit breaker ou fallback
-  entre providers reais (Etapas 5–7).
+  entre providers reais;
+- não inicia a Etapa 5.

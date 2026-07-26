@@ -1,6 +1,6 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 18/07/2026
+Atualizado em: 26/07/2026
 
 ## Status oficial
 
@@ -8,7 +8,41 @@ Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag fi
 
 DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
 
-Frente atual concluída: `PEDROCORE-OBSERVABILIDADE-LOCAL-01` — ring buffer sanitizado e default-off, painel `#/observability`, provider/fallback/timeline, relatórios, memória técnica, avaliação e release gate instrumentados no pipeline real. Integração local FinGuard → PedroCore → FinGuard e replay conjunto aprovados. Commits `b22338a`, `df6d72f`, `f995d5e`, `3b11b36`. Pytest: `368 passed, 7 skipped, 2 warnings`; frontend build verde. Gemini real não foi executado nesta frente porque os dois opt-ins permaneceram desligados. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01.md`.
+Correção mais recente concluída:
+`PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix — homologação e configuração
+de modelos`, commit `8c97004`. `_MODEL_CATALOG` passou a ser a fonte explícita
+dos modelos reconhecidos; configuração runtime apenas escolhe um identificador
+e não cria/homologa entrada. Provider/model binding agora é total e falha
+fechado antes de qualquer adapter real. Validação final registrada:
+`515 passed, 7 skipped`, eval harness `14/14`, zero chamadas reais e
+Gemini-only preservado.
+
+### Estado consolidado da evolução multi-provider
+
+| Etapa | Estado |
+| --- | --- |
+| Etapa 1 — catálogo de providers/modelos | concluída |
+| Etapa 2 — identidade e autorização por projeto | concluída e corrigida |
+| Etapa 3 — provider/model binding | concluída e corrigida |
+| Etapa 4 — política determinística em shadow mode | concluída |
+| Etapa 5 | não iniciada |
+
+| Capacidade | Veredito atual |
+| --- | --- |
+| Multi-provider estrutural | sim |
+| Identidade e autorização por projeto | sim |
+| Provider/model binding total | sim |
+| Shadow mode | sim |
+| Multi-provider automático real | não |
+| Health/circuit breaker | não |
+| Fallback entre providers reais | não |
+
+O único candidato automático real permanece Gemini. Claude e OpenAI não são
+executados automaticamente. Sem binding válido, `provider=auto` faz zero
+chamadas reais e usa o Mock seguro; seleção técnica explícita é bloqueada com
+zero adapters.
+
+Frente anterior concluída: `PEDROCORE-OBSERVABILIDADE-LOCAL-01` — ring buffer sanitizado e default-off, painel `#/observability`, provider/fallback/timeline, relatórios, memória técnica, avaliação e release gate instrumentados no pipeline real. Integração local FinGuard → PedroCore → FinGuard e replay conjunto aprovados. Commits `b22338a`, `df6d72f`, `f995d5e`, `3b11b36`. Pytest: `368 passed, 7 skipped, 2 warnings`; frontend build verde. Gemini real não foi executado nesta frente porque os dois opt-ins permaneceram desligados. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01.md`.
 
 Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 

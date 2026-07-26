@@ -1,12 +1,58 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix — homologação e configuração de modelos
+
+Status: **corrigido no commit `8c97004` com comportamento fail-closed**.
+
+- **Falha confirmada 1:** os modelos conhecidos eram derivados de
+  `adapter.default_model`. Como esse valor vem da configuração runtime, um
+  identificador arbitrário podia contaminar a caracterização como se fosse
+  conhecido e homologado. Provider homologado acabava homologando
+  implicitamente o modelo configurado.
+- **Falha confirmada 2:** na ausência de um default válido, o caminho antigo
+  apenas emitia `MODEL_DEFAULT_UNAVAILABLE` como warning e ainda podia chamar o
+  adapter real com `model=None`, permitindo que o próprio adapter escolhesse
+  silenciosamente seu default depois do binding.
+- **Fonte corrigida:** `_MODEL_CATALOG` é o catálogo explícito e imutável dos
+  modelos reconhecidos. Configuração runtime somente escolhe um identificador;
+  não cria, registra, implementa, homologa nem autoriza uma entrada. Posição na
+  lista e `index == 0` também não definem homologação ou default.
+- **Estados corrigidos:** modelo configurado, conhecido, homologado e autorizado
+  são estados independentes. A homologação é declarada por modelo e não é
+  herdada do provider.
+- **Validação:** existência, unicidade, provider proprietário, registro,
+  implementação, homologação, autorização, default e compatibilidade com a
+  task são verificados antes de formar o binding aplicável.
+- **Binding total:** adapter real recebe somente `model_id` validado e não pode
+  receber `model=None` nem aplicar fallback próprio de modelo.
+- **Fail-closed:** `provider=auto` sem modelo válido faz zero chamadas reais,
+  usa somente o Mock seguro e registra `MODEL_DEFAULT_UNAVAILABLE`; seleção
+  técnica explícita sem binding válido retorna `status=blocked`,
+  `provider_used=none` e zero chamadas. Não há tentativa de Claude, OpenAI ou
+  outro provider.
+- **Shadow mode:** usa apenas modelos explicitamente reconhecidos, elimina
+  configuração desconhecida (`model_incompatible`) e modelo conhecido não
+  homologado (`model_not_homologated`), sem chamar adapter, alterar a execução
+  real ou autorizar provider adicional.
+- **Sondas determinísticas:** default arbitrário não cria/homologa modelo;
+  homologação do provider não homologa o modelo; posição no catálogo não
+  homologa; ausência de default bloqueia seleção explícita e leva `auto`
+  somente ao Mock; shadow elimina modelo desconhecido e conhecido não
+  homologado; spies confirmam zero chamadas indevidas e nenhum modelo nulo.
+- **Validação final:** `515 passed, 7 skipped`; eval harness `14/14`; zero
+  chamadas reais. `AUTO_REAL_PROVIDER_CANDIDATES` permanece `("gemini",)`:
+  Gemini-only preservado.
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 4: política em shadow mode
 
 Status: **implementado, com efeito nulo comprovado sobre a execução real**.
 
+Nota atual: a fonte e os filtros de modelo desta entrega foram reconciliados
+pelo fix `8c97004`, registrado acima.
+
 - Novo módulo `shadow_routing`: calcula de forma determinística qual provider/modelo uma política multi-provider futura escolheria, **sem chamar provider algum e sem segunda IA**.
 - Política sem sinal dinâmico: filtros eliminatórios → prioridade estática por projeto/task (tuplas ordenadas) → desempate pelo primeiro sobrevivente. Sem score, custo, latência, health, A/B, ensemble ou votação.
-- Motivos de eliminação determinísticos e sanitizados: `not_registered`, `not_implemented`, `not_configured`, `not_homologated`, `ambiguous_identity`, `not_authorized`, `task_incompatible`, `project_policy_blocked`, `model_incompatible`, `safe_mode_blocked`. Claude/OpenAI aparecem priorizados porém sempre eliminados pelo motivo correto — nunca autorizados artificialmente.
+- Motivos de eliminação determinísticos e sanitizados: `not_registered`, `not_implemented`, `not_configured`, `not_homologated`, `ambiguous_identity`, `not_authorized`, `task_incompatible`, `project_policy_blocked`, `model_incompatible`, `model_not_homologated`, `model_not_authorized`, `safe_mode_blocked`. Claude/OpenAI aparecem priorizados porém sempre eliminados pelo motivo correto — nunca autorizados artificialmente.
 - Flag `PEDROCORE_SHADOW_ROUTING_ENABLED`, default **off**; o consumidor não liga nem desliga pelo payload.
 - Efeito nulo: com shadow ligado ou desligado, provider, modelo, nº de chamadas, resposta pública, status, fallback, release gate e warnings são idênticos. `would_differ_from_actual` compara apenas identificadores, após a execução.
 - Observabilidade distingue planejado vs. efetivo e lista candidatos eliminados; auditoria guarda resumo sanitizado. Contrato público inalterado.
@@ -15,6 +61,9 @@ Status: **implementado, com efeito nulo comprovado sobre a execução real**.
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 3: provider/model binding
 
 Status: **implementado, sem alterar o provider automático**.
+
+Nota atual: a derivação de modelos e o caminho sem default descritos na entrega
+original foram corrigidos pelo fix `8c97004`, registrado acima.
 
 - Catálogo ganha `ModelDefinition` e consultas de modelo: cada modelo pertence a **exatamente um** provider, e o catálogo continua sendo a fonte única de verdade (sem listas paralelas).
 - Novo módulo `provider_binding`: `ProviderModelBinding` + `SelectedProviderModel` resolvem provider e modelo como **uma unidade** antes de qualquer adapter.

@@ -2,7 +2,9 @@
 
 Frente: `PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION`.
 
-Status: **implementado, passivo e sem alteração de roteamento**.
+Status: **concluída; a entrega original foi passiva e não alterou o
+roteamento**. O catálogo de modelos foi posteriormente corrigido no commit
+`8c97004`.
 
 ## Objetivo
 
@@ -13,8 +15,8 @@ ponto do pipeline de orquestração o consome nesta etapa.
 ## Onde
 
 - `apps/api/app/modules/provider_catalog/schemas.py` — tipos e invariantes.
-- `apps/api/app/modules/provider_catalog/service.py` — construção da
-  caracterização a partir dos adapters realmente registrados.
+- `apps/api/app/modules/provider_catalog/service.py` — caracterização dinâmica
+  dos providers realmente registrados e catálogo explícito `_MODEL_CATALOG`.
 - `apps/api/tests/test_provider_catalog.py` — estrutura, estados e invariantes.
 - `apps/api/tests/test_provider_auto_characterization.py` — congelamento do
   comportamento automático atual.
@@ -54,6 +56,30 @@ em processo (`mock`, `local_qa`) declaram `healthy` com evidência
 
 `auto` não é provider: é modo de seleção e não pertence ao catálogo.
 
+## Reconciliação posterior do catálogo de modelos
+
+O commit `8c97004` separou a caracterização de provider da definição de
+modelos. A seleção configurada em runtime (`settings`, ambiente ou
+`adapter.default_model`) informa somente um identificador candidato; ela
+**não** cria, registra, implementa, homologa nem autoriza um modelo.
+
+Os modelos reconhecidos pelo PedroCore existem apenas no catálogo explícito e
+imutável `_MODEL_CATALOG`. Cada entrada declara proprietário, registro,
+implementação, homologação, autorização, default e compatibilidade de task.
+O catálogo falha cedo se um identificador/alias tiver proprietário ambíguo ou
+se um provider tiver mais de um default explícito.
+
+Assim, os estados precisam ser lidos separadamente:
+
+- provider configurado não implica modelo conhecido;
+- modelo conhecido não implica homologado;
+- modelo homologado não implica autorizado;
+- a homologação do provider não homologa automaticamente seus modelos.
+
+Na entrega original da Etapa 1 o catálogo era consultivo. As Etapas 3 e 4
+passaram a consumir essas definições, sem transformar configuração runtime em
+fonte de verdade.
+
 ## Segurança
 
 `required_config_keys` guarda apenas **nomes** de variáveis de ambiente, com
@@ -61,11 +87,12 @@ invariante que recusa qualquer coisa fora do padrão `^[A-Z][A-Z0-9_]*$`.
 Nenhum valor de credencial, endpoint privado ou segredo entra no catálogo,
 no `snapshot()` de diagnóstico ou nos testes.
 
-## O que esta etapa NÃO faz
+## O que a entrega original desta etapa NÃO fez
 
 - não adiciona Claude, OpenAI, DeepSeek ou Grok ao modo automático;
 - não altera `AUTO_REAL_PROVIDER_CANDIDATES` (segue `("gemini",)`);
-- não implementa fallback entre providers reais, retry, shadow routing,
-  score dinâmico, circuit breaker ou provider/model binding;
+- não implementou fallback entre providers reais, retry, shadow routing,
+  score dinâmico, circuit breaker ou provider/model binding; binding e shadow
+  foram entregues separadamente nas Etapas 3 e 4;
 - não altera o contrato público de `POST /api/orchestrate` nem a projeção
   consumida pelo frontend do FinGuard (`answer`, `suggestions`, `disclaimer`).
