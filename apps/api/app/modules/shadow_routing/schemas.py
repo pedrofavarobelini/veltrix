@@ -36,6 +36,8 @@ class EliminationReason(str, Enum):
     MODEL_INCOMPATIBLE = "model_incompatible"
     MODEL_NOT_HOMOLOGATED = "model_not_homologated"
     MODEL_NOT_AUTHORIZED = "model_not_authorized"
+    CIRCUIT_OPEN = "circuit_open"
+    HALF_OPEN_BUSY = "half_open_busy"
     SAFE_MODE_BLOCKED = "safe_mode_blocked"
     PROJECT_POLICY_BLOCKED = "project_policy_blocked"
 

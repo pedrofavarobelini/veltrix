@@ -483,6 +483,36 @@ class ObservabilityService:
         selected_provider: str | None,
         error: str | None,
     ) -> list[ProviderAttempt]:
+        structured = list(getattr(outcome.audit, "provider_attempts", []) or [])
+        if structured:
+            attempts = [
+                ProviderAttempt(
+                    provider=str(item.get("provider_id") or "unknown"),
+                    model=item.get("model_id"),
+                    result=str(item.get("result") or "unknown"),
+                    telemetry_structured=True,
+                    request_id=item.get("request_id"),
+                    attempt_id=item.get("attempt_id"),
+                    ordinal=item.get("ordinal"),
+                    external_dispatch=item.get("external_dispatch"),
+                    completion_certainty=item.get("completion_certainty"),
+                    failure_classification=item.get("failure_classification"),
+                    circuit_state_before=item.get("circuit_state_before"),
+                    circuit_state_after=item.get("circuit_state_after"),
+                    half_open_probe=bool(item.get("half_open_probe")),
+                    duration_ms=item.get("duration_ms"),
+                )
+                for item in structured
+            ]
+            if outcome.fallback_used:
+                attempts.append(
+                    ProviderAttempt(
+                        provider=outcome.provider_used,
+                        result="fallback_success",
+                    )
+                )
+            return attempts
+
         if outcome.provider_used == "none":
             return []
         if not outcome.fallback_used:

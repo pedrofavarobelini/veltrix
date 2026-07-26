@@ -28,6 +28,8 @@ from app.modules.provider_authorization.service import provider_authorization_se
 from app.modules.provider_binding.service import provider_binding_service
 from app.modules.provider_catalog.schemas import ProviderCategory
 from app.modules.provider_catalog.service import provider_catalog_service
+from app.modules.provider_health.schemas import CircuitState
+from app.modules.provider_health.service import provider_health_service
 from app.modules.shadow_routing.schemas import (
     POLICY_VERSION,
     EliminationReason,
@@ -247,6 +249,22 @@ class ShadowRoutingService:
         )
         if binding.invalid or binding.model_id is None:
             return EliminationReason.MODEL_INCOMPATIBLE, None
+
+        circuit = provider_health_service.peek(
+            provider_health_service.key(
+                caller.environment,
+                provider_id,
+                binding.model_id,
+            )
+        )
+        if circuit.enabled and circuit.state is CircuitState.OPEN:
+            return EliminationReason.CIRCUIT_OPEN, binding.model_id
+        if (
+            circuit.enabled
+            and circuit.state is CircuitState.HALF_OPEN
+            and circuit.half_open_probe_in_flight
+        ):
+            return EliminationReason.HALF_OPEN_BUSY, binding.model_id
 
         if is_real and not allow_real_provider:
             return EliminationReason.SAFE_MODE_BLOCKED, binding.model_id

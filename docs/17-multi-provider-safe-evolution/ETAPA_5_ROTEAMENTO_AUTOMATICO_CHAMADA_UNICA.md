@@ -89,7 +89,9 @@ contrato de assistente do FinGuard continua limitado a `answer`,
 
 ## Limites preservados
 
-- health state e circuit breaker ainda não foram implementados;
+- neste checkpoint da Etapa 5, health state e circuit breaker ainda não
+  estavam implementados; foram entregues posteriormente na
+  [[ETAPA_6_HEALTH_STATE_CIRCUIT_BREAKER]];
 - fallback entre providers reais ainda não foi implementado;
 - timeout ainda usa espera sobre adapters síncronos em thread;
-- Etapas 6 e 7 permanecem fora deste commit.
+- Etapas 6 e 7 permaneceram fora deste commit.

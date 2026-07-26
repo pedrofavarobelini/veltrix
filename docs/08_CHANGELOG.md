@@ -1,5 +1,32 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 6: health state e circuit breaker
+
+Status: **implementada e validada localmente, desligada por padrão**.
+
+- State machine `closed`/`open`/`half_open` por
+  `ambiente + provider + modelo`, em memória e por processo, com cooldown
+  monotônico e reserva atômica de um único probe half-open.
+- Circuit breaker controlado somente por configuração interna, default-off,
+  sem campo de payload, health check externo, persistência ou endpoint
+  administrativo.
+- Taxonomia estruturada separa falha retryable, pre-dispatch, caller, policy,
+  interna e conclusão ambígua. Somente evidência atribuível ao provider
+  degrada health.
+- Timeout de adapter síncrono em `asyncio.to_thread` é conclusão ambígua:
+  abre o circuito imediatamente, pois o término do trabalho externo não pode
+  ser provado nem cancelado.
+- Auditoria e observabilidade ganharam IDs de tentativa, ordinal, provider,
+  modelo, dispatch, certeza de conclusão, classificação, duração e circuito
+  antes/depois, preservando a projeção legada sem telemetria.
+- Routing shadow consulta sem mutar; enforced bloqueia circuito aberto ou probe
+  ocupado antes do adapter e recua para Mock. Não existe fallback real nesta
+  etapa.
+- Validação: direcionados `176 passed`; regressão de contrato `44 passed`;
+  suíte completa `553 passed, 7 skipped, 2 warnings`; eval harness `14/14`;
+  Ruff aprovado; zero chamadas externas reais. Ver
+  [[17-multi-provider-safe-evolution/ETAPA_6_HEALTH_STATE_CIRCUIT_BREAKER]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 5: roteamento enforced com chamada única
 
 Status: **motor implementado e validado; diversificação operacional bloqueada

@@ -54,5 +54,7 @@ class AuditMetadata(BaseModel):
     routing_candidates_considered: list[dict[str, Any]] = Field(default_factory=list)
     routing_candidates_eliminated: list[dict[str, Any]] = Field(default_factory=list)
     real_provider_attempt_count: int = 0
+    # Etapa 6: tentativas identificadas e estado do circuito antes/depois.
+    provider_attempts: list[dict[str, Any]] = Field(default_factory=list)
     authorization_result: str | None = None
     authorization_reason_code: str | None = None

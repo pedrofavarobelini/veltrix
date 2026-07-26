@@ -1,6 +1,8 @@
 import asyncio
 import os
 import time
+import uuid
+from datetime import datetime, timezone
 
 from app.core.config import settings
 from app.modules.artifact_reader.service import artifact_reader_service
@@ -26,6 +28,14 @@ from app.modules.orchestration.schemas import (
 from app.modules.provider_authorization.service import provider_authorization_service
 from app.modules.provider_binding.schemas import SelectedProviderModel
 from app.modules.provider_binding.service import provider_binding_service
+from app.modules.provider_health.schemas import (
+    CompletionCertainty,
+    FailureClassification,
+)
+from app.modules.provider_health.service import (
+    ProviderCircuitOpenError,
+    provider_health_service,
+)
 from app.modules.providers.base import ProviderConfigError, ProviderExecutionError
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.shadow_routing.schemas import EliminationReason, RoutingMode
@@ -115,6 +125,9 @@ PROVIDER_REAL_UNAVAILABLE_WARNING = (
 )
 PROVIDER_TIMEOUT_ENV = "PEDROCORE_PROVIDER_TIMEOUT_SECONDS"
 PROVIDER_TIMEOUT_WARNING = "Provider excedeu o tempo limite; fallback seguro aplicado."
+PROVIDER_CIRCUIT_OPEN_WARNING = (
+    "Provider temporariamente bloqueado pelo circuit breaker; fallback seguro aplicado."
+)
 
 # MULTI-PROVIDER-SAFE-EVOLUTION Etapa 2: provider real depende de autorização
 # explícita por projeto/papel/ambiente. Negar nunca vira chamada real: vira
@@ -398,7 +411,6 @@ class OrchestrationService:
         safe_mode_blocked = False
         error: str | None = None
         error_code: str | None = None
-        real_provider_attempt_count = 0
         local_model_items: list[WarningItem] = []
         provider_items: list[WarningItem] = []
         if binding.warning_code:
@@ -485,19 +497,27 @@ class OrchestrationService:
                         audit.provider_selected = provider.name
                         audit.authorization_result = "allowed"
                         try:
-                            real_provider_attempt_count += 1
-                            result = await self._generate_with_timeout(
+                            result = await self._generate_real_attempt(
                                 provider,
                                 payload,
                                 prompt.enriched_system_prompt,
                                 binding.model_id,
+                                audit=audit,
+                                environment=caller.environment,
+                                ordinal=1,
                             )
                             answer = result.answer
                             provider_used = result.provider
                             model_used = result.model
                         except Exception as exc:
                             error = str(exc)
-                            if isinstance(exc, TimeoutError):
+                            if isinstance(exc, ProviderCircuitOpenError):
+                                error = PROVIDER_CIRCUIT_OPEN_WARNING
+                                error_code = codes.PROVIDER_CIRCUIT_OPEN
+                                provider_items.append(
+                                    make_warning(codes.PROVIDER_CIRCUIT_OPEN, error)
+                                )
+                            elif isinstance(exc, TimeoutError):
                                 error = PROVIDER_TIMEOUT_WARNING
                                 error_code = codes.PROVIDER_TIMEOUT
                                 provider_items.append(
@@ -567,19 +587,34 @@ class OrchestrationService:
                 else:
                     try:
                         if provider.real_provider:
-                            real_provider_attempt_count += 1
-                        result = await self._generate_with_timeout(
-                            provider,
-                            payload,
-                            prompt.enriched_system_prompt,
-                            binding.model_id,
-                        )
+                            result = await self._generate_real_attempt(
+                                provider,
+                                payload,
+                                prompt.enriched_system_prompt,
+                                binding.model_id,
+                                audit=audit,
+                                environment=caller.environment,
+                                ordinal=1,
+                            )
+                        else:
+                            result = await self._generate_with_timeout(
+                                provider,
+                                payload,
+                                prompt.enriched_system_prompt,
+                                binding.model_id,
+                            )
                         answer = result.answer
                         provider_used = result.provider
                         model_used = result.model
                     except Exception as exc:
                         error = str(exc)
-                        if isinstance(exc, TimeoutError):
+                        if isinstance(exc, ProviderCircuitOpenError):
+                            error = PROVIDER_CIRCUIT_OPEN_WARNING
+                            error_code = codes.PROVIDER_CIRCUIT_OPEN
+                            provider_items.append(
+                                make_warning(codes.PROVIDER_CIRCUIT_OPEN, error)
+                            )
+                        elif isinstance(exc, TimeoutError):
                             error = PROVIDER_TIMEOUT_WARNING
                             error_code = codes.PROVIDER_TIMEOUT
                             provider_items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
@@ -696,7 +731,11 @@ class OrchestrationService:
         audit.routing_candidates_eliminated = self._routing_candidates(
             shadow_decision.candidates_eliminated
         )
-        audit.real_provider_attempt_count = real_provider_attempt_count
+        audit.real_provider_attempt_count = sum(
+            1
+            for attempt in audit.provider_attempts
+            if attempt.get("external_dispatch") is True
+        )
 
         shadow_active = shadow_decision.routing_mode is RoutingMode.SHADOW
         audit.shadow_enabled = shadow_active
@@ -888,6 +927,11 @@ class OrchestrationService:
         if first_reason is EliminationReason.NOT_HOMOLOGATED:
             return codes.PROVIDER_NOT_HOMOLOGATED, PROVIDER_NOT_AUTHORIZED_WARNING
         if first_reason in {
+            EliminationReason.CIRCUIT_OPEN,
+            EliminationReason.HALF_OPEN_BUSY,
+        }:
+            return codes.PROVIDER_CIRCUIT_OPEN, PROVIDER_CIRCUIT_OPEN_WARNING
+        if first_reason in {
             EliminationReason.MODEL_INCOMPATIBLE,
             EliminationReason.MODEL_NOT_HOMOLOGATED,
             EliminationReason.MODEL_NOT_AUTHORIZED,
@@ -946,6 +990,149 @@ class OrchestrationService:
             return min(120.0, max(0.05, float(raw)))
         except ValueError:
             return 30.0
+
+    async def _generate_real_attempt(
+        self,
+        provider,
+        payload: ChatRequest,
+        enriched_system_prompt: str,
+        model: str,
+        *,
+        audit,
+        environment: str,
+        ordinal: int,
+    ):
+        """Executa uma tentativa identificada e atualiza o circuito.
+
+        A classificação é baseada em tipos estruturados, nunca em texto de
+        exception. ``TimeoutError`` é sempre conclusão ambígua porque os
+        adapters atuais usam clientes síncronos dentro de ``asyncio.to_thread``.
+        """
+        attempt_id = str(uuid.uuid4())
+        started_at = datetime.now(timezone.utc).isoformat()
+        started = time.perf_counter()
+        key = provider_health_service.key(environment, provider.name, model)
+        permit = provider_health_service.acquire(key)
+        before = permit.snapshot
+
+        attempt = {
+            "request_id": audit.audit_id,
+            "attempt_id": attempt_id,
+            "ordinal": ordinal,
+            "provider_id": provider.name,
+            "model_id": model,
+            "started_at": started_at,
+            "circuit_state_before": before.state.value,
+            "consecutive_failures_before": before.consecutive_failures,
+            "cooldown_remaining_before": before.cooldown_remaining_seconds,
+            "half_open_probe": permit.half_open_probe,
+            "external_dispatch": False,
+            "completion_certainty": CompletionCertainty.NOT_DISPATCHED.value,
+            "failure_classification": None,
+            "result": None,
+            "fallback_eligible": False,
+        }
+
+        def finish(
+            *,
+            classification: FailureClassification,
+            certainty: CompletionCertainty,
+            external_dispatch: bool,
+            result: str,
+            after,
+        ) -> None:
+            attempt.update(
+                {
+                    "external_dispatch": external_dispatch,
+                    "completion_certainty": certainty.value,
+                    "failure_classification": classification.value,
+                    "result": result,
+                    "duration_ms": round((time.perf_counter() - started) * 1_000, 2),
+                    "circuit_state_after": after.state.value,
+                    "consecutive_failures_after": after.consecutive_failures,
+                    "opened_at_monotonic": after.opened_at_monotonic,
+                    "cooldown_remaining_after": after.cooldown_remaining_seconds,
+                }
+            )
+            audit.provider_attempts.append(attempt)
+
+        if not permit.allowed:
+            after = provider_health_service.peek(key)
+            finish(
+                classification=FailureClassification.PROVIDER_PRE_DISPATCH,
+                certainty=CompletionCertainty.NOT_DISPATCHED,
+                external_dispatch=False,
+                result="circuit_blocked",
+                after=after,
+            )
+            raise ProviderCircuitOpenError(permit.reason or PROVIDER_CIRCUIT_OPEN_WARNING)
+
+        try:
+            result = await self._generate_with_timeout(
+                provider,
+                payload,
+                enriched_system_prompt,
+                model,
+            )
+        except Exception as exc:
+            classification, certainty, external_dispatch = (
+                self._classify_provider_failure(exc)
+            )
+            after = provider_health_service.record(
+                key,
+                classification,
+                half_open_probe=permit.half_open_probe,
+            )
+            finish(
+                classification=classification,
+                certainty=certainty,
+                external_dispatch=external_dispatch,
+                result="failed",
+                after=after,
+            )
+            raise
+
+        after = provider_health_service.record(
+            key,
+            FailureClassification.SUCCESS,
+            half_open_probe=permit.half_open_probe,
+        )
+        finish(
+            classification=FailureClassification.SUCCESS,
+            certainty=CompletionCertainty.COMPLETED,
+            external_dispatch=True,
+            result="success",
+            after=after,
+        )
+        return result
+
+    @staticmethod
+    def _classify_provider_failure(
+        error: Exception,
+    ) -> tuple[FailureClassification, CompletionCertainty, bool]:
+        if isinstance(error, TimeoutError):
+            return (
+                FailureClassification.COMPLETION_AMBIGUOUS,
+                CompletionCertainty.AMBIGUOUS,
+                True,
+            )
+        if isinstance(error, ProviderConfigError):
+            return (
+                FailureClassification.PROVIDER_PRE_DISPATCH,
+                CompletionCertainty.NOT_DISPATCHED,
+                False,
+            )
+        if isinstance(error, ProviderExecutionError):
+            return (
+                FailureClassification.PROVIDER_RETRYABLE,
+                CompletionCertainty.COMPLETED,
+                True,
+            )
+        return (
+            FailureClassification.INTERNAL_ERROR,
+            CompletionCertainty.AMBIGUOUS,
+            True,
+        )
 
     async def _generate_with_timeout(
         self,

@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 
 
 class TimelineEvent(BaseModel):
@@ -14,6 +14,42 @@ class ProviderAttempt(BaseModel):
     provider: str
     result: str
     detail: str | None = None
+    telemetry_structured: bool = Field(default=False, exclude=True, repr=False)
+    model: str | None = None
+    request_id: str | None = None
+    attempt_id: str | None = None
+    ordinal: int | None = None
+    external_dispatch: bool | None = None
+    completion_certainty: str | None = None
+    failure_classification: str | None = None
+    circuit_state_before: str | None = None
+    circuit_state_after: str | None = None
+    half_open_probe: bool = False
+    duration_ms: float | None = None
+
+    @model_serializer(mode="plain")
+    def serialize_attempt(self) -> dict[str, Any]:
+        legacy = {
+            "provider": self.provider,
+            "result": self.result,
+            "detail": self.detail,
+        }
+        if not self.telemetry_structured:
+            return legacy
+        return {
+            **legacy,
+            "model": self.model,
+            "request_id": self.request_id,
+            "attempt_id": self.attempt_id,
+            "ordinal": self.ordinal,
+            "external_dispatch": self.external_dispatch,
+            "completion_certainty": self.completion_certainty,
+            "failure_classification": self.failure_classification,
+            "circuit_state_before": self.circuit_state_before,
+            "circuit_state_after": self.circuit_state_after,
+            "half_open_probe": self.half_open_probe,
+            "duration_ms": self.duration_ms,
+        }
 
 
 class ExecutionRecord(BaseModel):
