@@ -1,5 +1,17 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix: credencial compartilhada não autoriza provider real
+
+Status: **vulnerabilidade da Etapa 2 confirmada e corrigida**.
+
+- **Falha**: a API key global compartilhada recebia `caller_role=technical_tool` e o `project_id` era derivado do `origin_system` declarado; a matriz permitia `finguard × ambos os papéis × todos os ambientes × gemini`. Uma chave global podia alegar `origin_system=finguard` e alcançar o adapter real do Gemini. Confirmado por sonda determinística com spy de adapter (`adapters chamados: ['gemini']`), sem rede.
+- **Correção**: novo eixo `IdentityStrength` (`registered` / `local_trusted` / `ambiguous`). A chave global vira identidade **ambígua**: papel de consumidor comum, `project_id=shared_or_unknown` e nenhum provider real. Ela continua autenticando a requisição apenas como compatibilidade transitória.
+- `OriginClaimResult` separa `identity_project_id` (projeto provado, alimenta a matriz) de `context_project_id` (policy/tasks, preserva o contrato público). A alegação de origem de um caller ambíguo é registrada como `not_trusted` e nunca vira identidade.
+- Matriz revisada: identidade entra na chave, produção ganha regra própria (sem wildcard de ambiente) e provider real para FinGuard exige credencial registrada.
+- Violação de identidade deixa de parecer falha de provider: novo code `CALLER_IDENTITY_AMBIGUOUS`, distinto de `PROVIDER_REAL_UNAVAILABLE`.
+- Auditoria e observabilidade passam a registrar `identity_strength`.
+- Testes: `tests/test_shared_credential_privilege.py` (novo, 16 casos) + atualização dos testes que codificavam o comportamento vulnerável. Ver [[17-multi-provider-safe-evolution/FIX_CREDENCIAL_COMPARTILHADA]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 2: identidade e autorização por projeto
 
 Status: **implementado, fail-closed, sem alteração do provider automático**.

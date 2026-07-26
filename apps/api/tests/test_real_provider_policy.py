@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import settings
 from app.main import app
+from app.modules.caller_identity.service import FLAG_CALLER_REGISTRY
 from app.modules.contracts import codes
 from app.modules.providers.base import ProviderResponse
 from app.modules.providers.gemini_provider import GeminiProvider
@@ -13,6 +14,37 @@ client = TestClient(app)
 AUTH_ENV_VAR = "PEDROCORE_INTERNAL_API_KEY"
 AUTH_HEADER = "X-PedroCore-Api-Key"
 TEST_KEY = "test-gemini-key-never-leak"
+
+# Provider real para o projeto FinGuard exige credencial REGISTRADA que
+# vincule a credencial ao projeto: chave global compartilhada não basta.
+FINGUARD_CONSUMER_CREDENTIAL = "finguard-consumer-credencial-sintetica"
+FINGUARD_TOOL_CREDENTIAL = "finguard-tool-credencial-sintetica"
+
+
+def _register_finguard_credentials(monkeypatch) -> None:
+    monkeypatch.setenv(
+        FLAG_CALLER_REGISTRY,
+        json.dumps(
+            [
+                {
+                    "credential_id": "finguard-consumer",
+                    "api_key": FINGUARD_CONSUMER_CREDENTIAL,
+                    "project_id": "finguard",
+                    "role": "common_consumer",
+                    "environment": "development",
+                    "allowed_origins": ["finguard"],
+                },
+                {
+                    "credential_id": "finguard-tool",
+                    "api_key": FINGUARD_TOOL_CREDENTIAL,
+                    "project_id": "finguard",
+                    "role": "technical_tool",
+                    "environment": "development",
+                    "allowed_origins": ["finguard"],
+                },
+            ]
+        ),
+    )
 
 
 def _payload(provider: str, allow_real_provider: bool = False) -> dict:
@@ -70,7 +102,13 @@ def test_gemini_without_real_authorization_is_blocked(monkeypatch, real_provider
 
 
 def test_auto_with_real_authorization_chooses_gemini_stub(monkeypatch, real_provider_guard):
+    """FinGuard com credencial REGISTRADA alcança Gemini via provider=auto.
+
+    A chave global compartilhada não serve mais para isso: só uma credencial
+    que vincula inequivocamente o caller ao projeto estabelece identidade.
+    """
     monkeypatch.delenv(AUTH_ENV_VAR, raising=False)
+    _register_finguard_credentials(monkeypatch)
     monkeypatch.setattr(settings, "gemini_api_key", TEST_KEY)
     calls: list[str] = []
 
@@ -84,7 +122,11 @@ def test_auto_with_real_authorization_chooses_gemini_stub(monkeypatch, real_prov
 
     monkeypatch.setattr(GeminiProvider, "generate_response", fake_generate)
 
-    response = client.post("/api/orchestrate", json=_payload("auto", allow_real_provider=True))
+    response = client.post(
+        "/api/orchestrate",
+        json=_payload("auto", allow_real_provider=True),
+        headers={AUTH_HEADER: FINGUARD_CONSUMER_CREDENTIAL},
+    )
     data = response.json()
     dumped = json.dumps(data, ensure_ascii=False)
 
@@ -100,7 +142,9 @@ def test_auto_with_real_authorization_chooses_gemini_stub(monkeypatch, real_prov
 
 
 def test_gemini_with_real_authorization_uses_gemini_stub(monkeypatch, real_provider_guard):
+    """Seleção explícita continua possível para credencial técnica REGISTRADA."""
     monkeypatch.delenv(AUTH_ENV_VAR, raising=False)
+    _register_finguard_credentials(monkeypatch)
     monkeypatch.setattr(settings, "gemini_api_key", TEST_KEY)
     calls: list[str] = []
 
@@ -114,7 +158,11 @@ def test_gemini_with_real_authorization_uses_gemini_stub(monkeypatch, real_provi
 
     monkeypatch.setattr(GeminiProvider, "generate_response", fake_generate)
 
-    response = client.post("/api/orchestrate", json=_payload("gemini", allow_real_provider=True))
+    response = client.post(
+        "/api/orchestrate",
+        json=_payload("gemini", allow_real_provider=True),
+        headers={AUTH_HEADER: FINGUARD_TOOL_CREDENTIAL},
+    )
     data = response.json()
 
     assert response.status_code == 200

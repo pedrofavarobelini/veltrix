@@ -12,12 +12,12 @@ Ordem soberana da identidade:
 como alegação validada. Divergência entre a origem declarada e a identidade
 autenticada é REJEITADA — nunca corrigida silenciosamente.
 
-Limitação conhecida e registrada: enquanto existir apenas uma API key global
-(`PEDROCORE_INTERNAL_API_KEY`), a credencial não distingue projetos. Nesse
-caso a identidade é marcada como compartilhada (`shared_credential=True`,
-validação de origem `not_enforced`) e o isolamento operacional entre projetos
-depende do provisionamento de credenciais distintas via
-`PEDROCORE_CALLER_REGISTRY`.
+Autenticado != identificado de forma inequívoca != autorizado para provider
+real. A API key global (`PEDROCORE_INTERNAL_API_KEY`) continua AUTENTICANDO a
+requisição por compatibilidade transitória, mas não prova projeto: ela recebe
+identidade `ambiguous`, papel de consumidor comum, projeto
+`shared_or_unknown` e nenhum provider real. Somente uma credencial registrada
+em `PEDROCORE_CALLER_REGISTRY` estabelece identidade confiável de projeto.
 """
 
 from __future__ import annotations
@@ -30,10 +30,12 @@ from typing import Any
 
 from app.core.config import settings
 from app.modules.caller_identity.schemas import (
+    SHARED_OR_UNKNOWN_PROJECT_ID,
     AuthenticatedCallerContext,
     CallerResolution,
     CallerRestrictionResult,
     CallerRole,
+    IdentityStrength,
     OriginClaimResult,
     OriginValidation,
 )
@@ -75,10 +77,14 @@ MODEL_SELECTION_REASON = (
     "Consumidor comum não define modelo: seleção de modelo não é canal de "
     "escolha de provider."
 )
-SHARED_CREDENTIAL_NOTICE = (
-    "Identidade derivada de credencial compartilhada: a origem declarada é "
-    "aceita como alegação e o isolamento entre projetos depende de credenciais "
-    "distintas."
+AMBIGUOUS_IDENTITY_NOTICE = (
+    "Credencial compartilhada não identifica projeto: a origem declarada é "
+    "registrada apenas como alegação, nunca convertida em identidade, e nenhum "
+    "provider real é autorizado."
+)
+LOCAL_UNVERIFIED_NOTICE = (
+    "Autenticação interna não configurada (modo dev/local): a origem declarada "
+    "é aceita para policy, sem credencial que a comprove."
 )
 
 
@@ -157,10 +163,10 @@ class CallerIdentityService:
             caller_role=role,
             environment=_normalize(str(entry.get("environment") or ""))
             or current_environment(),
+            identity_strength=IdentityStrength.REGISTERED,
             authenticated=True,
             project_id=project_id,
             allowed_origins=allowed_origins,
-            shared_credential=False,
         )
 
     # ------------------------------------------------------------------
@@ -197,47 +203,56 @@ class CallerIdentityService:
         return CallerResolution(context=self.default_context())
 
     def _shared_context(self, internal_key: str) -> AuthenticatedCallerContext:
-        """Única API key global: identidade real, porém não isolada por projeto."""
+        """API key global: AUTENTICA a requisição, mas não prova projeto.
+
+        Compatibilidade transitória. O caller é ambíguo: menor privilégio,
+        projeto `shared_or_unknown` e nenhum provider real autorizado.
+        """
         credential_id = (
             os.environ.get(FLAG_INTERNAL_CREDENTIAL_ID) or ""
         ).strip() or f"{SHARED_CREDENTIAL_ID}-{credential_fingerprint(internal_key)}"
         return AuthenticatedCallerContext(
             credential_id=credential_id,
-            caller_role=CallerRole.TECHNICAL_TOOL,
+            caller_role=CallerRole.COMMON_CONSUMER,
             environment=current_environment(),
+            identity_strength=IdentityStrength.AMBIGUOUS,
             authenticated=True,
-            project_id=None,
+            project_id=SHARED_OR_UNKNOWN_PROJECT_ID,
             allowed_origins=None,
-            shared_credential=True,
         )
 
     def default_context(self) -> AuthenticatedCallerContext:
         """Contexto usado quando não há credencial apresentada.
 
-        Sem autenticação interna configurada, o PedroCore está em modo
-        dev/local e o caller é a ferramenta técnica local (comportamento
-        preexistente). Com registro de callers configurado, o default é
-        fail-closed: consumidor comum não autenticado.
+        Com registro de callers configurado, o default é fail-closed:
+        identidade ambígua, menor privilégio, nenhum provider real. Sem
+        autenticação interna configurada, o PedroCore está em modo dev/local
+        e o caller é o operador local (identidade `local_trusted`), que a
+        matriz só autoriza para o próprio projeto `pedrocore` fora de
+        produção.
         """
-        if self.registry_configured():
+        if self.registry_configured() or self.shared_key_configured():
             return AuthenticatedCallerContext(
                 credential_id=LOCAL_CREDENTIAL_ID,
                 caller_role=CallerRole.COMMON_CONSUMER,
                 environment=current_environment(),
+                identity_strength=IdentityStrength.AMBIGUOUS,
                 authenticated=False,
-                project_id=None,
+                project_id=SHARED_OR_UNKNOWN_PROJECT_ID,
                 allowed_origins=None,
-                shared_credential=True,
             )
         return AuthenticatedCallerContext(
             credential_id=LOCAL_CREDENTIAL_ID,
             caller_role=CallerRole.TECHNICAL_TOOL,
             environment=current_environment(),
+            identity_strength=IdentityStrength.LOCAL_TRUSTED,
             authenticated=False,
             project_id=None,
             allowed_origins=None,
-            shared_credential=True,
         )
+
+    def shared_key_configured(self) -> bool:
+        return bool((os.environ.get(FLAG_INTERNAL_API_KEY) or "").strip())
 
     # ------------------------------------------------------------------
     # Validação da alegação de origem
@@ -250,28 +265,43 @@ class CallerIdentityService:
     ) -> OriginClaimResult:
         declared = _normalize(declared_origin)
 
+        if context.identity_strength is IdentityStrength.AMBIGUOUS:
+            # A alegação é registrada em auditoria e nunca vira identidade.
+            # O Project Context segue derivado da origem apenas para policy,
+            # preservando o contrato público — sem qualquer privilégio.
+            return OriginClaimResult(
+                validation=OriginValidation.NOT_TRUSTED,
+                identity_project_id=SHARED_OR_UNKNOWN_PROJECT_ID,
+                context_project_id=derived_project_id,
+                declared_origin=declared,
+                reason=AMBIGUOUS_IDENTITY_NOTICE,
+            )
+
         if context.allowed_origins is not None and declared not in context.allowed_origins:
             return OriginClaimResult(
                 validation=OriginValidation.MISMATCH,
-                project_id=context.project_id or derived_project_id,
+                identity_project_id=context.project_id or derived_project_id,
+                context_project_id=context.project_id or derived_project_id,
                 declared_origin=declared,
                 reason=ORIGIN_MISMATCH_REASON,
             )
 
-        # Credencial vinculada a projeto é soberana: o projeto vem dela, e a
-        # origem declarada nunca o substitui.
-        if context.allowed_origins is None:
+        if context.project_id is not None:
+            # Credencial registrada é soberana: o projeto vem dela.
             return OriginClaimResult(
-                validation=OriginValidation.NOT_ENFORCED,
-                project_id=context.project_id or derived_project_id,
+                validation=OriginValidation.MATCH,
+                identity_project_id=context.project_id,
+                context_project_id=context.project_id,
                 declared_origin=declared,
-                reason=SHARED_CREDENTIAL_NOTICE,
             )
 
+        # Modo dev/local: origem aceita para policy, sem prova de credencial.
         return OriginClaimResult(
-            validation=OriginValidation.MATCH,
-            project_id=context.project_id or derived_project_id,
+            validation=OriginValidation.LOCAL_UNVERIFIED,
+            identity_project_id=derived_project_id,
+            context_project_id=derived_project_id,
             declared_origin=declared,
+            reason=LOCAL_UNVERIFIED_NOTICE,
         )
 
     # ------------------------------------------------------------------

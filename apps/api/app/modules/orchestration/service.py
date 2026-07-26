@@ -119,6 +119,12 @@ PROVIDER_NOT_AUTHORIZED_WARNING = (
     "Provider real não autorizado para o projeto autenticado neste ambiente; "
     "fallback Mock seguro aplicado."
 )
+# Negação por IDENTIDADE (não por falha operacional): credencial compartilhada
+# não identifica projeto e nunca alcança provider real.
+PROVIDER_AMBIGUOUS_IDENTITY_WARNING = (
+    "Credencial compartilhada não identifica o projeto do caller; nenhum "
+    "provider real é autorizado e a resposta segura local foi aplicada."
+)
 
 # Modos de seleção registrados na auditoria.
 SELECTION_MODE_AUTO = "auto"
@@ -215,7 +221,10 @@ class OrchestrationService:
                 started=started,
             )
 
-        project = project_context_resolver.resolve(origin_claim.project_id)
+        # Project Context (policy/tasks) vem da alegação validada; a IDENTIDADE
+        # usada para autorizar provider real vem de origin_claim.identity_project_id,
+        # que uma credencial ambígua nunca consegue definir.
+        project = project_context_resolver.resolve(origin_claim.context_project_id)
         policy = project_context_resolver.evaluate_task_policy(project, strategy.task_type)
 
         restriction = caller_identity_service.evaluate_request_restrictions(
@@ -342,13 +351,13 @@ class OrchestrationService:
                     fallback_used = True
                 else:
                     provider, denial = self._select_auto_real_provider(
-                        caller=caller, project_id=project.project_id
+                        caller=caller, project_id=origin_claim.identity_project_id
                     )
                     if provider is None:
                         if denial is not None:
                             audit.authorization_result = denial.result.value
                             audit.authorization_reason_code = denial.error_code
-                            error = PROVIDER_NOT_AUTHORIZED_WARNING
+                            error = self._denial_message(denial)
                             error_code = (
                                 denial.error_code or codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT
                             )
@@ -418,7 +427,8 @@ class OrchestrationService:
                 denial = None
                 if provider.real_provider:
                     decision = provider_authorization_service.evaluate(
-                        project_id=project.project_id,
+                        identity_strength=caller.identity_strength,
+                        project_id=origin_claim.identity_project_id,
                         caller_role=caller.caller_role,
                         environment=caller.environment,
                         provider_id=provider.name,
@@ -431,7 +441,7 @@ class OrchestrationService:
                         audit.provider_selected = provider.name
 
                 if denial is not None:
-                    error = PROVIDER_NOT_AUTHORIZED_WARNING
+                    error = self._denial_message(denial)
                     error_code = denial.error_code or codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT
                     provider_items.append(make_warning(error_code, error))
                     answer, provider_used, model_used = await self._mock_fallback(
@@ -664,6 +674,7 @@ class OrchestrationService:
             if provider is None or not provider.real_provider or not provider.is_configured:
                 continue
             decision = provider_authorization_service.evaluate(
+                identity_strength=caller.identity_strength,
                 project_id=project_id,
                 caller_role=caller.caller_role,
                 environment=caller.environment,
@@ -673,6 +684,13 @@ class OrchestrationService:
                 return None, decision
             return provider, None
         return None, None
+
+    @staticmethod
+    def _denial_message(decision) -> str:
+        """Distingue negação por identidade de negação por projeto/ambiente."""
+        if decision.error_code == codes.CALLER_IDENTITY_AMBIGUOUS:
+            return PROVIDER_AMBIGUOUS_IDENTITY_WARNING
+        return PROVIDER_NOT_AUTHORIZED_WARNING
 
     @staticmethod
     def _selection_mode(requested_provider: str) -> str:

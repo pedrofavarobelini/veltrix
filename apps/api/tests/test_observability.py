@@ -306,9 +306,11 @@ def test_execution_record_distinguishes_identity_from_declared_origin(monkeypatc
 
     assert caller["authenticated"] is True
     assert caller["origin_system_declared"] == "finguard"
-    assert caller["origin_validation"] == "not_enforced"
-    assert caller["project_id_authenticated"] == "finguard"
-    assert caller["caller_role"] == "technical_tool"
+    # Chave global compartilhada: a alegação é registrada, nunca vira identidade.
+    assert caller["origin_validation"] == "not_trusted"
+    assert caller["identity_strength"] == "ambiguous"
+    assert caller["project_id_authenticated"] == "shared_or_unknown"
+    assert caller["caller_role"] == "common_consumer"
     assert caller["provider_selection_mode"] == "explicit"
     assert detail["provider_effective"] == "mock"
     assert internal_key not in json.dumps(detail, ensure_ascii=False)

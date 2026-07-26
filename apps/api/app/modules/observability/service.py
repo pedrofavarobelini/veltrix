@@ -385,6 +385,7 @@ class ObservabilityService:
         return {
             "credential_id": audit.credential_id,
             "authenticated": audit.authenticated,
+            "identity_strength": audit.identity_strength,
             "project_id_authenticated": audit.project_id_authenticated,
             "caller_role": audit.caller_role,
             "environment": audit.environment,

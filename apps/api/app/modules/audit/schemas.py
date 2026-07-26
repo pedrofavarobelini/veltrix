@@ -21,6 +21,9 @@ class AuditMetadata(BaseModel):
     # credential_identifier é um ID configurado ou fingerprint truncado.
     credential_id: str | None = None
     authenticated: bool = False
+    # Autenticado != identificado de forma inequívoca: identity_strength diz
+    # se a credencial prova o projeto (`registered`) ou não (`ambiguous`).
+    identity_strength: str | None = None
     project_id_authenticated: str | None = None
     caller_role: str | None = None
     environment: str | None = None

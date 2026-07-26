@@ -16,7 +16,12 @@ from fastapi.testclient import TestClient
 
 from app.core.config import settings
 from app.main import app
-from app.modules.caller_identity.schemas import CallerRole, OriginValidation
+from app.modules.caller_identity.schemas import (
+    SHARED_OR_UNKNOWN_PROJECT_ID,
+    CallerRole,
+    IdentityStrength,
+    OriginValidation,
+)
 from app.modules.caller_identity.service import (
     FLAG_CALLER_REGISTRY,
     FLAG_INTERNAL_API_KEY,
@@ -326,6 +331,7 @@ def test_implemented_but_not_homologated_provider_is_never_eligible(monkeypatch)
         assert definition.is_approved_for_production is False
 
         decision = provider_authorization_service.evaluate(
+            identity_strength=IdentityStrength.REGISTERED,
             project_id="finguard",
             caller_role=CallerRole.COMMON_CONSUMER,
             environment="development",
@@ -381,8 +387,9 @@ def test_allow_real_provider_false_preserves_safe_mode_block(
 
 
 def test_authorization_matrix_defaults_to_deny():
-    for project in ("projeto-inexistente", "unknown", ""):
+    for project in ("projeto-inexistente", "unknown", SHARED_OR_UNKNOWN_PROJECT_ID, ""):
         decision = provider_authorization_service.evaluate(
+            identity_strength=IdentityStrength.REGISTERED,
             project_id=project,
             caller_role=CallerRole.TECHNICAL_TOOL,
             environment="development",
@@ -392,12 +399,34 @@ def test_authorization_matrix_defaults_to_deny():
 
     for provider_id in ("claude", "openai", "deepseek", "grok"):
         decision = provider_authorization_service.evaluate(
+            identity_strength=IdentityStrength.REGISTERED,
             project_id="finguard",
             caller_role=CallerRole.COMMON_CONSUMER,
             environment="development",
             provider_id=provider_id,
         )
         assert decision.denied is True, provider_id
+
+    # Identidade ambígua é negada mesmo com projeto e ambiente registrados.
+    ambiguous = provider_authorization_service.evaluate(
+        identity_strength=IdentityStrength.AMBIGUOUS,
+        project_id="finguard",
+        caller_role=CallerRole.COMMON_CONSUMER,
+        environment="development",
+        provider_id="gemini",
+    )
+    assert ambiguous.denied is True
+    assert ambiguous.error_code == codes.CALLER_IDENTITY_AMBIGUOUS
+
+    # Produção não é herdada por wildcard: exige credencial registrada.
+    local_production = provider_authorization_service.evaluate(
+        identity_strength=IdentityStrength.LOCAL_TRUSTED,
+        project_id="finguard",
+        caller_role=CallerRole.TECHNICAL_TOOL,
+        environment="production",
+        provider_id="gemini",
+    )
+    assert local_production.denied is True
 
 
 # ---------------------------------------------------------------------------
@@ -467,8 +496,8 @@ def test_local_qa_remains_compatible(registry, provider_stub):
 def test_legacy_explicit_technical_selection_is_not_broken(
     monkeypatch, provider_stub
 ):
-    """Sem registro de callers (modo dev/local atual), o comportamento
-    preexistente de seleção explícita continua idêntico."""
+    """Sem autenticação configurada (modo dev/local), o operador local mantém
+    a seleção explícita — mas apenas para o próprio projeto `pedrocore`."""
     monkeypatch.delenv(FLAG_CALLER_REGISTRY, raising=False)
     monkeypatch.delenv(FLAG_INTERNAL_API_KEY, raising=False)
     _configure_keys(monkeypatch, gemini_api_key=FAKE_PROVIDER_KEY)
@@ -479,7 +508,7 @@ def test_legacy_explicit_technical_selection_is_not_broken(
         json={
             "message": "Teste técnico local",
             "provider": "gemini",
-            "origin_system": "finguard",
+            "origin_system": "pedrocore",
             "task_type": "assistant_chat",
             "allow_real_provider": True,
         },
@@ -487,6 +516,7 @@ def test_legacy_explicit_technical_selection_is_not_broken(
 
     assert data["provider_used"] == "gemini"
     assert calls == ["gemini"]
+    assert data["audit"]["identity_strength"] == IdentityStrength.LOCAL_TRUSTED.value
 
 
 # ---------------------------------------------------------------------------
@@ -585,8 +615,10 @@ def test_fingerprint_cannot_reconstruct_the_credential():
     assert len(fingerprint) == len("fp_") + 12
 
 
-def test_shared_credential_is_reported_as_not_enforced(monkeypatch, provider_stub):
-    """Uma única API key global não isola projetos — e isso é explícito."""
+def test_shared_credential_is_authenticated_but_never_identified(
+    monkeypatch, provider_stub
+):
+    """Uma única API key global autentica, mas não identifica projeto."""
     monkeypatch.delenv(FLAG_CALLER_REGISTRY, raising=False)
     monkeypatch.setenv(FLAG_INTERNAL_API_KEY, "chave-global-de-teste")
     provider_stub()
@@ -602,10 +634,15 @@ def test_shared_credential_is_reported_as_not_enforced(monkeypatch, provider_stu
         headers={AUTH_HEADER: "chave-global-de-teste"},
     )
     data = response.json()
+    audit = data["audit"]
 
     assert response.status_code == 200
-    assert data["audit"]["origin_validation"] == OriginValidation.NOT_ENFORCED.value
-    assert data["audit"]["credential_id"].startswith("internal-shared-fp_")
+    assert audit["authenticated"] is True
+    assert audit["identity_strength"] == IdentityStrength.AMBIGUOUS.value
+    assert audit["origin_validation"] == OriginValidation.NOT_TRUSTED.value
+    assert audit["project_id_authenticated"] == SHARED_OR_UNKNOWN_PROJECT_ID
+    assert audit["caller_role"] == CallerRole.COMMON_CONSUMER.value
+    assert audit["credential_id"].startswith("internal-shared-fp_")
     assert "chave-global-de-teste" not in json.dumps(data, ensure_ascii=False)
 
 

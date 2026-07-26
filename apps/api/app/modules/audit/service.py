@@ -34,8 +34,11 @@ class AuditService:
             criticality=criticality,
             credential_id=caller.credential_id if caller is not None else None,
             authenticated=caller.authenticated if caller is not None else False,
+            identity_strength=(
+                caller.identity_strength.value if caller is not None else None
+            ),
             project_id_authenticated=(
-                origin_claim.project_id if origin_claim is not None else None
+                origin_claim.identity_project_id if origin_claim is not None else None
             ),
             caller_role=caller.caller_role.value if caller is not None else None,
             environment=caller.environment if caller is not None else None,

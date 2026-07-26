@@ -95,11 +95,16 @@ def real_provider_spy(monkeypatch):
 
 
 def _payload(**overrides) -> dict:
+    # origin_system=pedrocore: sem credencial registrada, o caller é o operador
+    # local (`local_trusted`), autorizado apenas para o próprio projeto. Alegar
+    # `finguard` sem credencial registrada é negado desde
+    # MULTI-PROVIDER-SAFE-EVOLUTION (fix de credencial compartilhada) e está
+    # coberto em tests/test_shared_credential_privilege.py.
     payload = {
         "message": "Pergunta segura de caracterização.",
         "provider": "auto",
         "task_type": "assistant_chat",
-        "origin_system": "finguard",
+        "origin_system": "pedrocore",
         "allow_real_provider": True,
     }
     payload.update(overrides)

@@ -61,20 +61,40 @@ Variável de ambiente `PEDROCORE_CALLER_REGISTRY`, com JSON de entradas:
 - Registro presente porém ilegível é **fail-closed**: nenhuma identidade é
   derivada (`CALLER_REGISTRY_INVALID`).
 
+## Força de identidade
+
+> **Correção de segurança pós-revisão.** A primeira versão desta etapa dava
+> `caller_role=technical_tool` à API key global e derivava o `project_id` do
+> `origin_system` declarado, permitindo que a chave compartilhada alegasse
+> `finguard` e alcançasse o Gemini. Isso foi corrigido: ver
+> [[FIX_CREDENCIAL_COMPARTILHADA]].
+
+```
+autenticado != identificado de forma inequívoca != autorizado para provider real
+```
+
+| `identity_strength` | Quando | Projeto de identidade | Papel | Provider real |
+| --- | --- | --- | --- | --- |
+| `registered` | credencial em `PEDROCORE_CALLER_REGISTRY` | o da credencial | o da credencial | conforme matriz |
+| `local_trusted` | sem autenticação interna configurada (dev/local) | derivado da origem declarada | `technical_tool` | só `pedrocore`, fora de produção |
+| `ambiguous` | API key global compartilhada, ou sem credencial com registro ativo | `shared_or_unknown` | `common_consumer` | **nenhum** |
+
 ## Credencial compartilhada — limitação registrada
 
 Sem `PEDROCORE_CALLER_REGISTRY`, o PedroCore continua com **uma única API key
-global** (`PEDROCORE_INTERNAL_API_KEY`) ou sem autenticação interna em modo
-dev/local. Nesse caso:
+global** (`PEDROCORE_INTERNAL_API_KEY`). Ela permanece apenas como
+**compatibilidade transitória**: autentica a requisição, mas não prova
+projeto.
 
 > A infraestrutura de identidade foi implementada, porém o isolamento
 > operacional entre múltiplos projetos depende do provisionamento de
 > credenciais distintas.
 
-A identidade é marcada como compartilhada, a validação de origem é registrada
-como `not_enforced` e isso aparece explicitamente na auditoria e na
-observabilidade. `origin_system` **não** é usado para compensar uma credencial
-indistinguível: ele apenas continua sendo a alegação já existente.
+O caller ambíguo recebe `project_id = shared_or_unknown`, papel de consumidor
+comum e **nenhum provider real**. A alegação `origin_system` é registrada em
+auditoria como `not_trusted` e nunca convertida em identidade — ela continua
+alimentando apenas o Project Context de policy/tasks, exatamente como antes,
+sem conferir privilégio algum.
 
 ## Papéis
 
@@ -89,24 +109,29 @@ existente para ele.
 ## Matriz de autorização
 
 ```
-project_id + caller_role + environment + provider → permitido ou negado
+identity_strength + project_id + caller_role + environment + provider
+→ permitido ou negado
 ```
 
 Default **negar**. Combinações registradas:
 
-| Projeto | Papéis | Ambientes | Providers |
-| --- | --- | --- | --- |
-| `finguard`, `finguard-local` | `common_consumer`, `technical_tool` | dev/local/test/qa/staging/produção | `gemini` |
-| `pedrocore` | `technical_tool` | dev/local/test/qa/staging | `gemini` |
+| Identidade | Projeto | Papéis | Ambientes | Providers |
+| --- | --- | --- | --- | --- |
+| `registered` | `finguard`, `finguard-local` | `common_consumer`, `technical_tool` | dev/local/test/qa/staging | `gemini` |
+| `registered` | `finguard`, `finguard-local` | `common_consumer`, `technical_tool` | produção (regra própria) | `gemini` |
+| `registered`, `local_trusted` | `pedrocore` | `technical_tool` | dev/local/test/qa/staging | `gemini` |
 
-Tudo o mais é negado: Claude, OpenAI, DeepSeek e Grok não são autorizados para
-nenhum projeto, papel ou ambiente; origem desconhecida não alcança provider
-real; `pedrocore` em produção não está registrado de propósito.
+`ambiguous` não aparece em nenhuma regra. Produção tem regra própria e nunca
+é herdada por wildcard de ambiente. Tudo o mais é negado: Claude, OpenAI,
+DeepSeek e Grok não são autorizados para nenhuma identidade, projeto, papel ou
+ambiente; origem desconhecida não alcança provider real; `pedrocore` em
+produção não está registrado de propósito.
 
 ## Cadeia cumulativa para uma chamada real
 
 ```
 caller autenticado
++ identidade inequívoca (registered, ou local_trusted no próprio pedrocore)
 + project_id conhecido
 + papel permitido
 + ambiente permitido
