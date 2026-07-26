@@ -426,6 +426,9 @@ class ObservabilityService:
             return None
         return {
             "enabled": decision.enabled,
+            "routing_mode": decision.routing_mode.value,
+            "configuration_valid": decision.configuration_valid,
+            "configuration_reason": decision.configuration_reason,
             "policy_version": decision.policy_version,
             "project_id": decision.project_id,
             "task_type": decision.task_type,
@@ -435,6 +438,7 @@ class ObservabilityService:
             "model_effective": outcome.model,
             "would_differ_from_actual": decision.would_differ_from_actual,
             "selection_reason": decision.selection_reason,
+            "real_provider_attempt_count": outcome.audit.real_provider_attempt_count,
             "candidates_considered": [
                 {
                     "provider_id": candidate.provider_id,

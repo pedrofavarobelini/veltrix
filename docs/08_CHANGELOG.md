@@ -1,5 +1,31 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 5: roteamento enforced com chamada única
+
+Status: **motor implementado e validado; diversificação operacional bloqueada
+por homologação**.
+
+- O avaliador determinístico da Etapa 4 virou motor único para `shadow` e
+  `enforced`: candidatos, filtros, prioridades, motivos e desempate não são
+  duplicados.
+- Modos internos `legacy`, `shadow` e `enforced`, com default conservador,
+  rollback imediato, compatibilidade da flag shadow anterior e recuo seguro
+  para `legacy` quando a configuração é inválida. O payload não controla modo.
+- Em `enforced`, `provider=auto` aplica o primeiro binding elegível e executa
+  no máximo uma tentativa real. Falha vai para Mock; nenhum segundo provider
+  real é chamado.
+- Auditoria/observabilidade registram modo, versão, configuração, candidatos,
+  seleção e quantidade de tentativas sem alterar o contrato do FinGuard.
+- Cinco providers externos têm modelo explícito, mas somente
+  `gemini + gemini-3.5-flash` está homologado e autorizado. Claude, OpenAI,
+  DeepSeek e Grok permanecem fora do automático.
+- Veredito factual: motor enforced aprovado; **multi-provider automático
+  operacional: não**, por ausência de segundo par homologado.
+- Validação: direcionados `147 passed`; suíte completa
+  `529 passed, 7 skipped, 2 warnings`; eval harness `14/14`; Ruff aprovado;
+  zero chamadas externas reais. Ver
+  [[17-multi-provider-safe-evolution/ETAPA_5_ROTEAMENTO_AUTOMATICO_CHAMADA_UNICA]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix — homologação e configuração de modelos
 
 Status: **corrigido no commit `8c97004` com comportamento fail-closed**.

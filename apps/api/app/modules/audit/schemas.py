@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class AuditMetadata(BaseModel):
@@ -41,5 +43,16 @@ class AuditMetadata(BaseModel):
     shadow_selected_model: str | None = None
     shadow_would_differ: bool | None = None
     shadow_policy_version: str | None = None
+    # Etapa 5: a mesma política determinística opera em legacy/shadow/enforced.
+    routing_mode: str = "legacy"
+    routing_policy_version: str | None = None
+    routing_configuration_valid: bool = True
+    routing_configuration_reason: str | None = None
+    routing_selected_provider: str | None = None
+    routing_selected_model: str | None = None
+    routing_selection_reason: str | None = None
+    routing_candidates_considered: list[dict[str, Any]] = Field(default_factory=list)
+    routing_candidates_eliminated: list[dict[str, Any]] = Field(default_factory=list)
+    real_provider_attempt_count: int = 0
     authorization_result: str | None = None
     authorization_reason_code: str | None = None

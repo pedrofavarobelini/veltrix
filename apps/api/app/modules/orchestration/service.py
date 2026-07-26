@@ -28,6 +28,7 @@ from app.modules.provider_binding.schemas import SelectedProviderModel
 from app.modules.provider_binding.service import provider_binding_service
 from app.modules.providers.base import ProviderConfigError, ProviderExecutionError
 from app.modules.providers.local_model_provider import local_model_ready
+from app.modules.shadow_routing.schemas import EliminationReason, RoutingMode
 from app.modules.shadow_routing.service import shadow_routing_service
 from app.modules.report_memory.service import report_memory_service
 from app.modules.policy_enforcement.service import policy_enforcement_service
@@ -296,16 +297,38 @@ class OrchestrationService:
             )
             memory_used = memory_block is not None
 
-        # Etapa 3: provider e modelo são validados como unidade ANTES de
-        # qualquer adapter. Combinação incoerente nunca chega ao provider.
         selection_mode = self._selection_mode(requested_provider)
+
+        # Etapas 4/5: um único avaliador puro calcula a mesma política em
+        # shadow e enforced. Somente o pipeline lê a decisão em enforced.
+        routing_decision = shadow_routing_service.evaluate(
+            caller=caller,
+            identity_project_id=origin_claim.identity_project_id,
+            context_project_id=project.project_id,
+            task_type=strategy.task_type,
+            allow_real_provider=payload.allow_real_provider,
+            policy_allowed=policy.allowed,
+        )
+        enforced_auto = (
+            selection_mode == SELECTION_MODE_AUTO
+            and routing_decision.routing_mode is RoutingMode.ENFORCED
+        )
+        auto_candidate = (
+            routing_decision.selected_provider
+            if enforced_auto
+            else self._auto_candidate()
+        )
+
+        # Etapa 3: provider e modelo são validados como unidade ANTES de
+        # qualquer adapter. Em enforced o binding usa exatamente o candidato
+        # produzido pelo motor único.
         binding = provider_binding_service.resolve(
             requested_provider=requested_provider,
             requested_model=payload.model,
             selection_mode=selection_mode,
             caller_role=caller.caller_role,
             task_type=strategy.task_type,
-            auto_candidate=self._auto_candidate(),
+            auto_candidate=auto_candidate,
         )
         auto_binding_invalid = (
             selection_mode == SELECTION_MODE_AUTO
@@ -339,18 +362,7 @@ class OrchestrationService:
                 binding=binding,
             )
 
-        # Etapa 4: decisão planejada por política shadow. É calculada aqui e
-        # NUNCA lida pelo caminho de execução: não escolhe provider, não muda
-        # modelo, não chama adapter e não inicia fallback. Só observabilidade
-        # e auditoria a consomem.
-        shadow_decision = shadow_routing_service.evaluate(
-            caller=caller,
-            identity_project_id=origin_claim.identity_project_id,
-            context_project_id=project.project_id,
-            task_type=strategy.task_type,
-            allow_real_provider=payload.allow_real_provider,
-            policy_allowed=policy.allowed,
-        )
+        shadow_decision = routing_decision
 
         effective_artifacts, reader_items = self._apply_artifact_reader(payload)
         artifacts_result = artifact_service.process(effective_artifacts)
@@ -386,6 +398,7 @@ class OrchestrationService:
         safe_mode_blocked = False
         error: str | None = None
         error_code: str | None = None
+        real_provider_attempt_count = 0
         local_model_items: list[WarningItem] = []
         provider_items: list[WarningItem] = []
         if binding.warning_code:
@@ -438,9 +451,16 @@ class OrchestrationService:
                     )
                     fallback_used = True
                 else:
-                    provider, denial = self._select_auto_real_provider(
-                        caller=caller, project_id=origin_claim.identity_project_id
-                    )
+                    if enforced_auto:
+                        provider, denial = self._select_enforced_real_provider(
+                            routing_decision,
+                            caller=caller,
+                            project_id=origin_claim.identity_project_id,
+                        )
+                    else:
+                        provider, denial = self._select_auto_real_provider(
+                            caller=caller, project_id=origin_claim.identity_project_id
+                        )
                     if provider is None:
                         if denial is not None:
                             audit.authorization_result = denial.result.value
@@ -448,6 +468,10 @@ class OrchestrationService:
                             error = self._denial_message(denial)
                             error_code = (
                                 denial.error_code or codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT
+                            )
+                        elif enforced_auto:
+                            error_code, error = self._routing_unavailable(
+                                routing_decision
                             )
                         else:
                             error = PROVIDER_REAL_UNAVAILABLE_WARNING
@@ -461,6 +485,7 @@ class OrchestrationService:
                         audit.provider_selected = provider.name
                         audit.authorization_result = "allowed"
                         try:
+                            real_provider_attempt_count += 1
                             result = await self._generate_with_timeout(
                                 provider,
                                 payload,
@@ -541,6 +566,8 @@ class OrchestrationService:
                     fallback_used = True
                 else:
                     try:
+                        if provider.real_provider:
+                            real_provider_attempt_count += 1
                         result = await self._generate_with_timeout(
                             provider,
                             payload,
@@ -651,17 +678,39 @@ class OrchestrationService:
             qa_skeleton.can_advance if qa_skeleton is not None else None
         )
 
-        # Comparação por identificadores, depois da execução real: o candidato
-        # planejado nunca é executado para verificar a diferença.
+        # Comparação por identificadores, depois da execução real. Em shadow a
+        # decisão é só observada; em enforced ela já controlou a escolha.
         shadow_decision = shadow_routing_service.compare_with_actual(
             shadow_decision, actual_provider=provider_used, actual_model=model_used
         )
-        audit.shadow_enabled = shadow_decision.enabled
-        audit.shadow_selected_provider = shadow_decision.selected_provider
-        audit.shadow_selected_model = shadow_decision.selected_model
-        audit.shadow_would_differ = shadow_decision.would_differ_from_actual
+        audit.routing_mode = shadow_decision.routing_mode.value
+        audit.routing_policy_version = shadow_decision.policy_version
+        audit.routing_configuration_valid = shadow_decision.configuration_valid
+        audit.routing_configuration_reason = shadow_decision.configuration_reason
+        audit.routing_selected_provider = shadow_decision.selected_provider
+        audit.routing_selected_model = shadow_decision.selected_model
+        audit.routing_selection_reason = shadow_decision.selection_reason
+        audit.routing_candidates_considered = self._routing_candidates(
+            shadow_decision.candidates_considered
+        )
+        audit.routing_candidates_eliminated = self._routing_candidates(
+            shadow_decision.candidates_eliminated
+        )
+        audit.real_provider_attempt_count = real_provider_attempt_count
+
+        shadow_active = shadow_decision.routing_mode is RoutingMode.SHADOW
+        audit.shadow_enabled = shadow_active
+        audit.shadow_selected_provider = (
+            shadow_decision.selected_provider if shadow_active else None
+        )
+        audit.shadow_selected_model = (
+            shadow_decision.selected_model if shadow_active else None
+        )
+        audit.shadow_would_differ = (
+            shadow_decision.would_differ_from_actual if shadow_active else None
+        )
         audit.shadow_policy_version = (
-            shadow_decision.policy_version if shadow_decision.enabled else None
+            shadow_decision.policy_version if shadow_active else None
         )
 
         return OrchestrationOutcome(
@@ -793,6 +842,78 @@ class OrchestrationService:
                 return None, decision
             return provider, None
         return None, None
+
+    @staticmethod
+    def _select_enforced_real_provider(routing_decision, caller, project_id: str):
+        """Resolve somente o primeiro sobrevivente produzido pelo motor único."""
+        selected = routing_decision.selected_provider
+        if not selected:
+            return None, None
+
+        provider = provider_registry.get(selected)
+        if provider is None or not provider.real_provider or not provider.is_configured:
+            return None, None
+
+        decision = provider_authorization_service.evaluate(
+            identity_strength=caller.identity_strength,
+            project_id=project_id,
+            caller_role=caller.caller_role,
+            environment=caller.environment,
+            provider_id=provider.name,
+        )
+        if decision.denied:
+            return None, decision
+        return provider, None
+
+    @staticmethod
+    def _routing_unavailable(routing_decision) -> tuple[str, str]:
+        """Traduz a eliminação principal para o contrato estável existente."""
+        first_reason = next(
+            (
+                candidate.elimination_reason
+                for candidate in routing_decision.candidates_considered
+                if candidate.elimination_reason is not None
+            ),
+            None,
+        )
+        if first_reason is EliminationReason.AMBIGUOUS_IDENTITY:
+            return codes.CALLER_IDENTITY_AMBIGUOUS, PROVIDER_AMBIGUOUS_IDENTITY_WARNING
+        if first_reason is EliminationReason.SAFE_MODE_BLOCKED:
+            return codes.PROVIDER_REAL_BLOCKED, AUTO_PROVIDER_REAL_BLOCKED_WARNING
+        if first_reason is EliminationReason.NOT_AUTHORIZED:
+            return (
+                codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT,
+                PROVIDER_NOT_AUTHORIZED_WARNING,
+            )
+        if first_reason is EliminationReason.NOT_HOMOLOGATED:
+            return codes.PROVIDER_NOT_HOMOLOGATED, PROVIDER_NOT_AUTHORIZED_WARNING
+        if first_reason in {
+            EliminationReason.MODEL_INCOMPATIBLE,
+            EliminationReason.MODEL_NOT_HOMOLOGATED,
+            EliminationReason.MODEL_NOT_AUTHORIZED,
+        }:
+            return (
+                codes.MODEL_DEFAULT_UNAVAILABLE,
+                "Nenhum modelo elegível foi selecionado pela política automática.",
+            )
+        return codes.PROVIDER_REAL_UNAVAILABLE, PROVIDER_REAL_UNAVAILABLE_WARNING
+
+    @staticmethod
+    def _routing_candidates(candidates) -> list[dict[str, object]]:
+        return [
+            {
+                "provider_id": candidate.provider_id,
+                "model_id": candidate.model_id,
+                "priority": candidate.priority,
+                "eliminated": candidate.eliminated,
+                "elimination_reason": (
+                    candidate.elimination_reason.value
+                    if candidate.elimination_reason is not None
+                    else None
+                ),
+            }
+            for candidate in candidates
+        ]
 
     @staticmethod
     def _denial_message(decision) -> str:

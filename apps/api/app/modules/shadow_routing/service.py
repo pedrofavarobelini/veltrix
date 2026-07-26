@@ -1,4 +1,4 @@
-"""Serviço de política shadow (Etapa 4).
+"""Motor determinístico de roteamento (Etapas 4 e 5).
 
 Política determinística, sem qualquer sinal dinâmico:
 
@@ -6,8 +6,9 @@ Política determinística, sem qualquer sinal dinâmico:
 
 Não há score, custo, latência, health, estatística, aprendizado, A/B, ensemble,
 votação, execução paralela ou comparação de respostas. Nenhum provider é
-chamado: a decisão é calculada apenas a partir do catálogo, da identidade, da
-autorização e do binding já existentes.
+chamado pelo avaliador: a decisão é calculada apenas a partir do catálogo, da
+identidade, da autorização e do binding já existentes. O pipeline decide se a
+mesma decisão será apenas observada (`shadow`) ou aplicada (`enforced`).
 
 Claude e OpenAI aparecem como candidatos conhecidos e potencialmente
 priorizados, mas são eliminados pelo motivo correto — nunca executados e nunca
@@ -30,11 +31,13 @@ from app.modules.provider_catalog.service import provider_catalog_service
 from app.modules.shadow_routing.schemas import (
     POLICY_VERSION,
     EliminationReason,
+    RoutingMode,
     ShadowCandidate,
     ShadowRoutingDecision,
 )
 
 FLAG_SHADOW_ROUTING = "PEDROCORE_SHADOW_ROUTING_ENABLED"
+FLAG_ROUTING_MODE = "PEDROCORE_PROVIDER_ROUTING_MODE"
 
 # Prioridade estática, declarada em código e ordenada: nada é derivado de
 # métrica dinâmica. Tuplas garantem ordem estável, sem depender de dict/set.
@@ -54,13 +57,38 @@ _DEFAULT_PRIORITY: tuple[str, ...] = ("gemini", "claude", "openai")
 SELECTED_REASON = "Primeiro candidato da prioridade estática que passou por todos os filtros."
 NO_CANDIDATE_REASON = "Nenhum candidato sobreviveu aos filtros eliminatórios."
 DISABLED_REASON = "Shadow mode desativado."
+INVALID_MODE_REASON = (
+    "Modo de roteamento interno inválido; rollback seguro para legacy aplicado."
+)
 
 
 class ShadowRoutingService:
-    """Calcula a decisão planejada. Nunca executa e nunca altera a real."""
+    """Calcula a decisão única. Nunca executa provider por conta própria."""
 
     def enabled(self) -> bool:
-        return (os.environ.get(FLAG_SHADOW_ROUTING) or "").strip().lower() == "true"
+        mode, _, _ = self.resolve_mode()
+        return mode is not RoutingMode.LEGACY
+
+    def resolve_mode(self) -> tuple[RoutingMode, bool, str | None]:
+        """Resolve a fonte efetiva, mantendo compatibilidade com a flag antiga."""
+        raw = (os.environ.get(FLAG_ROUTING_MODE) or "").strip().lower()
+        if raw:
+            try:
+                return RoutingMode(raw), True, None
+            except ValueError:
+                return RoutingMode.LEGACY, False, INVALID_MODE_REASON
+
+        legacy_shadow = (
+            os.environ.get(FLAG_SHADOW_ROUTING) or ""
+        ).strip().lower() == "true"
+        return (
+            RoutingMode.SHADOW if legacy_shadow else RoutingMode.LEGACY,
+            True,
+            None,
+        )
+
+    def routing_mode(self) -> RoutingMode:
+        return self.resolve_mode()[0]
 
     def policy_version(self) -> str:
         return POLICY_VERSION
@@ -83,13 +111,17 @@ class ShadowRoutingService:
         allow_real_provider: bool,
         policy_allowed: bool = True,
     ) -> ShadowRoutingDecision:
-        """Decisão planejada; sem efeito algum sobre a execução real."""
-        if not self.enabled():
+        """Decisão pura; somente o pipeline pode aplicá-la em `enforced`."""
+        routing_mode, configuration_valid, configuration_reason = self.resolve_mode()
+        if routing_mode is RoutingMode.LEGACY:
             return ShadowRoutingDecision(
                 enabled=False,
+                routing_mode=routing_mode,
+                configuration_valid=configuration_valid,
+                configuration_reason=configuration_reason,
                 project_id=context_project_id,
                 task_type=task_type,
-                selection_reason=DISABLED_REASON,
+                selection_reason=configuration_reason or DISABLED_REASON,
             )
 
         candidates: list[ShadowCandidate] = []
@@ -122,6 +154,9 @@ class ShadowRoutingService:
         eliminated = tuple(item for item in candidates if item.eliminated)
         return ShadowRoutingDecision(
             enabled=True,
+            routing_mode=routing_mode,
+            configuration_valid=configuration_valid,
+            configuration_reason=configuration_reason,
             project_id=context_project_id,
             task_type=task_type,
             candidates_considered=tuple(candidates),
@@ -171,6 +206,8 @@ class ShadowRoutingService:
         is_real = definition.category is ProviderCategory.REAL_EXTERNAL
         if is_real and caller.identity_strength is IdentityStrength.AMBIGUOUS:
             return EliminationReason.AMBIGUOUS_IDENTITY, None
+        if is_real and not definition.authorized_for_auto:
+            return EliminationReason.NOT_AUTHORIZED, None
 
         decision = provider_authorization_service.evaluate(
             identity_strength=caller.identity_strength,

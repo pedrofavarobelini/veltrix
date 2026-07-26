@@ -4,6 +4,21 @@
 
 > Nota DOCFIX: o estado atual canônico está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]]. Seções históricas de planejamento foram preservadas, mas devem ser lidas como contexto da época em que foram escritas.
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION
+
+- **Etapas 1–4:** concluídas; identidade/autorização, catálogo explícito,
+  binding total e shadow mode estão implementados.
+- **Etapa 5:** motor `legacy`/`shadow`/`enforced` com chamada única concluído e
+  validado. Diversificação operacional bloqueada porque somente
+  `gemini + gemini-3.5-flash` está homologado/autorizado.
+- **Etapa 6:** health state e circuit breaker ainda não iniciados.
+- **Etapa 7:** fallback real controlado ainda não iniciado e condicionado ao
+  gate de timeout/concorrência.
+
+Não existe, neste checkpoint, fallback entre providers reais nem homologação
+de Claude/OpenAI. Ver
+[[../17-multi-provider-safe-evolution/ETAPA_5_ROTEAMENTO_AUTOMATICO_CHAMADA_UNICA]].
+
 ## Entregas concluídas
 
 ### V1 — Chat/API mock

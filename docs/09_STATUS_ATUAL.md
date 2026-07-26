@@ -8,7 +8,16 @@ Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag fi
 
 DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
 
-Correção mais recente concluída:
+Frente mais recente: Etapa 5 de
+`PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION`. O motor determinístico único opera
+em `legacy`, `shadow` e `enforced`; em enforced seleciona um binding elegível e
+executa no máximo uma tentativa real, com Mock seguro em falha. Somente
+`gemini + gemini-3.5-flash` está homologado/autorizado, portanto a
+diversificação automática operacional permanece bloqueada. Validação:
+`529 passed, 7 skipped, 2 warnings`, eval `14/14`, Ruff aprovado e zero
+chamadas externas reais.
+
+Correção anterior concluída:
 `PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix — homologação e configuração
 de modelos`, commit `8c97004`. `_MODEL_CATALOG` passou a ser a fonte explícita
 dos modelos reconhecidos; configuração runtime apenas escolhe um identificador
@@ -25,7 +34,9 @@ Gemini-only preservado.
 | Etapa 2 — identidade e autorização por projeto | concluída e corrigida |
 | Etapa 3 — provider/model binding | concluída e corrigida |
 | Etapa 4 — política determinística em shadow mode | concluída |
-| Etapa 5 | não iniciada |
+| Etapa 5 — roteamento enforced com chamada única | motor concluído; diversificação bloqueada por homologação |
+| Etapa 6 — health/circuit breaker | não iniciada |
+| Etapa 7 — fallback real controlado | não iniciada |
 
 | Capacidade | Veredito atual |
 | --- | --- |

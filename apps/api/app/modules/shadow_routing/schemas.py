@@ -1,11 +1,9 @@
-"""Política de roteamento em shadow mode (Etapa 4).
+"""Política determinística de roteamento (Etapas 4 e 5).
 
 Calcula, de forma determinística, qual provider/modelo SERIA escolhido por uma
-política multi-provider futura — sem nunca alterar a execução real, sem chamar
-provider algum e sem consultar uma segunda IA.
-
-A decisão é observação, não roteamento: o pipeline continua usando
-`AUTO_REAL_PROVIDER_CANDIDATES` (Gemini-only).
+política multi-provider. O mesmo resultado é usado como observação em
+``shadow`` e como escolha real em ``enforced``; o avaliador nunca chama
+provider algum.
 """
 
 from __future__ import annotations
@@ -14,7 +12,15 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-POLICY_VERSION = "shadow-static-priority-v1"
+POLICY_VERSION = "static-priority-v2"
+
+
+class RoutingMode(str, Enum):
+    """Modo interno; nunca é controlado pelo payload do consumidor."""
+
+    LEGACY = "legacy"
+    SHADOW = "shadow"
+    ENFORCED = "enforced"
 
 
 class EliminationReason(str, Enum):
@@ -47,11 +53,14 @@ class ShadowCandidate(BaseModel):
 
 
 class ShadowRoutingDecision(BaseModel):
-    """Decisão planejada pela política shadow, sem qualquer efeito real."""
+    """Decisão única da política, compatível com a projeção shadow existente."""
 
     model_config = ConfigDict(frozen=True, protected_namespaces=())
 
     enabled: bool = False
+    routing_mode: RoutingMode = RoutingMode.LEGACY
+    configuration_valid: bool = True
+    configuration_reason: str | None = None
     project_id: str = ""
     task_type: str = ""
     candidates_considered: tuple[ShadowCandidate, ...] = Field(default_factory=tuple)
