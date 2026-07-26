@@ -56,5 +56,16 @@ class AuditMetadata(BaseModel):
     real_provider_attempt_count: int = 0
     # Etapa 6: tentativas identificadas e estado do circuito antes/depois.
     provider_attempts: list[dict[str, Any]] = Field(default_factory=list)
+    # Etapa 7: fallback real é independente, default-off e no máximo secundário.
+    real_fallback_enabled: bool = False
+    real_fallback_attempted: bool = False
+    real_fallback_reason: str | None = None
+    real_fallback_candidates_considered: list[dict[str, Any]] = Field(
+        default_factory=list
+    )
+    real_fallback_candidates_eliminated: list[dict[str, Any]] = Field(
+        default_factory=list
+    )
+    real_provider_attempt_record_count: int = 0
     authorization_result: str | None = None
     authorization_reason_code: str | None = None

@@ -8,15 +8,16 @@ Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag fi
 
 DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
 
-Frente mais recente: Etapa 6 de
-`PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION`. Health state e circuit breaker
-default-off operam por `ambiente + provider + modelo`, com estados
-`closed`/`open`/`half_open`, cooldown monotônico e um único probe por processo.
-Timeout após dispatch é conclusão ambígua e abre o circuito, porque os adapters
-síncronos em thread não expõem cancelamento nem prova de término. O estado é
-volátil e não é coordenado entre workers. Fallback real ainda não existe.
-Validação: `553 passed, 7 skipped, 2 warnings`, eval `14/14`, Ruff aprovado e
-zero chamadas externas reais.
+Frente mais recente: Etapa 7 de
+`PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION`. O fallback real controlado existe
+somente para falha `provider_pre_dispatch` com prova de `not_dispatched`; é
+interno, default-off, limitado a `assistant_chat`/`ecosystem_assistant`, um
+secundário distinto e dois registros de tentativa. Timeout continua como
+conclusão ambígua e nunca dispara secundário. Como apenas
+`gemini + gemini-3.5-flash` está homologado/autorizado no catálogo real, o
+fallback multi-provider operacional permanece indisponível. Validação final é
+`570 passed, 7 skipped, 2 warnings`, eval `14/14`, Ruff aprovado e zero
+chamadas externas reais.
 
 Correção anterior concluída:
 `PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix — homologação e configuração
@@ -37,7 +38,7 @@ Gemini-only preservado.
 | Etapa 4 — política determinística em shadow mode | concluída |
 | Etapa 5 — roteamento enforced com chamada única | motor concluído; diversificação bloqueada por homologação |
 | Etapa 6 — health/circuit breaker | concluída localmente; default-off e por processo |
-| Etapa 7 — fallback real controlado | não iniciada |
+| Etapa 7 — fallback real controlado | mecanismo pre-dispatch concluído; default-off e sem segundo homologado |
 
 | Capacidade | Veredito atual |
 | --- | --- |
@@ -47,7 +48,7 @@ Gemini-only preservado.
 | Shadow mode | sim |
 | Multi-provider automático real | não |
 | Health/circuit breaker | sim, local/default-off |
-| Fallback entre providers reais | não |
+| Fallback entre providers reais | mecanismo pre-dispatch sim; operacional não |
 
 O único candidato automático real permanece Gemini. Claude e OpenAI não são
 executados automaticamente. Sem binding válido, `provider=auto` faz zero

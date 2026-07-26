@@ -108,6 +108,7 @@ provider secundário.
 - não existe cancelamento cooperativo nos adapters atuais;
 - circuito aberto reduz risco de uma nova chamada, mas não encerra uma chamada
   anterior;
-- não existe fallback entre providers reais neste commit;
+- não existe fallback entre providers reais neste commit; o mecanismo restrito
+  posterior está em [[ETAPA_7_FALLBACK_REAL_CONTROLADO]];
 - apenas `gemini + gemini-3.5-flash` permanece homologado e autorizado para o
   automático real.

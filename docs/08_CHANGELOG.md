@@ -1,5 +1,33 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 7: fallback real controlado
+
+Status: **mecanismo pre-dispatch implementado e validado; default-off e não
+operacional com o catálogo real atual**.
+
+- Gate concluiu que timeout não cancela nem prova o término do trabalho em
+  `asyncio.to_thread`; por isso `completion_ambiguous` nunca dispara secundário.
+- Allowlist de falhas exige `provider_pre_dispatch + not_dispatched +
+  external_dispatch=false`. Somente configuração detectada antes do adapter e
+  recusa do circuito antes do dispatch atendem ao contrato atual.
+- Kill switch interno `PEDROCORE_REAL_FALLBACK_ENABLED`, default `false`, sem
+  controle pelo consumidor. Tasks iniciais: `assistant_chat` e
+  `ecosystem_assistant`.
+- Secundário distinto passa novamente por todos os filtros, binding e circuito.
+  O primário é eliminado como `already_attempted`.
+- Fluxo estritamente sequencial, até dois registros de provider, sem terceiro,
+  paralelismo, background, hedging ou retry em loop. Falha secundária vai para
+  Mock.
+- Auditoria registra decisão secundária, IDs, ordinal, seleção, horários,
+  dispatch, certeza, classificação, circuito e motivo do fallback.
+- Claude/OpenAI permanecem não homologados; promoção existe somente por
+  monkeypatch nos testes. Portanto fallback multi-provider operacional continua
+  **não**.
+- Validação: focados `17 passed`; direcionados conjuntos `103 passed`; suíte
+  completa `570 passed, 7 skipped, 2 warnings`; eval `14/14`,
+  `risk_level="none"`; Ruff aprovado; zero chamadas externas reais. Ver
+  [[17-multi-provider-safe-evolution/ETAPA_7_FALLBACK_REAL_CONTROLADO]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 6: health state e circuit breaker
 
 Status: **implementada e validada localmente, desligada por padrão**.

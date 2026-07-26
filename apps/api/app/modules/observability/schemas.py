@@ -19,6 +19,9 @@ class ProviderAttempt(BaseModel):
     request_id: str | None = None
     attempt_id: str | None = None
     ordinal: int | None = None
+    selection_reason: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
     external_dispatch: bool | None = None
     completion_certainty: str | None = None
     failure_classification: str | None = None
@@ -26,6 +29,8 @@ class ProviderAttempt(BaseModel):
     circuit_state_after: str | None = None
     half_open_probe: bool = False
     duration_ms: float | None = None
+    fallback_eligible: bool = False
+    fallback_decision_reason: str | None = None
 
     @model_serializer(mode="plain")
     def serialize_attempt(self) -> dict[str, Any]:
@@ -42,6 +47,9 @@ class ProviderAttempt(BaseModel):
             "request_id": self.request_id,
             "attempt_id": self.attempt_id,
             "ordinal": self.ordinal,
+            "selection_reason": self.selection_reason,
+            "started_at": self.started_at,
+            "finished_at": self.finished_at,
             "external_dispatch": self.external_dispatch,
             "completion_certainty": self.completion_certainty,
             "failure_classification": self.failure_classification,
@@ -49,6 +57,8 @@ class ProviderAttempt(BaseModel):
             "circuit_state_after": self.circuit_state_after,
             "half_open_probe": self.half_open_probe,
             "duration_ms": self.duration_ms,
+            "fallback_eligible": self.fallback_eligible,
+            "fallback_decision_reason": self.fallback_decision_reason,
         }
 
 

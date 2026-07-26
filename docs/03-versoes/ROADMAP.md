@@ -14,14 +14,18 @@
 - **Etapa 6:** health state e circuit breaker concluídos e validados
   localmente. O mecanismo é default-off, volátil e isolado por processo;
   timeout é conclusão ambígua e abre o circuito.
-- **Etapa 7:** fallback real controlado ainda não iniciado e condicionado ao
-  gate de timeout/concorrência.
+- **Etapa 7:** mecanismo de fallback real controlado concluído para falhas
+  comprovadamente pre-dispatch, default-off e limitado a tasks de baixo risco.
+  Timeout ambíguo é excluído. Operação multi-provider continua bloqueada por
+  ausência de segundo provider/modelo homologado.
 
-Não existe, neste checkpoint, fallback entre providers reais nem homologação
-de Claude/OpenAI. Ver
+Não existe, neste checkpoint, fallback multi-provider operacional nem
+homologação de Claude/OpenAI. Ver
 [[../17-multi-provider-safe-evolution/ETAPA_5_ROTEAMENTO_AUTOMATICO_CHAMADA_UNICA]]
 e
-[[../17-multi-provider-safe-evolution/ETAPA_6_HEALTH_STATE_CIRCUIT_BREAKER]].
+[[../17-multi-provider-safe-evolution/ETAPA_6_HEALTH_STATE_CIRCUIT_BREAKER]]
+e
+[[../17-multi-provider-safe-evolution/ETAPA_7_FALLBACK_REAL_CONTROLADO]].
 
 ## Entregas concluídas
 

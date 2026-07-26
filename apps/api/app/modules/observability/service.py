@@ -494,6 +494,9 @@ class ObservabilityService:
                     request_id=item.get("request_id"),
                     attempt_id=item.get("attempt_id"),
                     ordinal=item.get("ordinal"),
+                    selection_reason=item.get("selection_reason"),
+                    started_at=item.get("started_at"),
+                    finished_at=item.get("finished_at"),
                     external_dispatch=item.get("external_dispatch"),
                     completion_certainty=item.get("completion_certainty"),
                     failure_classification=item.get("failure_classification"),
@@ -501,10 +504,12 @@ class ObservabilityService:
                     circuit_state_after=item.get("circuit_state_after"),
                     half_open_probe=bool(item.get("half_open_probe")),
                     duration_ms=item.get("duration_ms"),
+                    fallback_eligible=bool(item.get("fallback_eligible")),
+                    fallback_decision_reason=item.get("fallback_decision_reason"),
                 )
                 for item in structured
             ]
-            if outcome.fallback_used:
+            if outcome.fallback_used and outcome.provider_used == "mock":
                 attempts.append(
                     ProviderAttempt(
                         provider=outcome.provider_used,

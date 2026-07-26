@@ -36,7 +36,11 @@ from app.modules.provider_health.service import (
     ProviderCircuitOpenError,
     provider_health_service,
 )
-from app.modules.providers.base import ProviderConfigError, ProviderExecutionError
+from app.modules.providers.base import (
+    ProviderConfigError,
+    ProviderExecutionError,
+    ProviderResponse,
+)
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.shadow_routing.schemas import EliminationReason, RoutingMode
 from app.modules.shadow_routing.service import shadow_routing_service
@@ -127,6 +131,33 @@ PROVIDER_TIMEOUT_ENV = "PEDROCORE_PROVIDER_TIMEOUT_SECONDS"
 PROVIDER_TIMEOUT_WARNING = "Provider excedeu o tempo limite; fallback seguro aplicado."
 PROVIDER_CIRCUIT_OPEN_WARNING = (
     "Provider temporariamente bloqueado pelo circuit breaker; fallback seguro aplicado."
+)
+FLAG_REAL_FALLBACK_ENABLED = "PEDROCORE_REAL_FALLBACK_ENABLED"
+MAX_REAL_PROVIDER_ATTEMPTS = 2
+REAL_FALLBACK_ALLOWED_TASKS = frozenset(
+    {
+        "assistant_chat",
+        "ecosystem_assistant",
+    }
+)
+REAL_FALLBACK_SAFE_CLASSIFICATIONS = frozenset(
+    {FailureClassification.PROVIDER_PRE_DISPATCH.value}
+)
+REAL_FALLBACK_STARTED_REASON = (
+    "Secundário iniciado somente após falha pre-dispatch comprovadamente concluída."
+)
+REAL_FALLBACK_DISABLED_REASON = "Kill switch interno de fallback real está desligado."
+REAL_FALLBACK_TASK_BLOCKED_REASON = (
+    "Task fora da allowlist conservadora de fallback real."
+)
+REAL_FALLBACK_UNSAFE_FAILURE_REASON = (
+    "Falha não comprova ausência de chamada externa ativa; secundário bloqueado."
+)
+REAL_FALLBACK_NO_CANDIDATE_REASON = (
+    "Nenhum provider secundário distinto passou novamente por todos os filtros."
+)
+REAL_FALLBACK_MAX_ATTEMPTS_REASON = (
+    "Limite absoluto de duas tentativas de provider atingido; terceiro bloqueado."
 )
 
 # MULTI-PROVIDER-SAFE-EVOLUTION Etapa 2: provider real depende de autorização
@@ -390,6 +421,7 @@ class OrchestrationService:
             provider_selection_mode=selection_mode,
             binding=binding,
         )
+        audit.real_fallback_enabled = self._real_fallback_enabled()
 
         prompt = prompt_builder.build(
             PromptBuildInput(
@@ -505,6 +537,8 @@ class OrchestrationService:
                                 audit=audit,
                                 environment=caller.environment,
                                 ordinal=1,
+                                selection_reason=routing_decision.selection_reason,
+                                fallback_candidate=enforced_auto,
                             )
                             answer = result.answer
                             provider_used = result.provider
@@ -528,9 +562,52 @@ class OrchestrationService:
                                 provider_items.append(
                                     make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
                                 )
-                            answer, provider_used, model_used = await self._mock_fallback(
-                                payload, requested_provider, error, prompt.enriched_system_prompt
-                            )
+                            secondary_result = None
+                            if enforced_auto:
+                                try:
+                                    secondary_result = (
+                                        await self._try_enforced_real_fallback(
+                                            primary_provider=provider,
+                                            payload=payload,
+                                            enriched_system_prompt=(
+                                                prompt.enriched_system_prompt
+                                            ),
+                                            caller=caller,
+                                            identity_project_id=(
+                                                origin_claim.identity_project_id
+                                            ),
+                                            context_project_id=project.project_id,
+                                            task_type=strategy.task_type,
+                                            policy_allowed=policy.allowed,
+                                            audit=audit,
+                                        )
+                                    )
+                                except Exception:
+                                    audit.real_fallback_reason = (
+                                        "Falha interna ao avaliar o secundário; "
+                                        "Mock seguro aplicado."
+                                    )
+                                    if audit.provider_attempts:
+                                        audit.provider_attempts[-1][
+                                            "fallback_eligible"
+                                        ] = False
+                                        audit.provider_attempts[-1][
+                                            "fallback_decision_reason"
+                                        ] = audit.real_fallback_reason
+                            if secondary_result is not None:
+                                answer = secondary_result.answer
+                                provider_used = secondary_result.provider
+                                model_used = secondary_result.model
+                                audit.provider_selected = secondary_result.provider
+                            else:
+                                answer, provider_used, model_used = (
+                                    await self._mock_fallback(
+                                        payload,
+                                        requested_provider,
+                                        error,
+                                        prompt.enriched_system_prompt,
+                                    )
+                                )
                             fallback_used = True
             elif provider is None:
                 error = f"Provider não suportado: {requested_provider}"
@@ -595,6 +672,10 @@ class OrchestrationService:
                                 audit=audit,
                                 environment=caller.environment,
                                 ordinal=1,
+                                selection_reason=(
+                                    "Provider selecionado explicitamente pelo caller."
+                                ),
+                                fallback_candidate=False,
                             )
                         else:
                             result = await self._generate_with_timeout(
@@ -736,6 +817,7 @@ class OrchestrationService:
             for attempt in audit.provider_attempts
             if attempt.get("external_dispatch") is True
         )
+        audit.real_provider_attempt_record_count = len(audit.provider_attempts)
 
         shadow_active = shadow_decision.routing_mode is RoutingMode.SHADOW
         audit.shadow_enabled = shadow_active
@@ -991,6 +1073,157 @@ class OrchestrationService:
         except ValueError:
             return 30.0
 
+    @staticmethod
+    def _real_fallback_enabled() -> bool:
+        return (
+            os.environ.get(FLAG_REAL_FALLBACK_ENABLED) or ""
+        ).strip().lower() == "true"
+
+    @staticmethod
+    def _safe_for_real_fallback(attempt: dict[str, object]) -> bool:
+        return (
+            attempt.get("failure_classification")
+            in REAL_FALLBACK_SAFE_CLASSIFICATIONS
+            and attempt.get("completion_certainty")
+            == CompletionCertainty.NOT_DISPATCHED.value
+            and attempt.get("external_dispatch") is False
+        )
+
+    def _real_fallback_gate(self, audit, task_type: str) -> tuple[bool, str]:
+        attempt = audit.provider_attempts[-1] if audit.provider_attempts else None
+
+        if not audit.real_fallback_enabled:
+            reason = REAL_FALLBACK_DISABLED_REASON
+        elif task_type not in REAL_FALLBACK_ALLOWED_TASKS:
+            reason = REAL_FALLBACK_TASK_BLOCKED_REASON
+        elif len(audit.provider_attempts) >= MAX_REAL_PROVIDER_ATTEMPTS:
+            reason = REAL_FALLBACK_MAX_ATTEMPTS_REASON
+        elif attempt is None or not self._safe_for_real_fallback(attempt):
+            reason = REAL_FALLBACK_UNSAFE_FAILURE_REASON
+        else:
+            reason = REAL_FALLBACK_STARTED_REASON
+
+        allowed = reason == REAL_FALLBACK_STARTED_REASON
+        if attempt is not None:
+            attempt["fallback_eligible"] = allowed
+            attempt["fallback_decision_reason"] = reason
+        return allowed, reason
+
+    async def _try_enforced_real_fallback(
+        self,
+        *,
+        primary_provider,
+        payload: ChatRequest,
+        enriched_system_prompt: str,
+        caller,
+        identity_project_id: str,
+        context_project_id: str,
+        task_type: str,
+        policy_allowed: bool,
+        audit,
+    ) -> ProviderResponse | None:
+        """Tenta um único secundário após término pre-dispatch comprovado.
+
+        Não há loop, task em background, race ou hedging. O método só é chamado
+        depois que a tentativa primária retornou uma exception estruturada.
+        """
+        allowed, reason = self._real_fallback_gate(audit, task_type)
+        audit.real_fallback_reason = reason
+        if not allowed:
+            return None
+
+        secondary_decision = shadow_routing_service.evaluate(
+            caller=caller,
+            identity_project_id=identity_project_id,
+            context_project_id=context_project_id,
+            task_type=task_type,
+            allow_real_provider=payload.allow_real_provider,
+            policy_allowed=policy_allowed,
+            excluded_provider_ids=frozenset({primary_provider.name}),
+        )
+        audit.real_fallback_candidates_considered = self._routing_candidates(
+            secondary_decision.candidates_considered
+        )
+        audit.real_fallback_candidates_eliminated = self._routing_candidates(
+            secondary_decision.candidates_eliminated
+        )
+
+        if (
+            secondary_decision.selected_provider is None
+            or secondary_decision.selected_provider == primary_provider.name
+            or secondary_decision.selected_model is None
+        ):
+            audit.real_fallback_reason = REAL_FALLBACK_NO_CANDIDATE_REASON
+            audit.provider_attempts[-1]["fallback_eligible"] = False
+            audit.provider_attempts[-1][
+                "fallback_decision_reason"
+            ] = REAL_FALLBACK_NO_CANDIDATE_REASON
+            return None
+
+        secondary_binding = provider_binding_service.resolve(
+            requested_provider=AUTO_PROVIDER_NAME,
+            requested_model=None,
+            selection_mode=SELECTION_MODE_AUTO,
+            caller_role=caller.caller_role,
+            task_type=task_type,
+            auto_candidate=secondary_decision.selected_provider,
+        )
+        if (
+            secondary_binding.invalid
+            or secondary_binding.model_id is None
+            or secondary_binding.model_id != secondary_decision.selected_model
+        ):
+            audit.real_fallback_reason = REAL_FALLBACK_NO_CANDIDATE_REASON
+            audit.provider_attempts[-1]["fallback_eligible"] = False
+            audit.provider_attempts[-1][
+                "fallback_decision_reason"
+            ] = REAL_FALLBACK_NO_CANDIDATE_REASON
+            return None
+
+        secondary, denial = self._select_enforced_real_provider(
+            secondary_decision,
+            caller=caller,
+            project_id=identity_project_id,
+        )
+        if secondary is None or denial is not None:
+            audit.real_fallback_reason = REAL_FALLBACK_NO_CANDIDATE_REASON
+            audit.provider_attempts[-1]["fallback_eligible"] = False
+            audit.provider_attempts[-1][
+                "fallback_decision_reason"
+            ] = REAL_FALLBACK_NO_CANDIDATE_REASON
+            return None
+
+        audit.real_fallback_attempted = True
+        try:
+            result = await self._generate_real_attempt(
+                secondary,
+                payload,
+                enriched_system_prompt,
+                secondary_binding.model_id,
+                audit=audit,
+                environment=caller.environment,
+                ordinal=2,
+                selection_reason=secondary_decision.selection_reason,
+                fallback_candidate=False,
+            )
+        except Exception:
+            audit.real_fallback_reason = (
+                "Provider secundário falhou; Mock seguro aplicado sem terceira tentativa."
+            )
+            if audit.provider_attempts:
+                audit.provider_attempts[-1][
+                    "fallback_decision_reason"
+                ] = REAL_FALLBACK_MAX_ATTEMPTS_REASON
+                audit.provider_attempts[-1]["fallback_eligible"] = False
+            return None
+
+        audit.real_fallback_reason = "Provider secundário concluiu com sucesso."
+        audit.provider_attempts[-1][
+            "fallback_decision_reason"
+        ] = "Sucesso secundário encerrou o fluxo."
+        audit.provider_attempts[-1]["fallback_eligible"] = False
+        return result
+
     async def _generate_real_attempt(
         self,
         provider,
@@ -1001,6 +1234,8 @@ class OrchestrationService:
         audit,
         environment: str,
         ordinal: int,
+        selection_reason: str,
+        fallback_candidate: bool,
     ):
         """Executa uma tentativa identificada e atualiza o circuito.
 
@@ -1021,6 +1256,7 @@ class OrchestrationService:
             "ordinal": ordinal,
             "provider_id": provider.name,
             "model_id": model,
+            "selection_reason": selection_reason,
             "started_at": started_at,
             "circuit_state_before": before.state.value,
             "consecutive_failures_before": before.consecutive_failures,
@@ -1031,6 +1267,12 @@ class OrchestrationService:
             "failure_classification": None,
             "result": None,
             "fallback_eligible": False,
+            "fallback_classification_safe": False,
+            "fallback_decision_reason": (
+                None
+                if fallback_candidate
+                else "Fallback real não se aplica a esta seleção."
+            ),
         }
 
         def finish(
@@ -1047,6 +1289,7 @@ class OrchestrationService:
                     "completion_certainty": certainty.value,
                     "failure_classification": classification.value,
                     "result": result,
+                    "finished_at": datetime.now(timezone.utc).isoformat(),
                     "duration_ms": round((time.perf_counter() - started) * 1_000, 2),
                     "circuit_state_after": after.state.value,
                     "consecutive_failures_after": after.consecutive_failures,
@@ -1054,6 +1297,15 @@ class OrchestrationService:
                     "cooldown_remaining_after": after.cooldown_remaining_seconds,
                 }
             )
+            attempt["fallback_classification_safe"] = (
+                classification.value in REAL_FALLBACK_SAFE_CLASSIFICATIONS
+                and certainty is CompletionCertainty.NOT_DISPATCHED
+                and external_dispatch is False
+            )
+            if result == "success" and fallback_candidate:
+                attempt["fallback_decision_reason"] = (
+                    "Sucesso primário; provider secundário não necessário."
+                )
             audit.provider_attempts.append(attempt)
 
         if not permit.allowed:

@@ -1,14 +1,16 @@
-"""Motor determinístico de roteamento (Etapas 4 e 5).
+"""Motor determinístico de roteamento (Etapas 4 a 7).
 
 Política determinística, sem qualquer sinal dinâmico:
 
     filtros eliminatórios → prioridade estática por projeto/task → desempate
 
-Não há score, custo, latência, health, estatística, aprendizado, A/B, ensemble,
-votação, execução paralela ou comparação de respostas. Nenhum provider é
-chamado pelo avaliador: a decisão é calculada apenas a partir do catálogo, da
-identidade, da autorização e do binding já existentes. O pipeline decide se a
-mesma decisão será apenas observada (`shadow`) ou aplicada (`enforced`).
+Não há score, custo, latência histórica, health check externo, estatística,
+aprendizado, A/B, ensemble, votação, execução paralela ou comparação de
+respostas. O circuit breaker entra apenas como filtro eliminatório. Nenhum
+provider é chamado pelo avaliador: a decisão é calculada a partir do catálogo,
+da identidade, da autorização, do binding e do estado local já existentes. O
+pipeline decide se a mesma decisão será apenas observada (`shadow`) ou aplicada
+(`enforced`).
 
 Claude e OpenAI aparecem como candidatos conhecidos e potencialmente
 priorizados, mas são eliminados pelo motivo correto — nunca executados e nunca
@@ -112,6 +114,7 @@ class ShadowRoutingService:
         task_type: str,
         allow_real_provider: bool,
         policy_allowed: bool = True,
+        excluded_provider_ids: frozenset[str] = frozenset(),
     ) -> ShadowRoutingDecision:
         """Decisão pura; somente o pipeline pode aplicá-la em `enforced`."""
         routing_mode, configuration_valid, configuration_reason = self.resolve_mode()
@@ -139,6 +142,7 @@ class ShadowRoutingService:
                 task_type=task_type,
                 allow_real_provider=allow_real_provider,
                 policy_allowed=policy_allowed,
+                excluded_provider_ids=excluded_provider_ids,
             )
             candidate = ShadowCandidate(
                 provider_id=provider_id,
@@ -194,7 +198,11 @@ class ShadowRoutingService:
         task_type: str,
         allow_real_provider: bool,
         policy_allowed: bool,
+        excluded_provider_ids: frozenset[str],
     ) -> tuple[EliminationReason | None, str | None]:
+        if provider_id in excluded_provider_ids:
+            return EliminationReason.ALREADY_ATTEMPTED, None
+
         definition = provider_catalog_service.get(provider_id)
         if definition is None or not definition.registered:
             return EliminationReason.NOT_REGISTERED, None

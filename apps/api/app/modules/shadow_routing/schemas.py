@@ -1,4 +1,4 @@
-"""Política determinística de roteamento (Etapas 4 e 5).
+"""Política determinística de roteamento (Etapas 4 a 7).
 
 Calcula, de forma determinística, qual provider/modelo SERIA escolhido por uma
 política multi-provider. O mesmo resultado é usado como observação em
@@ -38,6 +38,7 @@ class EliminationReason(str, Enum):
     MODEL_NOT_AUTHORIZED = "model_not_authorized"
     CIRCUIT_OPEN = "circuit_open"
     HALF_OPEN_BUSY = "half_open_busy"
+    ALREADY_ATTEMPTED = "already_attempted"
     SAFE_MODE_BLOCKED = "safe_mode_blocked"
     PROJECT_POLICY_BLOCKED = "project_policy_blocked"
 
