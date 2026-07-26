@@ -199,6 +199,7 @@ class ObservabilityService:
             status=outcome.status,
             payload_sanitized=payload_sanitized,
             removed_fields=removed_fields,
+            caller=self._caller_projection(outcome),
             provider_requested=outcome.provider_requested,
             provider_selected=provider_selected,
             provider_effective=outcome.provider_used,
@@ -372,6 +373,28 @@ class ObservabilityService:
                 },
             )
         )
+
+    @staticmethod
+    def _caller_projection(outcome: Any) -> dict[str, Any]:
+        """Identidade autenticada vs. origem declarada, sem qualquer segredo.
+
+        `credential_id` é um ID configurado ou fingerprint truncado: nunca a
+        chave, nunca um hash reutilizável como credencial.
+        """
+        audit = outcome.audit
+        return {
+            "credential_id": audit.credential_id,
+            "authenticated": audit.authenticated,
+            "project_id_authenticated": audit.project_id_authenticated,
+            "caller_role": audit.caller_role,
+            "environment": audit.environment,
+            "origin_system_declared": audit.origin_system_declared,
+            "origin_validation": audit.origin_validation,
+            "provider_selection_mode": audit.provider_selection_mode,
+            "provider_selected": audit.provider_selected,
+            "authorization_result": audit.authorization_result,
+            "authorization_reason_code": audit.authorization_reason_code,
+        }
 
     @staticmethod
     def _selected_provider(outcome: Any) -> str | None:

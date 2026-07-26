@@ -25,6 +25,8 @@ class ExecutionRecord(BaseModel):
     status: str
     payload_sanitized: dict[str, Any] = Field(default_factory=dict)
     removed_fields: list[str] = Field(default_factory=list)
+    # Identidade autenticada do caller, sem segredos (Etapa 2).
+    caller: dict[str, Any] | None = None
     provider_requested: str | None = None
     provider_selected: str | None = None
     provider_effective: str | None = None

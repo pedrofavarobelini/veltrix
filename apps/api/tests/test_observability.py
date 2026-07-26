@@ -267,7 +267,7 @@ def test_ring_buffer_respects_configured_limit(monkeypatch):
 def test_unexpected_pipeline_error_is_recorded_sanitized(monkeypatch):
     from app.modules.orchestration.service import orchestration_service
 
-    async def fail(_payload):
+    async def fail(_payload, _caller=None):
         raise RuntimeError("provider falhou token=segredo-erro")
 
     monkeypatch.setattr(orchestration_service, "_execute_pipeline", fail)
@@ -281,6 +281,37 @@ def test_unexpected_pipeline_error_is_recorded_sanitized(monkeypatch):
     assert detail["status"] == "error"
     assert "segredo-erro" not in (detail["error"] or "")
     assert "[REDACTED]" in (detail["error"] or "")
+
+
+def test_execution_record_distinguishes_identity_from_declared_origin(monkeypatch):
+    """Etapa 2: a observabilidade separa identidade autenticada, origem
+    declarada, provider solicitado e provider efetivo — sem segredos."""
+    internal_key = "chave-interna-de-teste-nunca-real"
+    monkeypatch.setenv("PEDROCORE_INTERNAL_API_KEY", internal_key)
+
+    response = client.post(
+        "/api/orchestrate",
+        json={
+            "message": "Teste de identidade",
+            "provider": "mock",
+            "task_type": "assistant_chat",
+            "origin_system": "finguard",
+        },
+        headers={"X-PedroCore-Api-Key": internal_key},
+    )
+    assert response.status_code == 200
+
+    detail = _latest_detail()
+    caller = detail["caller"]
+
+    assert caller["authenticated"] is True
+    assert caller["origin_system_declared"] == "finguard"
+    assert caller["origin_validation"] == "not_enforced"
+    assert caller["project_id_authenticated"] == "finguard"
+    assert caller["caller_role"] == "technical_tool"
+    assert caller["provider_selection_mode"] == "explicit"
+    assert detail["provider_effective"] == "mock"
+    assert internal_key not in json.dumps(detail, ensure_ascii=False)
 
 
 def test_total_provider_failure_hook_is_qa_only_and_diagnosed(monkeypatch):

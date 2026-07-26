@@ -7,6 +7,11 @@ from app.modules.artifact_reader.service import artifact_reader_service
 from app.modules.artifacts.schemas import ArtifactInput, ArtifactProcessingResult
 from app.modules.artifacts.service import PATH_LIKE_METADATA_KEYS, artifact_service
 from app.modules.audit.service import audit_service
+from app.modules.caller_identity.schemas import (
+    AuthenticatedCallerContext,
+    OriginClaimResult,
+)
+from app.modules.caller_identity.service import caller_identity_service
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
@@ -18,6 +23,7 @@ from app.modules.orchestration.schemas import (
     AssistantResponsePayload,
     OrchestrationOutcome,
 )
+from app.modules.provider_authorization.service import provider_authorization_service
 from app.modules.providers.base import ProviderConfigError
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.report_memory.service import report_memory_service
@@ -106,6 +112,19 @@ PROVIDER_REAL_UNAVAILABLE_WARNING = (
 PROVIDER_TIMEOUT_ENV = "PEDROCORE_PROVIDER_TIMEOUT_SECONDS"
 PROVIDER_TIMEOUT_WARNING = "Provider excedeu o tempo limite; fallback seguro aplicado."
 
+# MULTI-PROVIDER-SAFE-EVOLUTION Etapa 2: provider real depende de autorização
+# explícita por projeto/papel/ambiente. Negar nunca vira chamada real: vira
+# fallback Mock seguro.
+PROVIDER_NOT_AUTHORIZED_WARNING = (
+    "Provider real não autorizado para o projeto autenticado neste ambiente; "
+    "fallback Mock seguro aplicado."
+)
+
+# Modos de seleção registrados na auditoria.
+SELECTION_MODE_AUTO = "auto"
+SELECTION_MODE_EXPLICIT = "explicit"
+SELECTION_MODE_LOCAL = "local_deterministic"
+
 # Resposta segura e conservadora usada por _mock_fallback(). Nunca deve conter
 # erro tecnico bruto, nome de classe de provider/exception, nem rotulo de
 # debug (ex.: "MockProvider", "mock-v1", "Modelo solicitado", texto de
@@ -132,9 +151,17 @@ class OrchestrationService:
     """Pipeline central: Task Router → Project Context → Policy → Artifacts →
     Provider (com safe mode) → QA Text Analyzer local → QA Response/Release Gate → Audit."""
 
-    async def execute(self, payload: ChatRequest) -> OrchestrationOutcome:
+    async def execute(
+        self,
+        payload: ChatRequest,
+        caller: AuthenticatedCallerContext | None = None,
+    ) -> OrchestrationOutcome:
         """Executa o pipeline real e publica somente uma projeção sanitizada no
         ring buffer local quando a observabilidade estiver explicitamente ativa.
+
+        `caller` é a identidade derivada da credencial autenticada pelo router.
+        Sem contexto explícito, aplica-se o contexto default (dev/local ou
+        fail-closed quando existe registro de callers configurado).
         """
         started = time.perf_counter()
         if observability_service.force_total_provider_failure(payload):
@@ -146,7 +173,7 @@ class OrchestrationService:
             )
             raise error
         try:
-            outcome = await self._execute_pipeline(payload)
+            outcome = await self._execute_pipeline(payload, caller)
         except Exception as exc:
             observability_service.record_exception(
                 payload, exc, (time.perf_counter() - started) * 1_000
@@ -158,13 +185,54 @@ class OrchestrationService:
         )
         return outcome
 
-    async def _execute_pipeline(self, payload: ChatRequest) -> OrchestrationOutcome:
+    async def _execute_pipeline(
+        self,
+        payload: ChatRequest,
+        caller: AuthenticatedCallerContext | None = None,
+    ) -> OrchestrationOutcome:
         started = time.perf_counter()
 
         strategy = task_router.resolve(payload.task_type)
-        project = project_context_resolver.resolve(payload.origin_system)
-        policy = project_context_resolver.evaluate_task_policy(project, strategy.task_type)
+        caller = caller or caller_identity_service.default_context()
+
+        # Identidade primeiro: a origem declarada no payload é apenas alegação.
+        declared_project = project_context_resolver.resolve(payload.origin_system)
+        origin_claim = caller_identity_service.validate_origin_claim(
+            caller, payload.origin_system, declared_project.project_id
+        )
         requested_provider = (payload.provider or settings.default_provider).lower()
+
+        if origin_claim.rejected:
+            return self._identity_blocked_outcome(
+                payload=payload,
+                strategy=strategy,
+                project=declared_project,
+                caller=caller,
+                origin_claim=origin_claim,
+                requested_provider=requested_provider,
+                error_code=codes.CALLER_ORIGIN_MISMATCH,
+                reason=origin_claim.reason or codes.CALLER_ORIGIN_MISMATCH,
+                started=started,
+            )
+
+        project = project_context_resolver.resolve(origin_claim.project_id)
+        policy = project_context_resolver.evaluate_task_policy(project, strategy.task_type)
+
+        restriction = caller_identity_service.evaluate_request_restrictions(
+            caller, requested_provider, payload.model
+        )
+        if restriction.blocked:
+            return self._identity_blocked_outcome(
+                payload=payload,
+                strategy=strategy,
+                project=project,
+                caller=caller,
+                origin_claim=origin_claim,
+                requested_provider=requested_provider,
+                error_code=restriction.error_code or codes.CALLER_PROVIDER_SELECTION_NOT_ALLOWED,
+                reason=restriction.reason or "Requisição não permitida para o papel do caller.",
+                started=started,
+            )
 
         enforcement = policy_enforcement_service.evaluate(
             raw_task_type=payload.task_type,
@@ -183,6 +251,8 @@ class OrchestrationService:
                 policy=policy,
                 enforcement=enforcement,
                 requested_provider=requested_provider,
+                caller=caller,
+                origin_claim=origin_claim,
                 started=started,
             )
 
@@ -214,6 +284,9 @@ class OrchestrationService:
             task_type=strategy.task_type,
             provider_requested=requested_provider,
             criticality=strategy.criticality,
+            caller=caller,
+            origin_claim=origin_claim,
+            provider_selection_mode=self._selection_mode(requested_provider),
         )
 
         prompt = prompt_builder.build(
@@ -268,18 +341,28 @@ class OrchestrationService:
                     )
                     fallback_used = True
                 else:
-                    provider = self._select_auto_real_provider()
+                    provider, denial = self._select_auto_real_provider(
+                        caller=caller, project_id=project.project_id
+                    )
                     if provider is None:
-                        error = PROVIDER_REAL_UNAVAILABLE_WARNING
-                        error_code = codes.PROVIDER_REAL_UNAVAILABLE
-                        provider_items.append(
-                            make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
-                        )
+                        if denial is not None:
+                            audit.authorization_result = denial.result.value
+                            audit.authorization_reason_code = denial.error_code
+                            error = PROVIDER_NOT_AUTHORIZED_WARNING
+                            error_code = (
+                                denial.error_code or codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT
+                            )
+                        else:
+                            error = PROVIDER_REAL_UNAVAILABLE_WARNING
+                            error_code = codes.PROVIDER_REAL_UNAVAILABLE
+                        provider_items.append(make_warning(error_code, error))
                         answer, provider_used, model_used = await self._mock_fallback(
                             payload, requested_provider, error, prompt.enriched_system_prompt
                         )
                         fallback_used = True
                     else:
+                        audit.provider_selected = provider.name
+                        audit.authorization_result = "allowed"
                         try:
                             result = await self._generate_with_timeout(
                                 provider, payload, prompt.enriched_system_prompt
@@ -329,28 +412,55 @@ class OrchestrationService:
                 )
                 fallback_used = True
             else:
-                try:
-                    result = await self._generate_with_timeout(
-                        provider, payload, prompt.enriched_system_prompt
+                # Seleção explícita autorizada: consentimento da requisição
+                # (allow_real_provider) já passou, mas a matriz de projeto
+                # ainda pode negar o provider real.
+                denial = None
+                if provider.real_provider:
+                    decision = provider_authorization_service.evaluate(
+                        project_id=project.project_id,
+                        caller_role=caller.caller_role,
+                        environment=caller.environment,
+                        provider_id=provider.name,
                     )
-                    answer = result.answer
-                    provider_used = result.provider
-                    model_used = result.model
-                except Exception as exc:
-                    error = str(exc)
-                    if isinstance(exc, TimeoutError):
-                        error = PROVIDER_TIMEOUT_WARNING
-                        error_code = codes.PROVIDER_TIMEOUT
-                        provider_items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
-                    elif provider.real_provider and isinstance(exc, ProviderConfigError):
-                        error_code = codes.PROVIDER_REAL_UNAVAILABLE
-                        provider_items.append(
-                            make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
-                        )
+                    audit.authorization_result = decision.result.value
+                    audit.authorization_reason_code = decision.error_code
+                    if decision.denied:
+                        denial = decision
+                    else:
+                        audit.provider_selected = provider.name
+
+                if denial is not None:
+                    error = PROVIDER_NOT_AUTHORIZED_WARNING
+                    error_code = denial.error_code or codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT
+                    provider_items.append(make_warning(error_code, error))
                     answer, provider_used, model_used = await self._mock_fallback(
                         payload, requested_provider, error, prompt.enriched_system_prompt
                     )
                     fallback_used = True
+                else:
+                    try:
+                        result = await self._generate_with_timeout(
+                            provider, payload, prompt.enriched_system_prompt
+                        )
+                        answer = result.answer
+                        provider_used = result.provider
+                        model_used = result.model
+                    except Exception as exc:
+                        error = str(exc)
+                        if isinstance(exc, TimeoutError):
+                            error = PROVIDER_TIMEOUT_WARNING
+                            error_code = codes.PROVIDER_TIMEOUT
+                            provider_items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
+                        elif provider.real_provider and isinstance(exc, ProviderConfigError):
+                            error_code = codes.PROVIDER_REAL_UNAVAILABLE
+                            provider_items.append(
+                                make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
+                            )
+                        answer, provider_used, model_used = await self._mock_fallback(
+                            payload, requested_provider, error, prompt.enriched_system_prompt
+                        )
+                        fallback_used = True
 
             analysis = qa_text_analyzer.analyze(
                 task_type=strategy.task_type,
@@ -535,18 +645,42 @@ class OrchestrationService:
             )
             return answer, provider_used, model_used, True, error, None, items
 
-    def _select_auto_real_provider(self):
+    def _select_auto_real_provider(self, caller, project_id: str):
         """Seleciona provider real disponivel para provider=auto.
 
         Nesta frente, a politica real autorizada comeca por Gemini. Outros
         providers reais continuam registrados para o chat do PedroCore, mas nao
         entram na decisao auto do contrato FinGuard ate frente propria.
+
+        A lista de candidatos permanece congelada; a autorização por projeto
+        apenas NEGA o candidato — nunca promove outro provider real no lugar
+        dele. Negado vira fallback Mock seguro, nunca segundo provider real.
+
+        Retorna (provider, decisão negada). Provider None com decisão None
+        significa "nenhum provider real configurado".
         """
         for provider_name in AUTO_REAL_PROVIDER_CANDIDATES:
             provider = provider_registry.get(provider_name)
-            if provider is not None and provider.real_provider and provider.is_configured:
-                return provider
-        return None
+            if provider is None or not provider.real_provider or not provider.is_configured:
+                continue
+            decision = provider_authorization_service.evaluate(
+                project_id=project_id,
+                caller_role=caller.caller_role,
+                environment=caller.environment,
+                provider_id=provider.name,
+            )
+            if decision.denied:
+                return None, decision
+            return provider, None
+        return None, None
+
+    @staticmethod
+    def _selection_mode(requested_provider: str) -> str:
+        if requested_provider in LOCAL_PROVIDERS:
+            return SELECTION_MODE_LOCAL
+        if requested_provider == AUTO_PROVIDER_NAME:
+            return SELECTION_MODE_AUTO
+        return SELECTION_MODE_EXPLICIT
 
     @staticmethod
     def _provider_timeout_seconds() -> float:
@@ -677,6 +811,78 @@ class OrchestrationService:
 
         return effective, items
 
+    def _identity_blocked_outcome(
+        self,
+        payload: ChatRequest,
+        strategy,
+        project,
+        caller: AuthenticatedCallerContext,
+        origin_claim: OriginClaimResult,
+        requested_provider: str,
+        error_code: str,
+        reason: str,
+        started: float,
+    ) -> OrchestrationOutcome:
+        """Bloqueio por identidade/autorização do caller.
+
+        Acontece ANTES de qualquer provider: origem incompatível com a
+        credencial autenticada, ou consumidor comum tentando escolher provider
+        ou modelo. Nenhum provider real é alcançado.
+        """
+        audit = audit_service.create(
+            origin_system=payload.origin_system,
+            task_type=strategy.task_type,
+            provider_requested=requested_provider,
+            criticality=strategy.criticality,
+            caller=caller,
+            origin_claim=origin_claim,
+            provider_selection_mode=self._selection_mode(requested_provider),
+        )
+        audit.fallback_used = False
+        audit.provider_used = "none"
+        audit.safe_mode_blocked = False
+        audit.status = "blocked"
+        audit.latency_ms = round((time.perf_counter() - started) * 1000, 2)
+        audit.can_advance = False
+        audit.authorization_result = "denied"
+        audit.authorization_reason_code = error_code
+
+        return OrchestrationOutcome(
+            answer=(
+                "Solicitação bloqueada pelo controle de identidade do PedroCore. "
+                f"Motivo: {reason}"
+            ),
+            provider_requested=requested_provider,
+            provider_used="none",
+            model="none",
+            mode=payload.mode,
+            fallback_used=False,
+            safe_mode_blocked=False,
+            error=reason,
+            error_code=error_code,
+            task_type=strategy.task_type,
+            origin_system=payload.origin_system,
+            task_criticality=strategy.criticality,
+            requires_structured_response=strategy.requires_structured_response,
+            response_style=strategy.response_style,
+            project_id=project.project_id,
+            project_read_only=project.read_only,
+            project_can_execute_commands=project.can_execute_commands,
+            project_can_write_files=project.can_write_files,
+            task_allowed_for_project=False,
+            artifact_count=0,
+            artifact_types=[],
+            artifact_warnings=[],
+            qa_skeleton=None,
+            release_gate=None,
+            visual_qa_analysis=None,
+            exploration=None,
+            warning_items=[make_warning(error_code, reason)],
+            audit=audit,
+            status="blocked",
+            blocked_reason=reason,
+        )
+
     def _policy_blocked_outcome(
         self,
         payload: ChatRequest,
@@ -686,6 +892,8 @@ class OrchestrationService:
         enforcement,
         requested_provider: str,
         started: float,
+        caller: AuthenticatedCallerContext | None = None,
+        origin_claim: OriginClaimResult | None = None,
     ) -> OrchestrationOutcome:
         """Bloqueio real por policy: nenhum provider, reader ou análise é executado."""
         audit = audit_service.create(
@@ -693,6 +901,9 @@ class OrchestrationService:
             task_type=strategy.task_type,
             provider_requested=requested_provider,
             criticality=strategy.criticality,
+            caller=caller,
+            origin_claim=origin_claim,
+            provider_selection_mode=self._selection_mode(requested_provider),
         )
         audit.fallback_used = False
         audit.provider_used = "none"

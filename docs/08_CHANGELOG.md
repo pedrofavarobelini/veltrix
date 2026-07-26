@@ -1,5 +1,18 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 2: identidade e autorização por projeto
+
+Status: **implementado, fail-closed, sem alteração do provider automático**.
+
+- Novos módulos `caller_identity` e `provider_authorization`: identidade do caller derivada da credencial autenticada (`project_id`, `caller_role`, `environment`, `credential_id` não secreto), com registro opcional `PEDROCORE_CALLER_REGISTRY`.
+- `origin_system` deixa de ser fonte soberana: vira alegação validada. Divergência é **rejeitada** (`CALLER_ORIGIN_MISMATCH`), nunca corrigida em silêncio.
+- Matriz `project_id + caller_role + environment + provider` com default **negar**; somente Gemini está registrado (FinGuard em todos os ambientes, PedroCore técnico fora de produção). Negar vira fallback Mock seguro, nunca segundo provider real.
+- Consumidor comum não escolhe provider nem envia modelo (`CALLER_PROVIDER_SELECTION_NOT_ALLOWED`, `CALLER_MODEL_SELECTION_NOT_ALLOWED`); ferramenta técnica continua sujeita à matriz, ao safe mode e à policy.
+- `allow_real_provider` preservado como **consentimento da requisição**: sozinho nunca libera provider real.
+- Auditoria e observabilidade distinguem identidade autenticada, origem declarada, provider solicitado, selecionado e efetivo — sem chave, token ou hash reutilizável.
+- Limitação registrada: com uma única API key global, o isolamento operacional entre projetos depende do provisionamento de credenciais distintas.
+- Testes: `tests/test_caller_identity_authorization.py` (+ regressão em `tests/test_observability.py`). Ver [[17-multi-provider-safe-evolution/ETAPA_2_IDENTIDADE_AUTORIZACAO]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 1: catálogo de providers
 
 Status: **implementado, passivo e sem alteração de roteamento**.

@@ -3,6 +3,7 @@ import os
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from app.modules.caller_identity.service import caller_identity_service
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import make_warning
@@ -41,20 +42,28 @@ def _auth_error(error_code: str, reason: str) -> JSONResponse:
 @router.post("/orchestrate", response_model=OrchestrateResponse)
 async def orchestrate(payload: ChatRequest, request: Request):
     configured_key = (os.environ.get(API_KEY_ENV_VAR) or "").strip()
+    provided_key = request.headers.get(API_KEY_HEADER)
     auth_warnings = []
 
     if configured_key:
-        provided_key = request.headers.get(API_KEY_HEADER)
         if provided_key is None:
             return _auth_error(codes.INTERNAL_AUTH_MISSING, AUTH_MISSING_REASON)
         if provided_key != configured_key:
             return _auth_error(codes.INTERNAL_AUTH_INVALID, AUTH_INVALID_REASON)
-    else:
+    elif not caller_identity_service.registry_configured():
         auth_warnings.append(
             make_warning(codes.INTERNAL_AUTH_NOT_CONFIGURED, AUTH_NOT_CONFIGURED_WARNING)
         )
 
-    outcome = await orchestration_service.execute(payload)
+    # Identidade derivada da credencial apresentada; o payload nunca a define.
+    resolution = caller_identity_service.resolve(provided_key)
+    if resolution.rejected:
+        return _auth_error(
+            resolution.error_code or codes.CALLER_CREDENTIAL_UNKNOWN,
+            resolution.reason or "Credencial não reconhecida pelo PedroCore.",
+        )
+
+    outcome = await orchestration_service.execute(payload, caller=resolution.context)
 
     warning_items = auth_warnings + outcome.warning_items
 
