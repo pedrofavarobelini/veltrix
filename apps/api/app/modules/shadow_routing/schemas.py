@@ -28,6 +28,8 @@ class EliminationReason(str, Enum):
     NOT_AUTHORIZED = "not_authorized"
     TASK_INCOMPATIBLE = "task_incompatible"
     MODEL_INCOMPATIBLE = "model_incompatible"
+    MODEL_NOT_HOMOLOGATED = "model_not_homologated"
+    MODEL_NOT_AUTHORIZED = "model_not_authorized"
     SAFE_MODE_BLOCKED = "safe_mode_blocked"
     PROJECT_POLICY_BLOCKED = "project_policy_blocked"
 

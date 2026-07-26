@@ -153,6 +153,130 @@ _STATIC_SPECS: dict[str, dict[str, Any]] = {
     },
 }
 
+# Catálogo explícito e imutável de modelos. Estes são exatamente os
+# identificadores já reconhecidos pelo código antes desta correção; valores de
+# settings/env/adapter.default_model apenas selecionam um identificador e nunca
+# criam uma entrada.
+_MODEL_CATALOG: tuple[ModelDefinition, ...] = (
+    ModelDefinition(
+        provider_id="gemini",
+        model_id="gemini-3.5-flash",
+        registered=True,
+        implemented=True,
+        homologated=True,
+        authorized=True,
+        default_for_provider=True,
+        notes="Modelo Gemini explicitamente homologado para o uso real atual.",
+    ),
+    ModelDefinition(
+        provider_id="claude",
+        model_id="claude-sonnet-4-5",
+        registered=True,
+        implemented=True,
+        homologated=False,
+        authorized=False,
+        default_for_provider=True,
+        notes="Modelo conhecido, ainda não homologado nem autorizado.",
+    ),
+    ModelDefinition(
+        provider_id="openai",
+        model_id="gpt-5.2-mini",
+        registered=True,
+        implemented=True,
+        homologated=False,
+        authorized=False,
+        default_for_provider=True,
+        notes="Modelo conhecido, ainda não homologado nem autorizado.",
+    ),
+    ModelDefinition(
+        provider_id="deepseek",
+        model_id="deepseek-chat",
+        registered=True,
+        implemented=True,
+        homologated=False,
+        authorized=False,
+        default_for_provider=True,
+        notes="Modelo conhecido, ainda não homologado nem autorizado.",
+    ),
+    ModelDefinition(
+        provider_id="grok",
+        model_id="grok-4.3",
+        registered=True,
+        implemented=True,
+        homologated=False,
+        authorized=False,
+        default_for_provider=True,
+        notes="Modelo conhecido, ainda não homologado nem autorizado.",
+    ),
+    ModelDefinition(
+        provider_id="mock",
+        model_id="mock-v1",
+        registered=True,
+        implemented=True,
+        homologated=True,
+        authorized=True,
+        default_for_provider=True,
+        excluded_tasks=("release_gate_review",),
+        notes="Modelo simulado fixo usado somente no fallback seguro.",
+    ),
+    ModelDefinition(
+        provider_id=LOCAL_QA_PROVIDER_ID,
+        model_id=LOCAL_QA_MODEL,
+        registered=True,
+        implemented=True,
+        homologated=True,
+        authorized=True,
+        default_for_provider=True,
+        notes="Modelo determinístico local fixo para análise de QA.",
+    ),
+    ModelDefinition(
+        provider_id="local_model",
+        model_id="local-model",
+        registered=True,
+        implemented=True,
+        homologated=False,
+        authorized=True,
+        default_for_provider=True,
+        excluded_tasks=("release_gate_review",),
+        notes="Modelo generativo local opt-in; nunca é provider externo real.",
+    ),
+)
+
+
+def _validate_model_catalog(
+    entries: tuple[ModelDefinition, ...],
+) -> tuple[ModelDefinition, ...]:
+    """Falha cedo se model_id/alias for ambíguo ou houver defaults duplicados."""
+    identifiers: dict[str, str] = {}
+    defaults: set[str] = set()
+
+    for entry in entries:
+        if entry.provider_id not in _STATIC_SPECS:
+            raise ValueError(
+                f"modelo {entry.model_id!r} aponta para provider desconhecido: "
+                f"{entry.provider_id!r}"
+            )
+        for identifier in (entry.model_id, *entry.aliases):
+            normalized = identifier.strip().lower()
+            owner = identifiers.get(normalized)
+            if owner is not None:
+                raise ValueError(
+                    "model_id/alias deve pertencer a exatamente um provider: "
+                    f"{identifier!r} aparece em {owner!r} e {entry.provider_id!r}"
+                )
+            identifiers[normalized] = entry.provider_id
+        if entry.default_for_provider:
+            if entry.provider_id in defaults:
+                raise ValueError(
+                    f"provider com mais de um default explícito: {entry.provider_id}"
+                )
+            defaults.add(entry.provider_id)
+
+    return entries
+
+
+_MODEL_CATALOG = _validate_model_catalog(_MODEL_CATALOG)
+
 
 class ProviderCatalogService:
     """Leitura tipada do catálogo. Nenhuma decisão de roteamento aqui."""
@@ -236,25 +360,29 @@ class ProviderCatalogService:
     # Modelos conhecidos — fonte única de verdade do binding (Etapa 3).
     # ------------------------------------------------------------------
     def models(self) -> tuple[ModelDefinition, ...]:
-        return tuple(
-            model
-            for definition in self.definitions()
-            for model in self._models_of(definition)
-        )
+        return _MODEL_CATALOG
 
     def models_for(self, provider_id: str | None) -> tuple[ModelDefinition, ...]:
-        definition = self.get(provider_id)
-        if definition is None:
-            return ()
-        return self._models_of(definition)
-
-    def find_model(self, model_id: str | None) -> tuple[ModelDefinition, ...]:
-        """Todos os providers que declaram este modelo (normalmente um só)."""
-        normalized = (model_id or "").strip().lower()
-        if not normalized:
+        normalized = (provider_id or "").strip().lower()
+        if normalized not in _STATIC_SPECS:
             return ()
         return tuple(
-            model for model in self.models() if model.model_id.lower() == normalized
+            model for model in _MODEL_CATALOG if model.provider_id == normalized
+        )
+
+    def find_model(self, model_id: str | None) -> ModelDefinition | None:
+        """Resolve um identificador canônico ou alias sem ambiguidade."""
+        normalized = (model_id or "").strip().lower()
+        if not normalized:
+            return None
+        return next(
+            (
+                model
+                for model in _MODEL_CATALOG
+                if model.model_id.lower() == normalized
+                or normalized in {alias.lower() for alias in model.aliases}
+            ),
+            None,
         )
 
     def default_model_for(self, provider_id: str | None) -> ModelDefinition | None:
@@ -263,36 +391,25 @@ class ProviderCatalogService:
             None,
         )
 
-    @staticmethod
-    def _models_of(definition: ProviderDefinition) -> tuple[ModelDefinition, ...]:
-        return tuple(
-            ModelDefinition(
-                model_id=model_id,
-                provider_id=definition.provider_id,
-                # Só o default declarado do provider é reconhecido/homologado
-                # pelo repositório; nenhum outro identificador é inventado.
-                homologated=definition.is_approved_for_production and index == 0,
-                default_for_provider=index == 0,
-                compatible_tasks=definition.compatible_tasks,
-                excluded_tasks=definition.excluded_tasks,
-                notes=definition.notes,
-            )
-            for index, model_id in enumerate(definition.known_models)
-        )
+    def configured_model_id_for(self, provider_id: str | None) -> str | None:
+        """Lê a seleção runtime sem criar ou homologar entrada de catálogo."""
+        normalized = (provider_id or "").strip().lower()
+        if normalized == LOCAL_QA_PROVIDER_ID:
+            return LOCAL_QA_MODEL
 
-    @staticmethod
-    def _known_models(provider_id: str, adapter: Any) -> tuple[str, ...]:
-        """Modelos reconhecidos pelo repositório para o adapter registrado.
+        spec = _STATIC_SPECS.get(normalized)
+        if spec is None or not spec.get("adapter"):
+            return None
+        adapter = provider_registry.get(normalized)
+        if adapter is None or adapter.name != normalized:
+            return None
 
-        `local_model` resolve o nome em runtime (PEDROCORE_LOCAL_MODEL_NAME),
-        preservando exatamente o comportamento do adapter local opt-in.
-        """
-        if provider_id == "local_model":
+        if normalized == "local_model":
             candidate = local_model_name()
         else:
             candidate = adapter.default_model
         candidate = (candidate or "").strip()
-        return (candidate,) if candidate else ()
+        return candidate or None
 
     # ------------------------------------------------------------------
     def _build(self, provider_id: str, spec: dict[str, Any]) -> ProviderDefinition:
@@ -305,12 +422,15 @@ class ProviderCatalogService:
             registered = True
             implemented = True
             configured = True
-            known_models: tuple[str, ...] = (LOCAL_QA_MODEL,)
         else:
             registered = matched
             implemented = matched
             configured = bool(matched and adapter.is_configured)
-            known_models = self._known_models(provider_id, adapter) if matched else ()
+        known_models = tuple(
+            model.model_id
+            for model in _MODEL_CATALOG
+            if model.provider_id == provider_id and model.registered
+        )
 
         health = spec.get("health", ProviderHealth.UNKNOWN)
         health_evidence = spec.get("health_evidence", HealthEvidence.NOT_EVALUATED)

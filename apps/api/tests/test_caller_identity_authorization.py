@@ -306,7 +306,7 @@ def test_unauthorized_technical_tool_is_rejected(registry, provider_stub, monkey
     assert calls == []
 
 
-def test_configured_but_unauthorized_provider_is_rejected(
+def test_configured_but_non_homologated_provider_model_is_blocked(
     registry, provider_stub, monkeypatch
 ):
     _configure_keys(monkeypatch, anthropic_api_key=FAKE_PROVIDER_KEY)
@@ -314,8 +314,9 @@ def test_configured_but_unauthorized_provider_is_rejected(
 
     data = _post(TOOL_CREDENTIAL, provider="claude", origin_system="pedrocore").json()
 
-    assert data["provider_used"] == "mock"
-    assert data["error_code"] == codes.PROVIDER_NOT_HOMOLOGATED
+    assert data["status"] == "blocked"
+    assert data["provider_used"] == "none"
+    assert data["error_code"] == codes.MODEL_NOT_AUTHORIZED
     assert calls == []
 
 

@@ -22,7 +22,7 @@ class GeminiProvider(BaseAIProvider):
         self,
         message: str,
         mode: str,
-        model: str | None = None,
+        model: str,
         system_prompt: str | None = None,
     ) -> ProviderResponse:
         if not self.is_configured:
@@ -32,7 +32,7 @@ class GeminiProvider(BaseAIProvider):
             from google import genai
 
             prompt = self.build_prompt(message, mode, system_prompt)
-            selected_model = model or self.default_model
+            selected_model = model
 
             def run_request() -> str:
                 client = genai.Client(api_key=settings.gemini_api_key)

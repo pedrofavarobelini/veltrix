@@ -22,7 +22,7 @@ class ClaudeProvider(BaseAIProvider):
         self,
         message: str,
         mode: str,
-        model: str | None = None,
+        model: str,
         system_prompt: str | None = None,
     ) -> ProviderResponse:
         if not self.is_configured:
@@ -32,7 +32,7 @@ class ClaudeProvider(BaseAIProvider):
             import anthropic
 
             prompt = self.build_prompt(message, mode, system_prompt)
-            selected_model = model or self.default_model
+            selected_model = model
 
             def run_request() -> str:
                 client = anthropic.Anthropic(api_key=settings.anthropic_api_key)

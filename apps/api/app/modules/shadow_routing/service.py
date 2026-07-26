@@ -189,8 +189,17 @@ class ShadowRoutingService:
             return EliminationReason.PROJECT_POLICY_BLOCKED, None
 
         model = provider_catalog_service.default_model_for(provider_id)
-        if model is None or not model.supports_task(task_type):
+        if (
+            model is None
+            or not model.registered
+            or not model.implemented
+            or not model.supports_task(task_type)
+        ):
             return EliminationReason.MODEL_INCOMPATIBLE, None
+        if is_real and not model.homologated:
+            return EliminationReason.MODEL_NOT_HOMOLOGATED, None
+        if is_real and not model.authorized:
+            return EliminationReason.MODEL_NOT_AUTHORIZED, None
 
         binding = provider_binding_service.resolve(
             requested_provider=provider_id,

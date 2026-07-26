@@ -78,20 +78,25 @@ class HealthEvidence(str, Enum):
 
 
 class ModelDefinition(BaseModel):
-    """Modelo conhecido, sempre vinculado a exatamente um provider.
+    """Entrada explícita de modelo, vinculada a exatamente um provider.
 
     O catálogo é a fonte única de verdade de modelos: o binding (Etapa 3) e a
     política shadow (Etapa 4) leem daqui em vez de manter listas paralelas.
+    Configuração runtime nunca cria ou homologa uma instância.
     """
 
     model_config = ConfigDict(frozen=True, protected_namespaces=())
 
     model_id: str
     provider_id: str
-    homologated: bool = False
-    default_for_provider: bool = False
+    registered: bool
+    implemented: bool
+    homologated: bool
+    authorized: bool
+    default_for_provider: bool
     compatible_tasks: tuple[str, ...] = (ANY_TASK,)
     excluded_tasks: tuple[str, ...] = ()
+    aliases: tuple[str, ...] = ()
     notes: str = ""
 
     @model_validator(mode="after")
@@ -102,6 +107,30 @@ class ModelDefinition(BaseModel):
             raise ValueError(
                 f"modelo sem provider não pode existir no catálogo: {self.model_id!r}"
             )
+        if not self.registered and (
+            self.implemented
+            or self.homologated
+            or self.authorized
+            or self.default_for_provider
+        ):
+            raise ValueError(
+                "modelo não registrado não pode estar implementado, homologado, "
+                f"autorizado ou ser default: {self.model_id}"
+            )
+        if not self.implemented and (
+            self.homologated or self.authorized or self.default_for_provider
+        ):
+            raise ValueError(
+                "modelo não implementado não pode estar homologado, autorizado "
+                f"ou ser default: {self.model_id}"
+            )
+        normalized_aliases = [alias.strip().lower() for alias in self.aliases]
+        if any(not alias for alias in normalized_aliases):
+            raise ValueError(f"alias vazio no modelo: {self.model_id}")
+        if len(normalized_aliases) != len(set(normalized_aliases)):
+            raise ValueError(f"aliases duplicados no modelo: {self.model_id}")
+        if self.model_id.strip().lower() in normalized_aliases:
+            raise ValueError(f"alias repete o model_id canônico: {self.model_id}")
         return self
 
     def supports_task(self, task_type: str) -> bool:

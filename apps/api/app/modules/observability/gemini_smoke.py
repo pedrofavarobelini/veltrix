@@ -3,9 +3,11 @@ import os
 import time
 
 from app.core.config import settings
+from app.modules.caller_identity.schemas import CallerRole
 from app.modules.observability.sanitizer import sanitize_text
 from app.modules.observability.schemas import GeminiSmokeRequest, GeminiSmokeResponse
 from app.modules.observability.service import observability_service
+from app.modules.provider_binding.service import provider_binding_service
 from app.modules.providers.registry import provider_registry
 from app.modules.real_features import service as real_features
 
@@ -56,6 +58,18 @@ class GeminiSmokeService:
         provider = provider_registry.get("gemini")
         if provider is None or not provider.is_configured:
             return self._blocked(payload, "Provider Gemini indisponível ou não configurado.")
+        binding = provider_binding_service.resolve(
+            requested_provider="gemini",
+            requested_model=None,
+            selection_mode="explicit",
+            caller_role=CallerRole.TECHNICAL_TOOL,
+            task_type="assistant_chat",
+        )
+        if binding.invalid or binding.model_id is None:
+            return self._blocked(
+                payload,
+                "Binding Gemini sem modelo default explícito, homologado e autorizado.",
+            )
 
         started = time.perf_counter()
         try:
@@ -63,7 +77,7 @@ class GeminiSmokeService:
                 provider.generate_response(
                     message=SYNTHETIC_PROMPT,
                     mode="resumido",
-                    model=None,
+                    model=binding.model_id,
                     system_prompt=(
                         "Smoke técnico sintético. Não solicite nem use dados financeiros, "
                         "relatórios, arquivos ou informações do usuário."

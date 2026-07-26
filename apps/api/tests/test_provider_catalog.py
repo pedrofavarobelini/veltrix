@@ -20,13 +20,17 @@ from app.modules.orchestration.service import (
 from app.modules.provider_catalog.schemas import (
     HealthEvidence,
     HomologationStatus,
+    ModelDefinition,
     ProviderAvailability,
     ProviderCapability,
     ProviderCategory,
     ProviderDefinition,
     ProviderHealth,
 )
-from app.modules.provider_catalog.service import provider_catalog_service
+from app.modules.provider_catalog.service import (
+    _validate_model_catalog,
+    provider_catalog_service,
+)
 from app.modules.providers.registry import provider_registry
 
 FAKE_KEY = "test-catalog-key-never-leak"
@@ -70,6 +74,79 @@ def test_local_qa_matches_the_pipeline_constants():
     assert definition.provider_id == LOCAL_PROVIDER_NAME
     assert definition.known_models == (LOCAL_PROVIDER_MODEL,)
     assert ProviderCapability.RELEASE_GATE_DECISION in definition.capabilities
+
+
+def test_model_catalog_entries_have_explicit_independent_states():
+    models = provider_catalog_service.models()
+    gemini = provider_catalog_service.find_model(settings.gemini_model)
+    claude = provider_catalog_service.find_model(settings.anthropic_model)
+
+    assert models
+    assert gemini is not None
+    assert gemini.registered is True
+    assert gemini.implemented is True
+    assert gemini.homologated is True
+    assert gemini.authorized is True
+    assert gemini.default_for_provider is True
+    assert claude is not None
+    assert claude.registered is True
+    assert claude.implemented is True
+    assert claude.homologated is False
+    assert claude.authorized is False
+
+
+def test_model_catalog_rejects_duplicate_canonical_ids_globally():
+    duplicated = (
+        ModelDefinition(
+            provider_id="gemini",
+            model_id="duplicado",
+            registered=True,
+            implemented=True,
+            homologated=False,
+            authorized=False,
+            default_for_provider=False,
+        ),
+        ModelDefinition(
+            provider_id="claude",
+            model_id="duplicado",
+            registered=True,
+            implemented=True,
+            homologated=False,
+            authorized=False,
+            default_for_provider=False,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="exatamente um provider"):
+        _validate_model_catalog(duplicated)
+
+
+def test_model_catalog_rejects_alias_collision_globally():
+    duplicated = (
+        ModelDefinition(
+            provider_id="gemini",
+            model_id="modelo-a",
+            registered=True,
+            implemented=True,
+            homologated=False,
+            authorized=False,
+            default_for_provider=False,
+            aliases=("alias-compartilhado",),
+        ),
+        ModelDefinition(
+            provider_id="claude",
+            model_id="modelo-b",
+            registered=True,
+            implemented=True,
+            homologated=False,
+            authorized=False,
+            default_for_provider=False,
+            aliases=("alias-compartilhado",),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="exatamente um provider"):
+        _validate_model_catalog(duplicated)
 
 
 def test_catalog_auto_authorization_matches_frozen_pipeline_list():

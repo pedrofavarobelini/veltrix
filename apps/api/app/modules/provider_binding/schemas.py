@@ -26,8 +26,8 @@ class ModelSource(str, Enum):
     EXPLICIT_TECHNICAL = "explicit_technical"
     # Modelo fixo de Mock / provider determinístico local.
     LOCAL_FIXED = "local_fixed"
-    # Nenhum modelo selecionado (provider desconhecido ou sem default válido):
-    # o adapter mantém o comportamento preexistente.
+    # Nenhum modelo selecionado (provider desconhecido ou binding inválido).
+    # Este estado nunca pode alcançar adapter real.
     NOT_SELECTED = "not_selected"
 
 
@@ -42,10 +42,12 @@ class ProviderModelBinding(BaseModel):
     model_config = ConfigDict(frozen=True, protected_namespaces=())
 
     provider_id: str
-    model_id: str | None
+    model_id: str
     adapter_id: str | None
     capabilities: tuple[ProviderCapability, ...] = ()
     compatible_tasks: tuple[str, ...] = ()
+    registered: bool = False
+    implemented: bool = False
     configured: bool = False
     homologated: bool = False
     # Autorização de MODELO (pertence ao provider, é reconhecido e homologado

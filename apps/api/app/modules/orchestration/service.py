@@ -26,7 +26,7 @@ from app.modules.orchestration.schemas import (
 from app.modules.provider_authorization.service import provider_authorization_service
 from app.modules.provider_binding.schemas import SelectedProviderModel
 from app.modules.provider_binding.service import provider_binding_service
-from app.modules.providers.base import ProviderConfigError
+from app.modules.providers.base import ProviderConfigError, ProviderExecutionError
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.shadow_routing.service import shadow_routing_service
 from app.modules.report_memory.service import report_memory_service
@@ -307,7 +307,24 @@ class OrchestrationService:
             task_type=strategy.task_type,
             auto_candidate=self._auto_candidate(),
         )
-        if binding.invalid:
+        auto_binding_invalid = (
+            selection_mode == SELECTION_MODE_AUTO
+            and binding.requested_model is None
+            and binding.invalid
+        )
+        requested_adapter = provider_registry.get(requested_provider)
+        safe_mode_preempts_default_binding = (
+            selection_mode == SELECTION_MODE_EXPLICIT
+            and payload.model is None
+            and not payload.allow_real_provider
+            and requested_adapter is not None
+            and requested_adapter.real_provider
+        )
+        if (
+            binding.invalid
+            and not auto_binding_invalid
+            and not safe_mode_preempts_default_binding
+        ):
             return self._identity_blocked_outcome(
                 payload=payload,
                 strategy=strategy,
@@ -375,6 +392,13 @@ class OrchestrationService:
             provider_items.append(
                 make_warning(binding.warning_code, binding.warning_reason or "")
             )
+        if auto_binding_invalid:
+            provider_items.append(
+                make_warning(
+                    binding.error_code or codes.PROVIDER_MODEL_BINDING_INVALID,
+                    binding.reason or "Binding default inválido para provider=auto.",
+                )
+            )
 
         if requested_provider in LOCAL_PROVIDERS:
             analysis = qa_text_analyzer.analyze(
@@ -396,7 +420,16 @@ class OrchestrationService:
             provider = provider_registry.get(requested_provider)
 
             if requested_provider == AUTO_PROVIDER_NAME:
-                if not payload.allow_real_provider:
+                if auto_binding_invalid:
+                    error = binding.reason or "Binding default inválido para provider=auto."
+                    error_code = (
+                        binding.error_code or codes.PROVIDER_MODEL_BINDING_INVALID
+                    )
+                    answer, provider_used, model_used = await self._mock_fallback(
+                        payload, requested_provider, error, prompt.enriched_system_prompt
+                    )
+                    fallback_used = True
+                elif not payload.allow_real_provider:
                     safe_mode_blocked = True
                     error = AUTO_PROVIDER_REAL_BLOCKED_WARNING
                     error_code = codes.PROVIDER_REAL_BLOCKED
@@ -798,13 +831,17 @@ class OrchestrationService:
         provider,
         payload: ChatRequest,
         enriched_system_prompt: str,
-        model: str | None = None,
+        model: str,
     ):
         """Executa o adapter com o modelo JÁ VALIDADO pelo binding.
 
         O adapter nunca recebe `payload.model` diretamente: só a combinação
         provider+modelo aprovada pelo PedroCore chega até aqui.
         """
+        if not isinstance(model, str) or not model.strip():
+            raise ProviderExecutionError(
+                "Adapter não pode executar sem model_id validado pelo PedroCore."
+            )
         return await asyncio.wait_for(
             provider.generate_response(
                 message=payload.message,

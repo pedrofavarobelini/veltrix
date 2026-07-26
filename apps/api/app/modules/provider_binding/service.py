@@ -102,6 +102,7 @@ class ProviderBindingService:
                 provider_id=auto_candidate,
                 selection_mode=selection_mode,
                 requested_provider=requested,
+                task_type=task_type,
             )
 
         # --------------------------------------------------------------
@@ -128,24 +129,34 @@ class ProviderBindingService:
                 provider_id=requested,
                 selection_mode=selection_mode,
                 requested_provider=requested,
+                task_type=task_type,
             )
 
         known = provider_catalog_service.find_model(model)
-        if not known:
+        if known is None:
             return invalid(codes.MODEL_UNKNOWN, MODEL_UNKNOWN_REASON)
 
-        owned = [item for item in known if item.provider_id == definition.provider_id]
-        if not owned:
+        if known.provider_id != definition.provider_id:
             return invalid(codes.MODEL_PROVIDER_MISMATCH, MODEL_PROVIDER_MISMATCH_REASON)
 
-        model_definition = owned[0]
+        model_definition = known
+        if not (model_definition.registered and model_definition.implemented):
+            return invalid(codes.MODEL_NOT_AUTHORIZED, MODEL_NOT_AUTHORIZED_REASON)
+        is_real = definition.category is ProviderCategory.REAL_EXTERNAL
         if (
-            definition.category is ProviderCategory.REAL_EXTERNAL
-            and not model_definition.homologated
+            is_real
+            and (
+                not definition.is_approved_for_production
+                or not model_definition.homologated
+                or not model_definition.authorized
+            )
         ):
             return invalid(codes.MODEL_NOT_AUTHORIZED, MODEL_NOT_AUTHORIZED_REASON)
 
-        if not model_definition.supports_task(task_type):
+        if not (
+            definition.supports_task(task_type)
+            and model_definition.supports_task(task_type)
+        ):
             return invalid(codes.MODEL_TASK_INCOMPATIBLE, MODEL_TASK_INCOMPATIBLE_REASON)
 
         source = (
@@ -170,8 +181,9 @@ class ProviderBindingService:
         provider_id: str | None,
         selection_mode: str,
         requested_provider: str,
+        task_type: str,
     ) -> SelectedProviderModel:
-        """Modelo derivado internamente: default declarado no catálogo."""
+        """Valida o default runtime contra o catálogo explícito."""
         definition = provider_catalog_service.get(provider_id)
         if definition is None:
             return SelectedProviderModel(
@@ -180,22 +192,71 @@ class ProviderBindingService:
                 model_source=ModelSource.NOT_SELECTED,
             )
 
-        model_definition = provider_catalog_service.default_model_for(provider_id)
-        if model_definition is None:
-            # Degradação honesta: sem default válido o adapter mantém o
-            # comportamento preexistente, e o motivo fica registrado.
+        configured_model_id = provider_catalog_service.configured_model_id_for(
+            provider_id
+        )
+        if configured_model_id is None:
             return SelectedProviderModel(
                 selection_mode=selection_mode,
                 requested_provider=requested_provider,
                 provider_id=definition.provider_id,
                 model_source=ModelSource.NOT_SELECTED,
-                warning_code=codes.MODEL_DEFAULT_UNAVAILABLE,
-                warning_reason=MODEL_DEFAULT_UNAVAILABLE_REASON,
+                validation_result=BindingValidation.INVALID,
+                error_code=codes.MODEL_DEFAULT_UNAVAILABLE,
+                reason=MODEL_DEFAULT_UNAVAILABLE_REASON,
+            )
+
+        model_definition = provider_catalog_service.find_model(configured_model_id)
+        if (
+            model_definition is None
+            or model_definition.provider_id != definition.provider_id
+            or not model_definition.default_for_provider
+            or not model_definition.registered
+            or not model_definition.implemented
+        ):
+            return SelectedProviderModel(
+                selection_mode=selection_mode,
+                requested_provider=requested_provider,
+                provider_id=definition.provider_id,
+                model_source=ModelSource.NOT_SELECTED,
+                validation_result=BindingValidation.INVALID,
+                error_code=codes.MODEL_DEFAULT_UNAVAILABLE,
+                reason=MODEL_DEFAULT_UNAVAILABLE_REASON,
+            )
+
+        is_real = definition.category is ProviderCategory.REAL_EXTERNAL
+        if is_real and (
+            not definition.is_approved_for_production
+            or not model_definition.homologated
+            or not model_definition.authorized
+        ):
+            return SelectedProviderModel(
+                selection_mode=selection_mode,
+                requested_provider=requested_provider,
+                provider_id=definition.provider_id,
+                model_source=ModelSource.NOT_SELECTED,
+                validation_result=BindingValidation.INVALID,
+                error_code=codes.MODEL_NOT_AUTHORIZED,
+                reason=MODEL_NOT_AUTHORIZED_REASON,
+            )
+
+        if is_real and not (
+            definition.supports_task(task_type)
+            and model_definition.supports_task(task_type)
+        ):
+            return SelectedProviderModel(
+                selection_mode=selection_mode,
+                requested_provider=requested_provider,
+                provider_id=definition.provider_id,
+                model_source=ModelSource.NOT_SELECTED,
+                validation_result=BindingValidation.INVALID,
+                error_code=codes.MODEL_TASK_INCOMPATIBLE,
+                reason=MODEL_TASK_INCOMPATIBLE_REASON,
             )
 
         source = (
             ModelSource.LOCAL_FIXED
-            if definition.category is not ProviderCategory.REAL_EXTERNAL
+            if not is_real
             else ModelSource.PROVIDER_DEFAULT
         )
         return SelectedProviderModel(
@@ -209,16 +270,17 @@ class ProviderBindingService:
 
     @staticmethod
     def _binding(definition, model_definition, source: ModelSource) -> ProviderModelBinding:
-        is_real = definition.category is ProviderCategory.REAL_EXTERNAL
         return ProviderModelBinding(
             provider_id=definition.provider_id,
             model_id=model_definition.model_id,
             adapter_id=definition.adapter,
             capabilities=definition.capabilities,
             compatible_tasks=definition.compatible_tasks,
+            registered=model_definition.registered,
+            implemented=model_definition.implemented,
             configured=definition.configured,
             homologated=model_definition.homologated,
-            authorized=model_definition.homologated or not is_real,
+            authorized=model_definition.authorized,
             default_for_provider=model_definition.default_for_provider,
             source=source,
         )

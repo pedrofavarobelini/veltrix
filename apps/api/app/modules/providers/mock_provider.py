@@ -17,10 +17,10 @@ class MockProvider(BaseAIProvider):
         self,
         message: str,
         mode: str,
-        model: str | None = None,
+        model: str,
         system_prompt: str | None = None
     ):
-        selected_model = model or self.default_model
+        selected_model = model
 
         if mode == "resumido":
             answer = (

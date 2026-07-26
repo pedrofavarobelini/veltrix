@@ -22,6 +22,7 @@ from app.modules.caller_identity.service import (
 )
 from app.modules.orchestration.schemas import AssistantResponsePayload, OrchestrateResponse
 from app.modules.orchestration.service import AUTO_REAL_PROVIDER_CANDIDATES
+from app.modules.provider_catalog import service as provider_catalog_module
 from app.modules.providers.base import ProviderExecutionError, ProviderResponse
 from app.modules.providers.claude_provider import ClaudeProvider
 from app.modules.providers.deepseek_provider import DeepSeekProvider
@@ -406,6 +407,58 @@ def test_model_incompatible_candidate_is_eliminated(all_configured, shadow_on, m
     }
 
     assert reasons["gemini"] is EliminationReason.MODEL_INCOMPATIBLE
+    assert decision.selected_provider is None
+
+
+def test_arbitrary_configured_model_is_not_known_or_homologated_in_shadow(
+    all_configured, shadow_on, monkeypatch
+):
+    monkeypatch.setattr(
+        GeminiProvider,
+        "default_model",
+        "gemini-modelo-arbitrario-nao-homologado",
+    )
+
+    decision = shadow_routing_service.evaluate(
+        caller=_context(),
+        identity_project_id="finguard",
+        context_project_id="finguard",
+        task_type="assistant_chat",
+        allow_real_provider=True,
+    )
+    gemini = next(
+        item for item in decision.candidates_considered if item.provider_id == "gemini"
+    )
+
+    assert gemini.elimination_reason is EliminationReason.MODEL_INCOMPATIBLE
+    assert gemini.model_id is None
+    assert decision.selected_provider is None
+
+
+def test_known_but_non_homologated_model_is_eliminated_explicitly(
+    all_configured, shadow_on, monkeypatch
+):
+    entries = tuple(
+        entry.model_copy(update={"homologated": False, "authorized": False})
+        if entry.provider_id == "gemini"
+        else entry
+        for entry in provider_catalog_module._MODEL_CATALOG
+    )
+    monkeypatch.setattr(provider_catalog_module, "_MODEL_CATALOG", entries)
+
+    decision = shadow_routing_service.evaluate(
+        caller=_context(),
+        identity_project_id="finguard",
+        context_project_id="finguard",
+        task_type="assistant_chat",
+        allow_real_provider=True,
+    )
+    gemini = next(
+        item for item in decision.candidates_considered if item.provider_id == "gemini"
+    )
+
+    assert gemini.elimination_reason is EliminationReason.MODEL_NOT_HOMOLOGATED
+    assert gemini.model_id is None
     assert decision.selected_provider is None
 
 

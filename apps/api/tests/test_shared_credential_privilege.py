@@ -303,10 +303,11 @@ def test_registered_technical_credential_keeps_explicit_selection_inside_matrix(
     assert calls == ["gemini"]
 
     calls.clear()
-    # Fora da matriz (provider não homologado) continua negado.
+    # Modelo/provider não homologado é bloqueado antes de qualquer adapter.
     denied = _post(FINGUARD_TOOL_KEY, provider="claude").json()
-    assert denied["provider_used"] == "mock"
-    assert denied["error_code"] == codes.PROVIDER_NOT_HOMOLOGATED
+    assert denied["status"] == "blocked"
+    assert denied["provider_used"] == "none"
+    assert denied["error_code"] == codes.MODEL_NOT_AUTHORIZED
     assert calls == []
 
 

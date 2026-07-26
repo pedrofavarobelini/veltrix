@@ -17,7 +17,7 @@ client = TestClient(app)
 class FakeGemini(BaseAIProvider):
     name = "gemini"
     label = "Gemini fake seguro"
-    default_model = "gemini-fake-v1"
+    default_model = settings.gemini_model
     real_provider = True
 
     def __init__(self, *, configured: bool = True, fail: bool = False) -> None:
@@ -36,7 +36,7 @@ class FakeGemini(BaseAIProvider):
         return ProviderResponse(
             answer="OK",
             provider=self.name,
-            model=self.default_model,
+            model=_kwargs["model"],
         )
 
 

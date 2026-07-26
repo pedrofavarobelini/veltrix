@@ -28,6 +28,8 @@ from app.modules.orchestration.service import (
 )
 from app.modules.provider_binding.schemas import BindingValidation, ModelSource
 from app.modules.provider_binding.service import provider_binding_service
+from app.modules.provider_catalog import service as provider_catalog_module
+from app.modules.provider_catalog.schemas import ModelDefinition
 from app.modules.provider_catalog.service import provider_catalog_service
 from app.modules.providers.base import ProviderExecutionError, ProviderResponse
 from app.modules.providers.claude_provider import ClaudeProvider
@@ -144,6 +146,80 @@ def test_each_known_model_belongs_to_exactly_one_provider(all_configured):
 
     for model_id, providers in owners.items():
         assert len(providers) == 1, (model_id, providers)
+
+
+def test_arbitrary_adapter_default_does_not_create_or_homologate_model(
+    monkeypatch, registry, all_configured, adapter_spy
+):
+    calls = adapter_spy()
+    arbitrary = "gemini-modelo-arbitrario-nao-homologado"
+    before = provider_catalog_service.models_for("gemini")
+    monkeypatch.setattr(GeminiProvider, "default_model", arbitrary)
+
+    after = provider_catalog_service.models_for("gemini")
+    configured_binding = provider_binding_service.resolve(
+        requested_provider="gemini",
+        requested_model=None,
+        selection_mode="explicit",
+        caller_role=CallerRole.TECHNICAL_TOOL,
+        task_type="assistant_chat",
+    )
+    configured = _post(PEDROCORE_TOOL_KEY, provider="gemini").json()
+    explicit = _post(
+        PEDROCORE_TOOL_KEY,
+        provider="gemini",
+        model=arbitrary,
+    ).json()
+
+    assert after == before
+    assert provider_catalog_service.find_model(arbitrary) is None
+    assert configured_binding.invalid is True
+    assert configured_binding.error_code == codes.MODEL_DEFAULT_UNAVAILABLE
+    assert configured["status"] == "blocked"
+    assert configured["error_code"] == codes.MODEL_DEFAULT_UNAVAILABLE
+    assert explicit["status"] == "blocked"
+    assert explicit["error_code"] == codes.MODEL_UNKNOWN
+    assert calls == []
+
+
+def test_provider_homologation_does_not_homologate_its_model(
+    monkeypatch, registry, all_configured, adapter_spy
+):
+    calls = adapter_spy()
+    entries = tuple(
+        entry.model_copy(update={"homologated": False, "authorized": False})
+        if entry.provider_id == "gemini"
+        else entry
+        for entry in provider_catalog_module._MODEL_CATALOG
+    )
+    monkeypatch.setattr(provider_catalog_module, "_MODEL_CATALOG", entries)
+
+    assert provider_catalog_service.get("gemini").is_approved_for_production is True
+    assert provider_catalog_service.default_model_for("gemini").homologated is False
+
+    data = _post(
+        PEDROCORE_TOOL_KEY,
+        provider="gemini",
+        model=settings.gemini_model,
+    ).json()
+
+    assert data["status"] == "blocked"
+    assert data["error_code"] == codes.MODEL_NOT_AUTHORIZED
+    assert calls == []
+
+
+def test_catalog_position_does_not_determine_model_homologation():
+    first = ModelDefinition(
+        provider_id="provider-de-teste",
+        model_id="modelo-sintetico-nao-produtivo",
+        registered=True,
+        implemented=True,
+        homologated=False,
+        authorized=False,
+        default_for_provider=False,
+    )
+
+    assert (first,)[0].homologated is False
 
 
 def test_every_provider_default_model_comes_from_the_catalog(all_configured):
@@ -391,6 +467,7 @@ def test_no_request_calls_two_real_adapters(registry, all_configured, adapter_sp
             overrides["model"] = model
         _post(PEDROCORE_TOOL_KEY, **overrides)
         assert len(calls) <= 1, (provider, model, calls)
+        assert all(bound_model is not None for _, bound_model in calls)
 
 
 # ---------------------------------------------------------------------------
@@ -489,21 +566,37 @@ def test_binding_resolution_is_deterministic_and_typed(all_configured):
     assert invalid.model_id is None
 
 
-def test_provider_without_valid_default_model_degrades_without_blocking(
+def test_explicit_provider_without_valid_default_blocks_before_adapter(
     monkeypatch, registry, adapter_spy
 ):
-    """Sem default válido o adapter mantém o comportamento preexistente, e o
-    motivo fica registrado — nunca um bloqueio novo em fluxo interno."""
+    """Seleção explícita sem default válido bloqueia antes do adapter."""
     monkeypatch.setattr(settings, "gemini_api_key", FAKE_PROVIDER_KEY)
-    # O default declarado vive no adapter (lido de settings na importação).
     monkeypatch.setattr(GeminiProvider, "default_model", "")
     calls = adapter_spy()
 
     data = _post(PEDROCORE_TOOL_KEY, provider="gemini").json()
 
+    assert data["status"] == "blocked"
+    assert data["provider_used"] == "none"
+    assert data["error_code"] == codes.MODEL_DEFAULT_UNAVAILABLE
+    assert calls == []
+
+
+def test_auto_without_valid_default_uses_only_safe_mock(
+    monkeypatch, registry, adapter_spy
+):
+    monkeypatch.setattr(settings, "gemini_api_key", FAKE_PROVIDER_KEY)
+    monkeypatch.setattr(GeminiProvider, "default_model", "")
+    calls = adapter_spy()
+
+    data = _post(PEDROCORE_TOOL_KEY, provider="auto").json()
+
     assert data["status"] == "ok"
+    assert data["provider_used"] == "mock"
+    assert data["fallback_used"] is True
+    assert data["error_code"] == codes.MODEL_DEFAULT_UNAVAILABLE
     assert codes.MODEL_DEFAULT_UNAVAILABLE in data["warning_codes"]
-    assert calls == [("gemini", None)]
+    assert calls == []
 
 
 # ---------------------------------------------------------------------------

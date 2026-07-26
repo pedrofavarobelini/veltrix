@@ -5,6 +5,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.modules.provider_catalog import service as provider_catalog_module
+from app.modules.provider_catalog.schemas import (
+    HomologationStatus,
+    ModelDefinition,
+    ProviderCategory,
+)
 from app.modules.providers.base import BaseAIProvider, ProviderResponse
 from app.modules.providers.registry import provider_registry
 from app.modules.observability.sanitizer import sanitize_payload
@@ -134,6 +140,31 @@ def test_provider_timeout_uses_visible_safe_fallback(monkeypatch):
             return ProviderResponse(answer="tarde", provider=self.name, model=self.default_model)
 
     monkeypatch.setitem(provider_registry._providers, "slow_qa", SlowProvider())
+    monkeypatch.setitem(
+        provider_catalog_module._STATIC_SPECS,
+        "slow_qa",
+        {
+            "adapter": "SlowProvider",
+            "category": ProviderCategory.SIMULATED,
+            "homologation": HomologationStatus.HOMOLOGATED_INTERNAL,
+        },
+    )
+    monkeypatch.setattr(
+        provider_catalog_module,
+        "_MODEL_CATALOG",
+        (
+            *provider_catalog_module._MODEL_CATALOG,
+            ModelDefinition(
+                provider_id="slow_qa",
+                model_id="slow-qa-v1",
+                registered=True,
+                implemented=True,
+                homologated=True,
+                authorized=True,
+                default_for_provider=True,
+            ),
+        ),
+    )
     monkeypatch.setenv("PEDROCORE_PROVIDER_TIMEOUT_SECONDS", "0.05")
 
     response = client.post(

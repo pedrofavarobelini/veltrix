@@ -105,7 +105,7 @@ class LocalModelProvider(BaseAIProvider):
         self,
         message: str,
         mode: str,
-        model: str | None = None,
+        model: str,
         system_prompt: str | None = None,
     ) -> ProviderResponse:
         if not local_model_ready():
@@ -120,7 +120,7 @@ class LocalModelProvider(BaseAIProvider):
                 "backend e o transport em frente própria."
             )
 
-        selected_model = model or local_model_name()
+        selected_model = model
         prompt = self.build_prompt(message=message, mode=mode, system_prompt=system_prompt)
         answer = await self._transport.generate(
             endpoint=local_model_endpoint(),
