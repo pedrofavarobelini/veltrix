@@ -35,5 +35,11 @@ class AuditMetadata(BaseModel):
     model_requested: str | None = None
     model_selected: str | None = None
     model_source: str | None = None
+    # Etapa 4: decisão planejada pela política shadow (observação apenas).
+    shadow_enabled: bool = False
+    shadow_selected_provider: str | None = None
+    shadow_selected_model: str | None = None
+    shadow_would_differ: bool | None = None
+    shadow_policy_version: str | None = None
     authorization_result: str | None = None
     authorization_reason_code: str | None = None

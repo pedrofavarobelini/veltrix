@@ -1,5 +1,17 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 4: política em shadow mode
+
+Status: **implementado, com efeito nulo comprovado sobre a execução real**.
+
+- Novo módulo `shadow_routing`: calcula de forma determinística qual provider/modelo uma política multi-provider futura escolheria, **sem chamar provider algum e sem segunda IA**.
+- Política sem sinal dinâmico: filtros eliminatórios → prioridade estática por projeto/task (tuplas ordenadas) → desempate pelo primeiro sobrevivente. Sem score, custo, latência, health, A/B, ensemble ou votação.
+- Motivos de eliminação determinísticos e sanitizados: `not_registered`, `not_implemented`, `not_configured`, `not_homologated`, `ambiguous_identity`, `not_authorized`, `task_incompatible`, `project_policy_blocked`, `model_incompatible`, `safe_mode_blocked`. Claude/OpenAI aparecem priorizados porém sempre eliminados pelo motivo correto — nunca autorizados artificialmente.
+- Flag `PEDROCORE_SHADOW_ROUTING_ENABLED`, default **off**; o consumidor não liga nem desliga pelo payload.
+- Efeito nulo: com shadow ligado ou desligado, provider, modelo, nº de chamadas, resposta pública, status, fallback, release gate e warnings são idênticos. `would_differ_from_actual` compara apenas identificadores, após a execução.
+- Observabilidade distingue planejado vs. efetivo e lista candidatos eliminados; auditoria guarda resumo sanitizado. Contrato público inalterado.
+- Testes: `tests/test_shadow_routing.py` (26 casos) + regressão em `tests/test_observability.py`. Ver [[17-multi-provider-safe-evolution/ETAPA_4_SHADOW_MODE]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 3: provider/model binding
 
 Status: **implementado, sem alterar o provider automático**.

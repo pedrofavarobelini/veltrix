@@ -201,6 +201,7 @@ class ObservabilityService:
             removed_fields=removed_fields,
             caller=self._caller_projection(outcome),
             binding=self._binding_projection(outcome),
+            shadow_routing=self._shadow_projection(outcome),
             provider_requested=outcome.provider_requested,
             provider_selected=provider_selected,
             provider_effective=outcome.provider_used,
@@ -411,6 +412,54 @@ class ObservabilityService:
             "model_effective": outcome.model,
             "model_source": audit.model_source,
             "selection_mode": audit.provider_selection_mode,
+        }
+
+    @staticmethod
+    def _shadow_projection(outcome: Any) -> dict[str, Any] | None:
+        """Decisão planejada e candidatos eliminados, sem segredos.
+
+        Distingue o provider/model PLANEJADO do efetivamente executado; o
+        candidato planejado nunca é executado.
+        """
+        decision = getattr(outcome, "shadow_decision", None)
+        if decision is None:
+            return None
+        return {
+            "enabled": decision.enabled,
+            "policy_version": decision.policy_version,
+            "project_id": decision.project_id,
+            "task_type": decision.task_type,
+            "provider_shadow_planned": decision.selected_provider,
+            "model_shadow_planned": decision.selected_model,
+            "provider_effective": outcome.provider_used,
+            "model_effective": outcome.model,
+            "would_differ_from_actual": decision.would_differ_from_actual,
+            "selection_reason": decision.selection_reason,
+            "candidates_considered": [
+                {
+                    "provider_id": candidate.provider_id,
+                    "model_id": candidate.model_id,
+                    "priority": candidate.priority,
+                    "eliminated": candidate.eliminated,
+                    "elimination_reason": (
+                        candidate.elimination_reason.value
+                        if candidate.elimination_reason is not None
+                        else None
+                    ),
+                }
+                for candidate in decision.candidates_considered
+            ],
+            "candidates_eliminated": [
+                {
+                    "provider_id": candidate.provider_id,
+                    "elimination_reason": (
+                        candidate.elimination_reason.value
+                        if candidate.elimination_reason is not None
+                        else None
+                    ),
+                }
+                for candidate in decision.candidates_eliminated
+            ],
         }
 
     @staticmethod

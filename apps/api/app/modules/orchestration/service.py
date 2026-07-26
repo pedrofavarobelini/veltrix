@@ -28,6 +28,7 @@ from app.modules.provider_binding.schemas import SelectedProviderModel
 from app.modules.provider_binding.service import provider_binding_service
 from app.modules.providers.base import ProviderConfigError
 from app.modules.providers.local_model_provider import local_model_ready
+from app.modules.shadow_routing.service import shadow_routing_service
 from app.modules.report_memory.service import report_memory_service
 from app.modules.policy_enforcement.service import policy_enforcement_service
 from app.modules.real_features import service as real_features
@@ -321,6 +322,19 @@ class OrchestrationService:
                 binding=binding,
             )
 
+        # Etapa 4: decisão planejada por política shadow. É calculada aqui e
+        # NUNCA lida pelo caminho de execução: não escolhe provider, não muda
+        # modelo, não chama adapter e não inicia fallback. Só observabilidade
+        # e auditoria a consomem.
+        shadow_decision = shadow_routing_service.evaluate(
+            caller=caller,
+            identity_project_id=origin_claim.identity_project_id,
+            context_project_id=project.project_id,
+            task_type=strategy.task_type,
+            allow_real_provider=payload.allow_real_provider,
+            policy_allowed=policy.allowed,
+        )
+
         effective_artifacts, reader_items = self._apply_artifact_reader(payload)
         artifacts_result = artifact_service.process(effective_artifacts)
 
@@ -604,6 +618,19 @@ class OrchestrationService:
             qa_skeleton.can_advance if qa_skeleton is not None else None
         )
 
+        # Comparação por identificadores, depois da execução real: o candidato
+        # planejado nunca é executado para verificar a diferença.
+        shadow_decision = shadow_routing_service.compare_with_actual(
+            shadow_decision, actual_provider=provider_used, actual_model=model_used
+        )
+        audit.shadow_enabled = shadow_decision.enabled
+        audit.shadow_selected_provider = shadow_decision.selected_provider
+        audit.shadow_selected_model = shadow_decision.selected_model
+        audit.shadow_would_differ = shadow_decision.would_differ_from_actual
+        audit.shadow_policy_version = (
+            shadow_decision.policy_version if shadow_decision.enabled else None
+        )
+
         return OrchestrationOutcome(
             answer=answer,
             provider_requested=requested_provider,
@@ -637,6 +664,7 @@ class OrchestrationService:
             blocked_reason=blocked_reason,
             intelligence_plan=intelligence_plan,
             memory_used=memory_used,
+            shadow_decision=shadow_decision,
         )
 
     async def _execute_local_model(

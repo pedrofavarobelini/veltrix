@@ -29,6 +29,8 @@ class ExecutionRecord(BaseModel):
     caller: dict[str, Any] | None = None
     # Provider/model planejado pelo binding vs. efetivamente executado (Etapa 3).
     binding: dict[str, Any] | None = None
+    # Decisão planejada pela política shadow, nunca executada (Etapa 4).
+    shadow_routing: dict[str, Any] | None = None
     provider_requested: str | None = None
     provider_selected: str | None = None
     provider_effective: str | None = None

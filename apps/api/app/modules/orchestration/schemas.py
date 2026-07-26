@@ -5,6 +5,7 @@ from app.modules.contracts.codes import WarningItem
 from app.modules.exploration.schemas import ExplorationPlan
 from app.modules.intelligence_layer.schemas import IntelligencePlan
 from app.modules.qa_response.schemas import QAResponseSkeleton, ReleaseGateResult
+from app.modules.shadow_routing.schemas import ShadowRoutingDecision
 from app.modules.visual_qa.schemas import VisualQAAnalysis
 
 
@@ -46,6 +47,10 @@ class OrchestrationOutcome(BaseModel):
     intelligence_plan: IntelligencePlan | None = None
     # ECOSYSTEM-INTELLIGENCE-SUITE-01: memória técnica consultada nesta request.
     memory_used: bool = False
+    # MULTI-PROVIDER-SAFE-EVOLUTION Etapa 4: decisão planejada pela política
+    # shadow. É metadado interno (auditoria/observabilidade); NÃO é exposto em
+    # ChatResponse/OrchestrateResponse e não influencia a execução real.
+    shadow_decision: ShadowRoutingDecision | None = None
 
     @property
     def task_warnings(self) -> list[str]:

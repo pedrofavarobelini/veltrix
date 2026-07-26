@@ -340,6 +340,39 @@ def test_execution_record_distinguishes_planned_and_effective_binding():
     assert binding["selection_mode"] == "explicit"
 
 
+def test_execution_record_carries_shadow_decision_with_eliminated_candidates(
+    monkeypatch,
+):
+    """Etapa 4: a observabilidade registra o planejado e os eliminados."""
+    monkeypatch.setenv("PEDROCORE_SHADOW_ROUTING_ENABLED", "true")
+
+    response = client.post(
+        "/api/orchestrate",
+        json={
+            "message": "Teste de shadow",
+            "provider": "mock",
+            "task_type": "assistant_chat",
+            "origin_system": "finguard",
+        },
+    )
+    assert response.status_code == 200
+
+    shadow = _latest_detail()["shadow_routing"]
+
+    assert shadow["enabled"] is True
+    assert shadow["policy_version"]
+    assert shadow["provider_effective"] == "mock"
+    assert [item["provider_id"] for item in shadow["candidates_considered"]] == [
+        "gemini",
+        "claude",
+        "openai",
+    ]
+    # Todo candidato eliminado carrega um motivo determinístico e sanitizado.
+    for item in shadow["candidates_eliminated"]:
+        assert item["elimination_reason"]
+    assert "chave" not in json.dumps(shadow, ensure_ascii=False).lower()
+
+
 def test_total_provider_failure_hook_is_qa_only_and_diagnosed(monkeypatch):
     monkeypatch.setenv(FLAG_QA_FORCE_TOTAL_FAILURE, "true")
     error_client = TestClient(app, raise_server_exceptions=False)
