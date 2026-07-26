@@ -1,5 +1,15 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 1: catálogo de providers
+
+Status: **implementado, passivo e sem alteração de roteamento**.
+
+- Novo módulo `provider_catalog` (`schemas.py` + `service.py`): caracterização tipada de `gemini`, `claude`, `openai`, `deepseek`, `grok`, `mock`, `local_qa` e `local_model`, com adapter, categoria, modelos conhecidos, capacidades, tasks compatíveis e prioridade estática.
+- Estados **separados** e nunca inferidos entre si: `registered`, `implemented`, `configured`, `homologation`, `authorized_for_auto`, `availability`, `health`. Ter chave não homologa, não autoriza e não torna saudável.
+- Invariantes recusam combinações incoerentes (não implementado configurado/homologado/elegível; `healthy` sem evidência; `healthy` em provider real sem avaliação real; `required_config_keys` com valor em vez de nome de env var).
+- Catálogo é **consultivo**: o pipeline continua usando `AUTO_REAL_PROVIDER_CANDIDATES = ("gemini",)`. Nenhuma chamada real, nenhum fallback entre providers reais, contrato público intacto.
+- Testes: `tests/test_provider_catalog.py` e `tests/test_provider_auto_characterization.py`. Ver [[17-multi-provider-safe-evolution/ETAPA_1_CATALOGO_PROVIDERS]].
+
 ## PEDROCORE-OBSERVABILIDADE-LOCAL-01 — 2026-07-18
 
 Status: **implementado e validado localmente**.
