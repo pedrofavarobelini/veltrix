@@ -6,6 +6,7 @@ from app.modules.caller_identity.schemas import (
     AuthenticatedCallerContext,
     OriginClaimResult,
 )
+from app.modules.provider_binding.schemas import SelectedProviderModel
 
 
 class AuditService:
@@ -18,6 +19,7 @@ class AuditService:
         caller: AuthenticatedCallerContext | None = None,
         origin_claim: OriginClaimResult | None = None,
         provider_selection_mode: str | None = None,
+        binding: SelectedProviderModel | None = None,
     ) -> AuditMetadata:
         """Cria a auditoria da requisição.
 
@@ -47,6 +49,9 @@ class AuditService:
                 origin_claim.validation.value if origin_claim is not None else None
             ),
             provider_selection_mode=provider_selection_mode,
+            model_requested=binding.requested_model if binding is not None else None,
+            model_selected=binding.model_id if binding is not None else None,
+            model_source=binding.model_source.value if binding is not None else None,
         )
 
 

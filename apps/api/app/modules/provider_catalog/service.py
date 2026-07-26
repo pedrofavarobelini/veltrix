@@ -18,12 +18,14 @@ from app.modules.provider_catalog.schemas import (
     ANY_TASK,
     HealthEvidence,
     HomologationStatus,
+    ModelDefinition,
     ProviderAvailability,
     ProviderCapability,
     ProviderCategory,
     ProviderDefinition,
     ProviderHealth,
 )
+from app.modules.providers.local_model_provider import local_model_name
 from app.modules.providers.registry import provider_registry
 
 # Pseudo-providers resolvidos dentro do pipeline, sem entrada no registry.
@@ -231,6 +233,68 @@ class ProviderCatalogService:
         ]
 
     # ------------------------------------------------------------------
+    # Modelos conhecidos — fonte única de verdade do binding (Etapa 3).
+    # ------------------------------------------------------------------
+    def models(self) -> tuple[ModelDefinition, ...]:
+        return tuple(
+            model
+            for definition in self.definitions()
+            for model in self._models_of(definition)
+        )
+
+    def models_for(self, provider_id: str | None) -> tuple[ModelDefinition, ...]:
+        definition = self.get(provider_id)
+        if definition is None:
+            return ()
+        return self._models_of(definition)
+
+    def find_model(self, model_id: str | None) -> tuple[ModelDefinition, ...]:
+        """Todos os providers que declaram este modelo (normalmente um só)."""
+        normalized = (model_id or "").strip().lower()
+        if not normalized:
+            return ()
+        return tuple(
+            model for model in self.models() if model.model_id.lower() == normalized
+        )
+
+    def default_model_for(self, provider_id: str | None) -> ModelDefinition | None:
+        return next(
+            (model for model in self.models_for(provider_id) if model.default_for_provider),
+            None,
+        )
+
+    @staticmethod
+    def _models_of(definition: ProviderDefinition) -> tuple[ModelDefinition, ...]:
+        return tuple(
+            ModelDefinition(
+                model_id=model_id,
+                provider_id=definition.provider_id,
+                # Só o default declarado do provider é reconhecido/homologado
+                # pelo repositório; nenhum outro identificador é inventado.
+                homologated=definition.is_approved_for_production and index == 0,
+                default_for_provider=index == 0,
+                compatible_tasks=definition.compatible_tasks,
+                excluded_tasks=definition.excluded_tasks,
+                notes=definition.notes,
+            )
+            for index, model_id in enumerate(definition.known_models)
+        )
+
+    @staticmethod
+    def _known_models(provider_id: str, adapter: Any) -> tuple[str, ...]:
+        """Modelos reconhecidos pelo repositório para o adapter registrado.
+
+        `local_model` resolve o nome em runtime (PEDROCORE_LOCAL_MODEL_NAME),
+        preservando exatamente o comportamento do adapter local opt-in.
+        """
+        if provider_id == "local_model":
+            candidate = local_model_name()
+        else:
+            candidate = adapter.default_model
+        candidate = (candidate or "").strip()
+        return (candidate,) if candidate else ()
+
+    # ------------------------------------------------------------------
     def _build(self, provider_id: str, spec: dict[str, Any]) -> ProviderDefinition:
         adapter = provider_registry.get(provider_id) if spec.get("adapter") else None
         # provider_registry.get() devolve o Mock para nomes ausentes; só vale
@@ -246,7 +310,7 @@ class ProviderCatalogService:
             registered = matched
             implemented = matched
             configured = bool(matched and adapter.is_configured)
-            known_models = (adapter.default_model,) if matched else ()
+            known_models = self._known_models(provider_id, adapter) if matched else ()
 
         health = spec.get("health", ProviderHealth.UNKNOWN)
         health_evidence = spec.get("health_evidence", HealthEvidence.NOT_EVALUATED)

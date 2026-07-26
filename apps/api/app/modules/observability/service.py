@@ -200,6 +200,7 @@ class ObservabilityService:
             payload_sanitized=payload_sanitized,
             removed_fields=removed_fields,
             caller=self._caller_projection(outcome),
+            binding=self._binding_projection(outcome),
             provider_requested=outcome.provider_requested,
             provider_selected=provider_selected,
             provider_effective=outcome.provider_used,
@@ -395,6 +396,21 @@ class ObservabilityService:
             "provider_selected": audit.provider_selected,
             "authorization_result": audit.authorization_result,
             "authorization_reason_code": audit.authorization_reason_code,
+        }
+
+    @staticmethod
+    def _binding_projection(outcome: Any) -> dict[str, Any]:
+        """Provider/model planejado pelo binding vs. efetivamente executado."""
+        audit = outcome.audit
+        return {
+            "provider_requested": outcome.provider_requested,
+            "provider_selected": audit.provider_selected,
+            "provider_effective": outcome.provider_used,
+            "model_requested": audit.model_requested,
+            "model_selected": audit.model_selected,
+            "model_effective": outcome.model,
+            "model_source": audit.model_source,
+            "selection_mode": audit.provider_selection_mode,
         }
 
     @staticmethod

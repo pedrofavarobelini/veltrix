@@ -133,7 +133,11 @@ def test_auto_with_real_authorization_chooses_gemini_stub(monkeypatch, real_prov
     assert response.status_code == 200
     assert data["provider_requested"] == "auto"
     assert data["provider_used"] == "gemini"
-    assert data["model"] == "gemini-stub-v1"
+    # Etapa 3: o modelo é derivado internamente pelo PedroCore (default
+    # declarado do Gemini), não pelo adapter nem pelo payload.
+    assert data["model"] == settings.gemini_model
+    assert data["audit"]["model_requested"] is None
+    assert data["audit"]["model_selected"] == settings.gemini_model
     assert data["fallback_used"] is False
     assert data["safe_mode_blocked"] is False
     assert calls == ["gemini"]
@@ -168,7 +172,9 @@ def test_gemini_with_real_authorization_uses_gemini_stub(monkeypatch, real_provi
     assert response.status_code == 200
     assert data["provider_requested"] == "gemini"
     assert data["provider_used"] == "gemini"
-    assert data["model"] == "gemini-stub-v1"
+    # Sem modelo no payload, o PedroCore seleciona o default do provider.
+    assert data["model"] == settings.gemini_model
+    assert data["audit"]["model_source"] == "provider_default"
     assert data["fallback_used"] is False
     assert calls == ["gemini"]
     assert real_provider_guard == []

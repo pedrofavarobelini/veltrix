@@ -1,5 +1,18 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Etapa 3: provider/model binding
+
+Status: **implementado, sem alterar o provider automático**.
+
+- Catálogo ganha `ModelDefinition` e consultas de modelo: cada modelo pertence a **exatamente um** provider, e o catálogo continua sendo a fonte única de verdade (sem listas paralelas).
+- Novo módulo `provider_binding`: `ProviderModelBinding` + `SelectedProviderModel` resolvem provider e modelo como **uma unidade** antes de qualquer adapter.
+- `_generate_with_timeout()` deixa de repassar `payload.model`: o adapter recebe apenas o modelo já validado pelo PedroCore. Defaults do adapter viram seleção explícita do core (`model_source=provider_default`).
+- Bloqueios com código próprio, sem fallback silencioso: `MODEL_UNKNOWN`, `MODEL_PROVIDER_MISMATCH`, `MODEL_NOT_AUTHORIZED`, `MODEL_TASK_INCOMPATIBLE`, `MODEL_NOT_ALLOWED_FOR_CALLER`, `MODEL_NOT_ALLOWED_IN_AUTO`, `MODEL_DEFAULT_UNAVAILABLE`, `PROVIDER_MODEL_BINDING_INVALID`.
+- `provider=auto` rejeita modelo do payload: modelo nunca seleciona provider. `AUTO_REAL_PROVIDER_CANDIDATES` segue `("gemini",)`.
+- Mock, `local_qa` e `local_model` têm binding fixo próprio; nome de modelo externo não redireciona requisição local.
+- Auditoria distingue `model_requested`/`model_selected`/`model_source`; observabilidade ganha o bloco `binding` (planejado vs. efetivo).
+- Testes: `tests/test_provider_model_binding.py` (28 casos) + regressão em `tests/test_observability.py`. Ver [[17-multi-provider-safe-evolution/ETAPA_3_PROVIDER_MODEL_BINDING]].
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION — Fix: credencial compartilhada não autoriza provider real
 
 Status: **vulnerabilidade da Etapa 2 confirmada e corrigida**.

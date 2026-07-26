@@ -316,6 +316,30 @@ def test_execution_record_distinguishes_identity_from_declared_origin(monkeypatc
     assert internal_key not in json.dumps(detail, ensure_ascii=False)
 
 
+def test_execution_record_distinguishes_planned_and_effective_binding():
+    """Etapa 3: a observabilidade separa provider/model planejado do efetivo."""
+    response = client.post(
+        "/api/orchestrate",
+        json={
+            "message": "Teste de binding",
+            "provider": "mock",
+            "model": "mock-v1",
+            "task_type": "assistant_chat",
+            "origin_system": "pedrocore",
+        },
+    )
+    assert response.status_code == 200
+
+    binding = _latest_detail()["binding"]
+
+    assert binding["provider_requested"] == "mock"
+    assert binding["model_requested"] == "mock-v1"
+    assert binding["model_selected"] == "mock-v1"
+    assert binding["model_effective"] == response.json()["model"]
+    assert binding["model_source"] == "local_fixed"
+    assert binding["selection_mode"] == "explicit"
+
+
 def test_total_provider_failure_hook_is_qa_only_and_diagnosed(monkeypatch):
     monkeypatch.setenv(FLAG_QA_FORCE_TOTAL_FAILURE, "true")
     error_client = TestClient(app, raise_server_exceptions=False)

@@ -77,6 +77,42 @@ class HealthEvidence(str, Enum):
     IN_PROCESS_DETERMINISTIC = "in_process_deterministic"
 
 
+class ModelDefinition(BaseModel):
+    """Modelo conhecido, sempre vinculado a exatamente um provider.
+
+    O catálogo é a fonte única de verdade de modelos: o binding (Etapa 3) e a
+    política shadow (Etapa 4) leem daqui em vez de manter listas paralelas.
+    """
+
+    model_config = ConfigDict(frozen=True, protected_namespaces=())
+
+    model_id: str
+    provider_id: str
+    homologated: bool = False
+    default_for_provider: bool = False
+    compatible_tasks: tuple[str, ...] = (ANY_TASK,)
+    excluded_tasks: tuple[str, ...] = ()
+    notes: str = ""
+
+    @model_validator(mode="after")
+    def _check(self) -> ModelDefinition:
+        if not self.model_id.strip():
+            raise ValueError("model_id vazio não identifica modelo.")
+        if not self.provider_id.strip():
+            raise ValueError(
+                f"modelo sem provider não pode existir no catálogo: {self.model_id!r}"
+            )
+        return self
+
+    def supports_task(self, task_type: str) -> bool:
+        normalized = (task_type or "").strip().lower()
+        if normalized in self.excluded_tasks:
+            return False
+        if ANY_TASK in self.compatible_tasks:
+            return True
+        return normalized in self.compatible_tasks
+
+
 class ProviderDefinition(BaseModel):
     """Definição imutável e sem segredos de um provider do catálogo."""
 

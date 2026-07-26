@@ -31,5 +31,9 @@ class AuditMetadata(BaseModel):
     origin_validation: str | None = None
     provider_selection_mode: str | None = None
     provider_selected: str | None = None
+    # Etapa 3: modelo solicitado != modelo selecionado pelo PedroCore.
+    model_requested: str | None = None
+    model_selected: str | None = None
+    model_source: str | None = None
     authorization_result: str | None = None
     authorization_reason_code: str | None = None

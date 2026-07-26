@@ -27,6 +27,8 @@ class ExecutionRecord(BaseModel):
     removed_fields: list[str] = Field(default_factory=list)
     # Identidade autenticada do caller, sem segredos (Etapa 2).
     caller: dict[str, Any] | None = None
+    # Provider/model planejado pelo binding vs. efetivamente executado (Etapa 3).
+    binding: dict[str, Any] | None = None
     provider_requested: str | None = None
     provider_selected: str | None = None
     provider_effective: str | None = None

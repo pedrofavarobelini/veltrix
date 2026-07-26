@@ -24,6 +24,8 @@ from app.modules.orchestration.schemas import (
     OrchestrationOutcome,
 )
 from app.modules.provider_authorization.service import provider_authorization_service
+from app.modules.provider_binding.schemas import SelectedProviderModel
+from app.modules.provider_binding.service import provider_binding_service
 from app.modules.providers.base import ProviderConfigError
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.report_memory.service import report_memory_service
@@ -130,6 +132,14 @@ PROVIDER_AMBIGUOUS_IDENTITY_WARNING = (
 SELECTION_MODE_AUTO = "auto"
 SELECTION_MODE_EXPLICIT = "explicit"
 SELECTION_MODE_LOCAL = "local_deterministic"
+
+# Etapa 3: combinação provider+modelo incoerente é bloqueada antes do adapter.
+BINDING_BLOCKED_ANSWER_PREFIX = (
+    "Solicitação bloqueada pelo controle de provider e modelo do PedroCore."
+)
+IDENTITY_BLOCKED_ANSWER_PREFIX = (
+    "Solicitação bloqueada pelo controle de identidade do PedroCore."
+)
 
 # Resposta segura e conservadora usada por _mock_fallback(). Nunca deve conter
 # erro tecnico bruto, nome de classe de provider/exception, nem rotulo de
@@ -285,6 +295,32 @@ class OrchestrationService:
             )
             memory_used = memory_block is not None
 
+        # Etapa 3: provider e modelo são validados como unidade ANTES de
+        # qualquer adapter. Combinação incoerente nunca chega ao provider.
+        selection_mode = self._selection_mode(requested_provider)
+        binding = provider_binding_service.resolve(
+            requested_provider=requested_provider,
+            requested_model=payload.model,
+            selection_mode=selection_mode,
+            caller_role=caller.caller_role,
+            task_type=strategy.task_type,
+            auto_candidate=self._auto_candidate(),
+        )
+        if binding.invalid:
+            return self._identity_blocked_outcome(
+                payload=payload,
+                strategy=strategy,
+                project=project,
+                caller=caller,
+                origin_claim=origin_claim,
+                requested_provider=requested_provider,
+                error_code=binding.error_code or codes.PROVIDER_MODEL_BINDING_INVALID,
+                reason=binding.reason or "Combinação provider/modelo inválida.",
+                started=started,
+                answer_prefix=BINDING_BLOCKED_ANSWER_PREFIX,
+                binding=binding,
+            )
+
         effective_artifacts, reader_items = self._apply_artifact_reader(payload)
         artifacts_result = artifact_service.process(effective_artifacts)
 
@@ -295,7 +331,8 @@ class OrchestrationService:
             criticality=strategy.criticality,
             caller=caller,
             origin_claim=origin_claim,
-            provider_selection_mode=self._selection_mode(requested_provider),
+            provider_selection_mode=selection_mode,
+            binding=binding,
         )
 
         prompt = prompt_builder.build(
@@ -320,6 +357,10 @@ class OrchestrationService:
         error_code: str | None = None
         local_model_items: list[WarningItem] = []
         provider_items: list[WarningItem] = []
+        if binding.warning_code:
+            provider_items.append(
+                make_warning(binding.warning_code, binding.warning_reason or "")
+            )
 
         if requested_provider in LOCAL_PROVIDERS:
             analysis = qa_text_analyzer.analyze(
@@ -374,7 +415,10 @@ class OrchestrationService:
                         audit.authorization_result = "allowed"
                         try:
                             result = await self._generate_with_timeout(
-                                provider, payload, prompt.enriched_system_prompt
+                                provider,
+                                payload,
+                                prompt.enriched_system_prompt,
+                                binding.model_id,
                             )
                             answer = result.answer
                             provider_used = result.provider
@@ -411,7 +455,7 @@ class OrchestrationService:
                     error,
                     error_code,
                     local_model_items,
-                ) = await self._execute_local_model(payload, strategy, prompt)
+                ) = await self._execute_local_model(payload, strategy, prompt, binding)
             elif provider.real_provider and not payload.allow_real_provider:
                 safe_mode_blocked = True
                 error = PROVIDER_REAL_BLOCKED_WARNING
@@ -451,7 +495,10 @@ class OrchestrationService:
                 else:
                     try:
                         result = await self._generate_with_timeout(
-                            provider, payload, prompt.enriched_system_prompt
+                            provider,
+                            payload,
+                            prompt.enriched_system_prompt,
+                            binding.model_id,
                         )
                         answer = result.answer
                         provider_used = result.provider
@@ -597,6 +644,7 @@ class OrchestrationService:
         payload: ChatRequest,
         strategy,
         prompt,
+        binding: SelectedProviderModel,
     ) -> tuple[str, str, str, bool, str | None, str | None, list[WarningItem]]:
         """Gate do provider generativo local opt-in (PEDROCORE-LOCAL-MODEL-01).
 
@@ -634,7 +682,7 @@ class OrchestrationService:
         provider = provider_registry.get(LOCAL_MODEL_PROVIDER_NAME)
         try:
             result = await self._generate_with_timeout(
-                provider, payload, prompt.enriched_system_prompt
+                provider, payload, prompt.enriched_system_prompt, binding.model_id
             )
             items.append(
                 make_warning(
@@ -693,6 +741,15 @@ class OrchestrationService:
         return PROVIDER_NOT_AUTHORIZED_WARNING
 
     @staticmethod
+    def _auto_candidate() -> str | None:
+        """Candidato do modo automático — congelado em Gemini-only.
+
+        Serve apenas para o binding derivar internamente o modelo do provider
+        que o `auto` já escolheria. Não amplia a lista nem reordena nada.
+        """
+        return AUTO_REAL_PROVIDER_CANDIDATES[0] if AUTO_REAL_PROVIDER_CANDIDATES else None
+
+    @staticmethod
     def _selection_mode(requested_provider: str) -> str:
         if requested_provider in LOCAL_PROVIDERS:
             return SELECTION_MODE_LOCAL
@@ -713,12 +770,18 @@ class OrchestrationService:
         provider,
         payload: ChatRequest,
         enriched_system_prompt: str,
+        model: str | None = None,
     ):
+        """Executa o adapter com o modelo JÁ VALIDADO pelo binding.
+
+        O adapter nunca recebe `payload.model` diretamente: só a combinação
+        provider+modelo aprovada pelo PedroCore chega até aqui.
+        """
         return await asyncio.wait_for(
             provider.generate_response(
                 message=payload.message,
                 mode=payload.mode,
-                model=payload.model,
+                model=model,
                 system_prompt=enriched_system_prompt,
             ),
             timeout=self._provider_timeout_seconds(),
@@ -840,12 +903,15 @@ class OrchestrationService:
         error_code: str,
         reason: str,
         started: float,
+        answer_prefix: str = IDENTITY_BLOCKED_ANSWER_PREFIX,
+        binding: SelectedProviderModel | None = None,
     ) -> OrchestrationOutcome:
-        """Bloqueio por identidade/autorização do caller.
+        """Bloqueio por identidade/autorização do caller ou por binding inválido.
 
         Acontece ANTES de qualquer provider: origem incompatível com a
-        credencial autenticada, ou consumidor comum tentando escolher provider
-        ou modelo. Nenhum provider real é alcançado.
+        credencial autenticada, consumidor comum tentando escolher provider ou
+        modelo, ou combinação provider+modelo incoerente. Nenhum adapter real
+        é alcançado.
         """
         audit = audit_service.create(
             origin_system=payload.origin_system,
@@ -855,6 +921,7 @@ class OrchestrationService:
             caller=caller,
             origin_claim=origin_claim,
             provider_selection_mode=self._selection_mode(requested_provider),
+            binding=binding,
         )
         audit.fallback_used = False
         audit.provider_used = "none"
@@ -866,10 +933,7 @@ class OrchestrationService:
         audit.authorization_reason_code = error_code
 
         return OrchestrationOutcome(
-            answer=(
-                "Solicitação bloqueada pelo controle de identidade do PedroCore. "
-                f"Motivo: {reason}"
-            ),
+            answer=f"{answer_prefix} Motivo: {reason}",
             provider_requested=requested_provider,
             provider_used="none",
             model="none",
