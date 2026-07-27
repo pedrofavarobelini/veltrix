@@ -2,13 +2,27 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
-## Resultado atual — 2026-07-26
+## Resultado atual — 2026-07-27
+
+- Fechamento: [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
+- Backend integral: `703 passed, 7 skipped, 2 warnings`.
+- Eval harness: `14/14 passed`, `risk_level="none"`.
+- Ruff aprovado nos arquivos da frente; zero chamadas externas reais.
+- Novos arquivos: `test_provider_generation_characterization.py`,
+  `test_output_budget.py`, `test_gemini_adapter_budget.py`,
+  `test_provider_output_budget_pipeline.py`,
+  `test_output_budget_observability.py` e o helper `gemini_fakes.py`.
+- O fake substitui apenas o *cliente* do SDK: `GenerateContentConfig` e
+  `HttpOptions` continuam sendo os tipos reais do `google-genai` instalado.
+- Pendência conhecida e fora do escopo desta frente: `ruff` acusa um import não
+  usado em `tests/test_report_memory.py`, arquivo não tocado aqui.
+
+## Resultado anterior — 2026-07-26
 
 - Fechamento: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]].
 - Backend integral: `570 passed, 7 skipped, 2 warnings`.
 - Eval harness: `14/14 passed`, `risk_level="none"`.
 - Ruff aprovado; zero chamadas externas reais.
-- Esta frente de consolidação altera somente documentação, portanto a suíte não foi reexecutada.
 
 ## Comandos seguros
 

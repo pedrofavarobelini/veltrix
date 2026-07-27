@@ -483,6 +483,14 @@ Não entram API key, token, header completo ou conteúdo sensível desnecessári
 - Não há terceira tentativa.
 - Mock seguro encerra falhas sem expor detalhes técnicos na resposta pública.
 
+> **Evolução posterior.** A frente
+> [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+> acrescentou orçamento de saída, timeout de transporte e cliente Gemini
+> assíncrono. Todas as garantias listadas acima permanecem: timeout continua
+> ambíguo, sem retry, sem secundário, sem paralelismo, sem terceira tentativa.
+> O cancelamento local e o de transporte passaram a ser reais; o cancelamento
+> **remoto** continua não comprovável.
+
 ## 17. Compatibilidade FinGuard
 
 Contrato de consumo:

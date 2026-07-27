@@ -51,3 +51,9 @@ Mapa dos limites de seguranca do PedroCore IA.
 - Chamada real se provider real for autorizado explicitamente.
 - Fallback Mock mascarando falha se consumidor ignorar `fallback_used`.
 - Documentos historicos fora dos MOCs podem refletir fases antigas.
+- **Cancelamento remoto não comprovável**: após um timeout de transporte, o
+  PedroCore fecha a conexão local, mas não há prova de que a geração remota
+  tenha parado. Ver
+  [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
+- Valores de orçamento de saída derivam do `response_style` das tasks, não de
+  medição real de tokens; podem precisar de ajuste após sonda autorizada.

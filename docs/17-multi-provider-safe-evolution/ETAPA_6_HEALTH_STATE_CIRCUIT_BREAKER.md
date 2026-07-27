@@ -112,3 +112,21 @@ provider secundário.
   posterior está em [[ETAPA_7_FALLBACK_REAL_CONTROLADO]];
 - apenas `gemini + gemini-3.5-flash` permanece homologado e autorizado para o
   automático real.
+
+## Nota de evolução — OUTPUT-BUDGET-CANCELLATION-01
+
+Este documento descreve o estado do commit `30d308f` e permanece válido como
+registro histórico. Depois dele, a frente
+[[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+alterou o caminho Gemini:
+
+- o adapter deixou de usar `asyncio.to_thread` e passou a usar o cliente
+  assíncrono nativo, com fechamento explícito;
+- passou a existir timeout de transporte, sempre menor que a espera da
+  orquestração;
+- o cancelamento da task, do `await` e do transporte local passou a ser real.
+
+O que **não** mudou, e é o ponto central desta etapa: fechar a conexão local
+continua não provando que a geração remota parou. Timeout após dispatch segue
+sendo `completion_ambiguous`/`ambiguous`, o circuito mantém o tratamento
+conservador e nenhum secundário é iniciado.

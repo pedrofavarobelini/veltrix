@@ -13,6 +13,19 @@ health e fallback do PedroCore.
 - Validação acumulada: `570 passed, 7 skipped, 2 warnings`; eval harness
   `14/14`, `risk_level="none"`.
 
+## Evolução posterior
+
+- [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+  — orçamento de saída, timeout de transporte, cliente Gemini assíncrono,
+  lifecycle e detecção de truncamento.
+- [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+  — fechamento, limitações e riscos residuais.
+- Efeito sobre as Etapas 6 e 7: o cancelamento local e o de transporte
+  passaram a ser reais, mas o cancelamento **remoto** continua não
+  comprovável. `completion_ambiguous` permanece obrigatório e timeout continua
+  sem destravar retry, secundário ou fallback real.
+- Validação após a frente: `703 passed, 7 skipped`; eval `14/14`.
+
 ## Etapas 1–7
 
 - [[17-multi-provider-safe-evolution/ETAPA_1_CATALOGO_PROVIDERS]]

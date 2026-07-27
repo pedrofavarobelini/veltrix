@@ -1,5 +1,59 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-PROVIDER-OUTPUT-BUDGET-CANCELLATION-01
+
+Status: **orçamento de saída, timeout de transporte e cliente assíncrono
+implementados; cancelamento remoto continua não comprovável**.
+
+- Novo módulo `app/modules/output_budget/`: política pura e determinística com
+  `effective_output_budget = min(global_cap, model_cap, task_cap)`. Teto global
+  `8192`; `4096` para tasks conversacionais/financeiras; `3072` para tasks
+  estruturadas; `2048` para task não catalogada. Valores derivados do
+  `response_style` do `task_router`, não de medição de tokens.
+- `ModelDefinition.max_output_tokens` no catálogo; `gemini-3.5-flash` declara
+  `8192`. `ChatRequest` continua sem qualquer campo de tokens ou timeout: o
+  consumidor não participa da decisão.
+- `GeminiProvider` migrado para o cliente assíncrono nativo
+  (`client.aio.models.generate_content`); `asyncio.to_thread` removido do
+  caminho Gemini. Cliente fechado com `aclose()` em `finally`, cobrindo
+  sucesso, erro, timeout, cancelamento e erro de normalização.
+- `GenerateContentConfig(max_output_tokens=...)` e
+  `HttpOptions(timeout=<ms>)` passam a ser enviados ao SDK. A derivação do
+  timeout de transporte vive num único lugar e garante
+  `transport_timeout < orchestration_wait_timeout` em todo o clamp
+  `[0.05 s, 120 s]` (30 s → 27 000 ms). `HttpRetryOptions` nunca é configurado.
+- `finish_reason` e `usage_metadata` passam a ser lidos. `MAX_TOKENS` vira
+  truncamento explícito (`PROVIDER_OUTPUT_TRUNCATED`) e a resposta parcial não
+  é publicada; demais `finish_reason` anormais viram
+  `PROVIDER_OUTPUT_REJECTED`. Truncamento nunca é inferido do tamanho do texto.
+- Métricas de token vêm só de `usage_metadata` real; ausência nunca vira
+  estimativa nem falha. `total` menor que `input + output` é descartado como
+  incoerente; maior é preservado (`thoughts_token_count`).
+- Taxonomia sem enums novos: timeout de transporte e timeout da orquestração
+  permanecem `completion_ambiguous`/`ambiguous`; truncamento usa
+  `provider_non_retryable`/`completed`, que estava declarado e nunca era
+  produzido. `PROVIDER_COMPLETION_AMBIGUOUS` passou a ser realmente emitido.
+- Novos fatos de transporte na auditoria (`transport_cancel_requested`,
+  `transport_cancelled_locally`) convivem com `completion_certainty=ambiguous`:
+  fechar a conexão local não prova que a geração remota parou.
+- Preservado sem exceção: sem retry, sem segundo provider após timeout ou
+  truncamento, sem chamada paralela, sem continuação automática; Mock seguro,
+  safe mode, release gate, circuit breaker e fallback real inalterados.
+- Smoke Gemini deixou de ter timeout próprio hardcoded e passou a usar a mesma
+  política do pipeline.
+- Testes: `703 passed, 7 skipped` (baseline anterior `570 passed, 7 skipped`);
+  eval `14/14`, `risk_level="none"`; Ruff aprovado nos arquivos da frente; zero
+  chamadas externas reais. Dublês de adapter preexistentes receberam apenas
+  `**kwargs`, sem alteração de asserção.
+- Documentação:
+  [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+  e
+  [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
+- Limitações declaradas: cancelamento remoto não comprovado; `X-Server-Timeout`
+  não é garantia; Organizar não revalidado; nenhuma chamada real; o orçamento
+  não prova a causa do timeout histórico; custo real não medido.
+- Sem push, sem tag, sem alteração de dependência, sem alteração no FinGuard.
+
 ## PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01
 
 - Consolidação documental das Etapas 1–7 e das correções de credencial compartilhada e homologação/configuração de modelos.

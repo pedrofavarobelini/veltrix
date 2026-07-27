@@ -136,3 +136,22 @@ Os testes que exercitam o secundário promovem Claude/OpenAI somente por
 - a implementação não torna Claude/OpenAI homologados;
 - disponibilidade operacional exige outra frente de homologação, sem alterar
   este gate de segurança.
+
+## Nota de evolução — OUTPUT-BUDGET-CANCELLATION-01
+
+Este documento descreve o estado do commit `e389b2c` e permanece válido. A
+frente
+[[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+migrou o adapter Gemini para cliente assíncrono com timeout de transporte, mas
+**não relaxou este gate**:
+
+- timeout de transporte e timeout de orquestração continuam
+  `completion_ambiguous`, portanto continuam fora de
+  `REAL_FALLBACK_SAFE_CLASSIFICATIONS`;
+- truncamento (`MAX_TOKENS`) entrou como `provider_non_retryable`, que também
+  não é classificação segura para secundário;
+- o fechamento local do transporte é registrado como fato
+  (`transport_cancelled_locally`) e **nunca** é tratado como prova de término
+  externo.
+
+A tabela original continua correta: o adapter não oferece cancelamento remoto.

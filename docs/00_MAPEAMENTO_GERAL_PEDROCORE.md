@@ -814,7 +814,9 @@ Após esta consolidação, não há pendência arquitetural nas Etapas 1–7. H�
 - Detecao de segredo por regex nao e exaustiva.
 - Provider real pode gerar custo/chamada externa se autorizado explicitamente e configurado.
 - Fallback Mock pode mascarar erro se consumidor ignorar `fallback_used`.
-- Timeout de provider executado em thread tem conclusão ambígua: não é cancelamento comprovado e nunca permite tentativa secundária.
+- Timeout de provider tem conclusão ambígua: não é cancelamento comprovado e nunca permite tentativa secundária. Desde [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] o adapter Gemini é assíncrono e fecha o transporte local, mas fechar a conexão continua não provando que a geração remota parou.
+- Orçamento de saída (`min(global_cap, model_cap, task_cap)`) e timeout de transporte são decididos só pelo PedroCore; o consumidor não tem campo para influenciá-los. Os valores derivam do `response_style` das tasks, não de medição real de tokens.
+- Resposta com `finish_reason=MAX_TOKENS` é tratada como incompleta: texto parcial não é publicado, e não há continuação, retry nem segundo provider.
 - Circuit breaker é local por processo, usa relógio monotônico e fica default-off; não substitui health distribuído.
 - Fallback real é default-off e só aceita `provider_pre_dispatch + not_dispatched + external_dispatch=false`.
 - Apenas um provider/modelo externo está homologado e elegível; a arquitetura não equivale a operação multi-provider.

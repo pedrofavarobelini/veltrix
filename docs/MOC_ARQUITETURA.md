@@ -9,6 +9,7 @@ Mapa de arquitetura atual e historico de planejamento.
 - [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros de `/api/chat` e `/api/orchestrate`.
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - visão integrada da arquitetura multi-provider atual.
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] - pipeline normal, timeout ambíguo e fallback seguro.
+- [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] - orçamento de saída, timeout de transporte, cliente Gemini assíncrono e lifecycle.
 
 ## Endpoints
 

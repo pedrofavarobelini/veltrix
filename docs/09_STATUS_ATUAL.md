@@ -2,7 +2,37 @@
 
 Checkpoint documental atual: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] consolidam as Etapas 1–7. Arquitetura multi-provider: concluída. Multi-provider automático operacional: não. Motivo: somente `gemini + gemini-3.5-flash` está homologado e elegível. Próximo passo: homologar um segundo provider real em frente separada.
 
-Atualizado em: 26/07/2026
+Atualizado em: 27/07/2026
+
+## Frente mais recente
+
+`PEDROCORE-PROVIDER-OUTPUT-BUDGET-CANCELLATION-01` —
+[[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
+
+O adapter Gemini passou a ter orçamento explícito de saída
+(`min(global_cap, model_cap, task_cap)`), timeout de transporte derivado e
+sempre menor que a espera da orquestração, cliente assíncrono nativo sem
+`asyncio.to_thread`, lifecycle explícito, detecção de truncamento por
+`finish_reason` e coleta real de `usage_metadata`. Validação:
+`703 passed, 7 skipped`, eval `14/14`, zero chamadas externas reais.
+
+Estado honesto do cancelamento: a task, o `await` e o transporte local são
+cancelados de verdade; **a geração remota não é comprovadamente interrompida**.
+Por isso `completion_ambiguous` foi preservado e timeout continua sem disparar
+retry, segundo provider ou fallback real.
+
+Estado da homologação FinGuard:
+
+```text
+Assistente operacional     sim
+Gemini real                comprovado anteriormente
+cenários homologados       3/4 (Dívidas, Economizar, Crescer)
+Organizar                  pendente por variabilidade/timeout
+```
+
+O Organizar **não foi revalidado** nesta frente: nenhuma chamada real foi
+feita. O orçamento de saída reduz risco, mas não prova a causa dos timeouts
+históricos de ~30 s e ~60 s.
 
 ## Status oficial
 

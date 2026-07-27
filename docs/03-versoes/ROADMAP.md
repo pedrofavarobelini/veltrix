@@ -4,6 +4,26 @@
 
 > Nota DOCFIX: o estado atual canônico está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]]. Seções históricas de planejamento foram preservadas, mas devem ser lidas como contexto da época em que foram escritas.
 
+## PEDROCORE-PROVIDER-OUTPUT-BUDGET-CANCELLATION-01
+
+Status: **concluída com limitação documentada**.
+
+Detalhamento em
+[[../18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+e fechamento em
+[[../18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
+
+Entregue: orçamento explícito de saída em três camadas, timeout de transporte
+derivado e sempre menor que a espera da orquestração, cliente Gemini
+assíncrono nativo sem `asyncio.to_thread`, lifecycle explícito do cliente,
+detecção de truncamento por `finish_reason` e coleta real de `usage_metadata`.
+
+Não entregue, por impossibilidade técnica: prova de cancelamento da geração
+**remota**. `completion_ambiguous` permanece obrigatório.
+
+Fora de escopo e não iniciado: revalidação do cenário Organizar (exige chamada
+real autorizada) e ajuste dos valores de budget com base em medição real.
+
 ## PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION
 
 Status documental: Etapas 1–7 e correções consolidadas em

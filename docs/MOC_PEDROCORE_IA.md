@@ -1,11 +1,13 @@
 # MOC PedroCore IA
 
-## Fechamento atual — 2026-07-26
+## Fechamento atual — 2026-07-27
 
-- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - mapa central das Etapas 1–7, correções e próximo passo.
+- [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] - orçamento de saída, timeout de transporte, cliente Gemini assíncrono e certeza de término.
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - mapa central das Etapas 1–7, correções e evolução posterior.
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] - fechamento técnico e documental consolidado.
-- Suite integral mais recente: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`; zero chamadas externas reais.
+- Suite integral mais recente: `703 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`; zero chamadas externas reais.
 - Arquitetura multi-provider concluída; automação multi-provider real ainda indisponível porque há somente um provider/modelo homologado e elegível.
+- Cancelamento remoto continua não comprovável; `completion_ambiguous` preservado.
 
 Entrada principal do grafo Obsidian do PedroCore IA.
 

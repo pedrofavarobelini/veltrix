@@ -15,6 +15,7 @@ Mapa de versao, status, changelog e fechamento.
 - [[15-estudo-pedrocore/PEDROCORE_VEREDITO_FINAL]]
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]]
+- [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
 
 ## Tags e commits
 
