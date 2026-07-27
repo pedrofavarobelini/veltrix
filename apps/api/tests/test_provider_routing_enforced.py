@@ -99,7 +99,7 @@ def adapter_spy(monkeypatch):
         failing = failing or set()
 
         def make(provider_name: str):
-            async def fake(self, message, mode, model, system_prompt=None):
+            async def fake(self, message, mode, model, system_prompt=None, **kwargs):
                 calls.append((provider_name, model))
                 if provider_name in failing:
                     raise ProviderExecutionError(

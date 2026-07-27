@@ -72,7 +72,7 @@ def real_provider_spy(monkeypatch):
         failing = failing or set()
 
         def make(provider_name: str):
-            async def stub(self, message, mode, model=None, system_prompt=None):
+            async def stub(self, message, mode, model=None, system_prompt=None, **kwargs):
                 calls.append(provider_name)
                 if provider_name in failing:
                     raise ProviderExecutionError(

@@ -121,7 +121,7 @@ def adapter_spy(monkeypatch):
 
     def install():
         def make(provider_name):
-            async def fake(self, message, mode, model, system_prompt=None):
+            async def fake(self, message, mode, model, system_prompt=None, **kwargs):
                 calls.append((provider_name, model))
                 return ProviderResponse(
                     answer=f"Resposta sintética de {provider_name}.",

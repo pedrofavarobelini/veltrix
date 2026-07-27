@@ -112,7 +112,7 @@ def test_auto_with_real_authorization_chooses_gemini_stub(monkeypatch, real_prov
     monkeypatch.setattr(settings, "gemini_api_key", TEST_KEY)
     calls: list[str] = []
 
-    async def fake_generate(self, message, mode, model=None, system_prompt=None):
+    async def fake_generate(self, message, mode, model=None, system_prompt=None, **kwargs):
         calls.append(self.name)
         return ProviderResponse(
             answer="Resposta Gemini stubada e conservadora.",
@@ -152,7 +152,7 @@ def test_gemini_with_real_authorization_uses_gemini_stub(monkeypatch, real_provi
     monkeypatch.setattr(settings, "gemini_api_key", TEST_KEY)
     calls: list[str] = []
 
-    async def fake_generate(self, message, mode, model=None, system_prompt=None):
+    async def fake_generate(self, message, mode, model=None, system_prompt=None, **kwargs):
         calls.append(self.name)
         return ProviderResponse(
             answer="Gemini direto via PedroCore stubado.",

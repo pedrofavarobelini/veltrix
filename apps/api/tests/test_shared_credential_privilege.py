@@ -100,7 +100,7 @@ def adapter_spy(monkeypatch):
         failing = failing or set()
 
         def make(name: str):
-            async def stub(self, message, mode, model=None, system_prompt=None):
+            async def stub(self, message, mode, model=None, system_prompt=None, **kwargs):
                 calls.append(name)
                 if name in failing:
                     raise ProviderExecutionError(f"Falha simulada de {name}.")

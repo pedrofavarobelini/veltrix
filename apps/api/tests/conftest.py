@@ -65,7 +65,10 @@ def real_provider_guard(monkeypatch, request):
     calls: list[str] = []
 
     def make_guard(provider_name: str):
-        async def guard(self, message, mode, model=None, system_prompt=None):
+        # `**kwargs` absorve os parâmetros de geração que o pipeline passa a
+        # adapters com `supports_generation_budget` (output_budget,
+        # transport_timeout_ms). O guard continua bloqueando ANTES do SDK.
+        async def guard(self, message, mode, model=None, system_prompt=None, **kwargs):
             calls.append(provider_name)
             raise RuntimeError(GUARD_MESSAGE.format(name=provider_name))
 

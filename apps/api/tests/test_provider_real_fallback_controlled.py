@@ -93,7 +93,7 @@ class AdapterHarness:
         return self
 
     def _fake(self, provider_name: str):
-        async def generate(self_provider, message, mode, model, system_prompt=None):
+        async def generate(self_provider, message, mode, model, system_prompt=None, **kwargs):
             del self_provider, message, mode, system_prompt
             self.calls.append(provider_name)
             self.timeline.append(("start", provider_name, perf_counter()))
@@ -297,9 +297,9 @@ def test_ambiguous_timeout_never_starts_secondary_while_work_can_remain_alive(
         finished.set()
 
     async def timeout_with_live_external_work(
-        self_provider, message, mode, model, system_prompt=None
+        self_provider, message, mode, model, system_prompt=None, **kwargs
     ):
-        del self_provider, message, mode, model, system_prompt
+        del self_provider, message, mode, model, system_prompt, kwargs
         harness.calls.append("gemini")
         worker = threading.Thread(target=lingering_work)
         worker_holder.append(worker)
