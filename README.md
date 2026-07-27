@@ -1,6 +1,31 @@
 # PedroCore IA
 
-Checkpoint documental atual: `PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01` consolida as Etapas 1–7 da evolução multi-provider segura. A arquitetura multi-provider está concluída, mas o uso automático de mais de um provider real ainda não está operacional: somente `gemini + gemini-3.5-flash` está homologado e elegível. Última validação integral de código: `570 passed, 7 skipped, 2 warnings`; eval harness `14/14`, `risk_level="none"`, sem chamadas externas reais. Ver `docs/17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7.md` e `docs/MOC_MULTI_PROVIDER_SAFE_EVOLUTION.md`.
+## ENCERRAMENTO FINAL — CANÔNICO ATUAL
+
+```text
+PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO
+```
+
+Frente: `FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01`.
+Documento: `docs/19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01.md`.
+
+- Assistente IA do FinGuard: **homologação real 4/4**. O cenário `Organizar`, última limitação aberta, foi aprovado com Gemini real (`provider_effective=gemini`, `fallback=false`, `retry=0`, um único dispatch).
+- Validação integral desta frente: **`736 passed, 7 skipped, 2 warnings`**; eval harness `14/14`, `risk_level="none"`, sem chamadas externas reais na suíte.
+- Grafo documental Obsidian: **íntegro** — 127 documentos, 686 links, zero órfãos, zero links quebrados. Validado por `app.modules.docs_graph`, não por `.obsidian/graph.json`.
+- Arquitetura multi-provider concluída; operação multi-provider **automática** permanece indisponível porque só `gemini + gemini-3.5-flash` está homologado e elegível. Isso é decisão de homologação, não pendência.
+- Cancelamento remoto continua **não comprovável** — limitação aceita e documentada.
+- Nenhuma implementação obrigatória restante.
+
+Checkpoint anterior (**histórico**): `PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01` consolidou as Etapas 1–7 da evolução multi-provider segura; naquele momento a suíte era `570 passed, 7 skipped`. Ver `docs/17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7.md` e `docs/MOC_MULTI_PROVIDER_SAFE_EVOLUTION.md`.
+
+### Validar o grafo documental
+
+```powershell
+cd apps\api
+.venv\Scripts\python.exe -m app.modules.docs_graph.service
+```
+
+Sai com código diferente de zero diante de órfão, beco sem saída, link quebrado, link ambíguo, basename duplicado ou documento inalcançável a partir do MOC raiz.
 
 Versão atual de produto: V5.1.9
 Tags técnicas: `v6.0.0` (MVP backend, em `ee2ac68`) e `v7.0.0` (core operacional seguro finalizado localmente).

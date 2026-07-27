@@ -50,3 +50,10 @@ C:\Projetos\FinGuard\pedrocore-ia
 - Painel de configurações simples.
 - Prompt base editável.
 - Feedback visual/toast nos botões.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

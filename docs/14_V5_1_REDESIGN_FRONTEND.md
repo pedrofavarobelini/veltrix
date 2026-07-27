@@ -50,3 +50,10 @@ A V5.1 mantém React + Vite + TypeScript e CSS próprio. Não foi adicionada bib
 - Teste manual com MockProvider.
 - Teste manual com GeminiProvider se `.env` estiver configurado.
 - Conferência de que `.env` não foi versionado.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

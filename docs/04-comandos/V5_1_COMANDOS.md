@@ -79,3 +79,10 @@ git commit -m "feat: refazer frontend com redesign aprovado e logo oficial"
 
 git tag -a v5.1.1 -m "PedroCore IA V5.1 approved - redesigned frontend with official logo"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

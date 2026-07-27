@@ -42,3 +42,10 @@ Tasks não críticas fora da lista continuam gerando warning (`PROJECT_TASK_NOT_
 ## 5. O que falta (fora deste repositório)
 
 O cliente HTTP do Assistente no repositório do FinGuard já consome `/api/orchestrate` para `assistant_chat`/`finance_advice`. Integrações de QA/release gate e evoluções de produto continuam separadas por frente; o PedroCore não acessa, não lê e não altera o FinGuard real.
+
+---
+
+## Navegacao
+
+- [[MOC_INTEGRACOES]]
+- [[MOC_PEDROCORE_IA]]

@@ -22,3 +22,10 @@ A leitura real fora de `tmp_path` está coberta pelo fluxo opt-in geral (`PEDROC
 ## Resultado
 
 `tests/test_artifact_reader.py`: 17 testes (13 anteriores + 4 novos), todos passando com `tmp_path`.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

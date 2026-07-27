@@ -214,3 +214,10 @@ POST /api/orchestrate
 ```
 
 Resposta inclui `exploration` com `exploration_plan`, `manual_steps`, `risk_areas`, `required_evidence`, `human_confirmations`, `blocked_actions` e sempre `can_execute_actions=false`, `can_advance=false`, `requires_human_review=true`. Task types: `exploratory_test_plan`, `manual_exploration_report`, `assisted_exploration_review`.
+
+---
+
+## Navegacao
+
+- [[MOC_ARQUITETURA]]
+- [[MOC_PEDROCORE_IA]]

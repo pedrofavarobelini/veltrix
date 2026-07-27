@@ -28,3 +28,10 @@
 ### Status
 
 Pronto para teste local.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

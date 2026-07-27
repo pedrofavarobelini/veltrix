@@ -158,3 +158,10 @@ inalterados.
 - não implementa fallback entre providers reais, retry, health ou score;
 - shadow mode pertence à Etapa 4 e não consome o candidato para execução;
 - não permite que o modelo selecione provider.
+
+---
+
+## Navegacao
+
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]
+- [[MOC_FECHAMENTOS]]

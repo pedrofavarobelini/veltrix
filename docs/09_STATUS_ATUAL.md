@@ -1,10 +1,45 @@
 # PedroCore IA — Status Atual
 
-Checkpoint documental atual: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] consolidam as Etapas 1–7. Arquitetura multi-provider: concluída. Multi-provider automático operacional: não. Motivo: somente `gemini + gemini-3.5-flash` está homologado e elegível. Próximo passo: homologar um segundo provider real em frente separada.
-
 Atualizado em: 27/07/2026
 
-## Assistente IA — ENCERRADO
+## ENCERRAMENTO FINAL — CANÔNICO ATUAL
+
+`FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01` —
+[[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]].
+
+```text
+PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO
+```
+
+```text
+Dívidas      aprovado   (evidência real anterior)
+Economizar   aprovado   (evidência real anterior)
+Crescer      aprovado   (evidência real anterior)
+Organizar    aprovado   (evidência real NOVA, desta frente)
+```
+
+**Homologação real consolidada: 4/4.**
+
+O cenário Organizar — última limitação aberta — foi aprovado com Gemini real:
+`provider_effective=gemini`, `model=gemini-3.5-flash`, `fallback=false`,
+`retry=0`, exatamente **um** dispatch externo, `23.049 ms`, resíduo zero.
+
+A causa da falha anterior deixou de ser um ponto cego: o replay canônico do
+FinGuard passou a **persistir o diagnóstico em disco antes do teardown**, em vez
+de apenas imprimi-lo num processo prestes a morrer.
+
+Suíte integral após todas as alterações: `736 passed, 7 skipped, 2 warnings`;
+eval `14/14`, `risk_level="none"`. Grafo documental íntegro (127 documentos,
+686 links, zero órfãos).
+
+Arquitetura multi-provider: concluída. Multi-provider automático operacional:
+não — somente `gemini + gemini-3.5-flash` está homologado e elegível. Isso é
+decisão de homologação, não pendência.
+
+## Assistente IA — 3/4 (HISTÓRICO)
+
+> **Superado pela seção acima.** Esta seção descreve o estado anterior à
+> execução real do Organizar e é preservada como evidência.
 
 `FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01` —
 [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
@@ -13,21 +48,16 @@ Atualizado em: 27/07/2026
 ASSISTENTE IA ENCERRADO COM LIMITAÇÃO EXTERNA DOCUMENTADA — HOMOLOGAÇÃO REAL 3/4
 ```
 
-```text
-Dívidas      aprovado
-Economizar   aprovado
-Crescer      aprovado
-Organizar    limitação externa aceita
-```
+A homologação real do Organizar consumiu o único dispatch autorizado daquela
+frente e terminou em fallback seguro (`provider_used=mock`,
+`duration_ms=3523`). A causa no lado do provider não pôde ser determinada — a
+observabilidade é um ring buffer em memória e foi perdida no teardown — e a
+assinatura diferia da histórica (~30 s/~60 s). Um diagnóstico estrutural local
+comprovou que o adapter async, o orçamento e o timeout de transporte funcionam;
+**nenhum defeito local objetivo foi demonstrado**, então não houve repetição
+nem nova implementação naquela frente.
 
-A homologação real do Organizar consumiu o único dispatch autorizado e
-terminou em fallback seguro (`provider_used=mock`, `duration_ms=3523`). A causa
-no lado do provider não pôde ser determinada — a observabilidade é um ring
-buffer em memória e foi perdida no teardown — e a assinatura difere da
-histórica (~30 s/~60 s). Um diagnóstico estrutural local comprovou que o
-adapter async, o orçamento e o timeout de transporte funcionam; **nenhum
-defeito local objetivo foi demonstrado**, então não houve repetição nem nova
-implementação.
+Checkpoint documental anterior: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] consolidam as Etapas 1–7.
 
 Nenhuma implementação obrigatória permanece no Assistente IA.
 

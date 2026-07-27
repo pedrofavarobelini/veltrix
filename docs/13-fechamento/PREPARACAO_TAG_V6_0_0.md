@@ -72,3 +72,10 @@ Não executar estes comandos nesta microfrente. Qualquer decisão futura de move
 ## 7. Recomendação
 
 Manter `v6.0.0` apontando para `ee2ac68`. A próxima frente técnica pode avançar para `PEDROCORE-IMPLEMENT-04 — Expansão operacional segura — Blocos 7 a 11` sem criar, mover ou deletar tag nesta microfrente.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

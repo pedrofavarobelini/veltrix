@@ -18,3 +18,10 @@ Corrigir os dois pontos visuais marcados no teste real:
 ## Observação
 
 Esta versão não altera layout estrutural nem responsividade. É apenas limpeza visual sobre a base responsiva aprovada.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

@@ -32,3 +32,10 @@ O que permanece opcional/futuro: cliente HTTP no repositório FinGuard, QA visua
 ## Histórico do objetivo original (V1)
 
 A V1 tinha como foco validar interface de conversa, estrutura de backend, fluxo de envio/recebimento e organização de código, como base para evoluir para uma API de IA. Esse objetivo inicial foi cumprido e superado: o projeto evoluiu de "chat pessoal de testes" para "orquestrador central de IA", conforme descrito acima.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

@@ -16,3 +16,10 @@ Recurso real = opt-in + flag explícita + skipado no pytest padrão + revisão h
 ## Garantias
 
 Nenhum provider real, OCR, Playwright, multimodal ou FinGuard real executado; `.env`/`apps/api/.env`/`apps/web` intocados; nenhuma request externa.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

@@ -16,3 +16,10 @@
 ## Garantias
 
 Nenhum OCR executado no pytest padrão; nenhum serviço externo; nenhuma dependência instalada; release gate conservador.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

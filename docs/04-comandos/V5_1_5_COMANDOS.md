@@ -63,3 +63,10 @@ git commit -m "fix: limpar topo e remover botao configuracoes da sidebar"
 
 git tag -a v5.1.5 -m "PedroCore IA V5.1.5 approved - clean header and sidebar"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

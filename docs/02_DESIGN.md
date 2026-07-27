@@ -28,3 +28,10 @@ Interface simples, pessoal e intuitiva, porque será usada principalmente pelo P
 - Refazer: `Gerando nova resposta...`
 - Config: `Configurações abertas.`
 - Fechar: `Configurações salvas.`
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

@@ -118,3 +118,10 @@ diagnóstico operacional.
   operador local do `pedrocore` (fora de produção). Deploys expostos devem
   configurar autenticação — a camada de identidade não substitui autenticação
   ausente.
+
+---
+
+## Navegacao
+
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]
+- [[MOC_FECHAMENTOS]]

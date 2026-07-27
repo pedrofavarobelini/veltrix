@@ -56,3 +56,10 @@ Validar:
 - Refazer mostra toast.
 - Config abre painel.
 - Fechar mostra toast.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

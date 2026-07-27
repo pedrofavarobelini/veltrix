@@ -111,3 +111,10 @@ Cliente HTTP no repositório FinGuard; push para GitHub/portfólio; deploy; exec
 ## 27. Push
 
 **Nenhum push foi feito.** Todo o trabalho é local; publicação é decisão humana futura.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

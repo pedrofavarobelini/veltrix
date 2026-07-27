@@ -45,3 +45,10 @@ pedrocore:v3:chat-history
 ```
 
 Essa decisão evita perda de histórico local ao atualizar da V3 para a V4.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

@@ -62,3 +62,10 @@ docs/15_V5_1_2_RESPONSIVIDADE_NOTEBOOK.md
 - Teste visual em janela menor.
 - Envio de mensagem via MockProvider.
 - Envio de mensagem via Gemini, quando configurado.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

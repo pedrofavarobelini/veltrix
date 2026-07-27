@@ -192,3 +192,10 @@ V7 — RAG/memória com documentos — pendente
 V8 — Multi-provider — pendente
 V9 — Deploy/documentação final — pendente
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

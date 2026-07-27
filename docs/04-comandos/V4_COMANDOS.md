@@ -304,3 +304,10 @@ ea295c3 (tag: v2.0.0) feat: approve PedroCore IA V2 multi-provider
 working tree clean
 apps/api/.env.example
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

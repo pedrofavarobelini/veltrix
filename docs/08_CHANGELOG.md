@@ -1,6 +1,43 @@
 # PedroCore IA — Changelog
 
-## FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01
+## FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01
+
+Status: **PedroCore encerrado — core operacional concluído. Assistente IA
+homologado 4/4.** Ver [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]].
+
+- **Organizar aprovado com Gemini real.** Última limitação aberta do Assistente
+  IA. Exatamente um dispatch externo autorizado, `provider=auto`, sem modelo do
+  consumidor, `provider_effective=gemini`, `model=gemini-3.5-flash`,
+  `fallback=false`, `retry=0`, segundo provider `0`, paralelismo `0`,
+  `23.049 ms`, resíduo zero. Homologação real consolidada: **4/4**.
+  - Evidência **reaproveitada** (execuções reais anteriores já aprovadas):
+    Dívidas, Economizar e Crescer. Esses três **não** foram reexecutados.
+  - Evidência **nova desta frente**: Organizar.
+- **Causa raiz da indeterminação anterior corrigida no ferramental.** O replay
+  do FinGuard apenas imprimia o diagnóstico do provider, e apenas para
+  tentativas falhas, num processo prestes a ser derrubado — por isso a falha de
+  2026-07-27 ficou sem causa. Agora o diagnóstico é **persistido em disco antes
+  do teardown**, cobre sucesso e falha, e distingue "nenhuma execução" de "não
+  foi possível ler". Nenhuma persistência de produção foi criada: a correção é
+  exclusivamente de ferramental de QA.
+- **Novo módulo `docs_graph`**: validador determinístico do grafo documental
+  Obsidian (`app/modules/docs_graph/`, `tests/test_docs_graph.py`). Detecta
+  órfão, beco sem saída, link quebrado, link ambíguo, basename duplicado e
+  documento inalcançável a partir do MOC raiz; sai com código diferente de zero
+  em qualquer violação. `.obsidian/graph.json` **não** é usado como prova, por
+  ser configuração visual.
+- **Grafo documental conectado**: de 137 violações (39 órfãos, 59 becos sem
+  saída, 39 inalcançáveis) para **zero**. Criados [[MOC_HISTORICO_PEDROCORE]] e
+  [[MOC_FECHAMENTOS]]; rodapé de navegação acrescentado a 59 documentos, sempre
+  por adição, sem alterar conteúdo existente. Total: 127 documentos, 686 links.
+- **Documentação de status reconciliada**: `README.md`, `VERSION.md` e
+  [[09_STATUS_ATUAL]] declaravam `570 passed` e homologação `3/4`. Passaram a
+  declarar `736 passed, 7 skipped` e `4/4`, com as seções anteriores marcadas
+  explicitamente como **HISTÓRICO** em vez de removidas.
+- Nenhuma alteração de código de produção do pipeline, providers, política,
+  identidade, orçamento ou timeout. Sem push, tag, merge, rebase ou amend.
+
+## FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01 (HISTÓRICO)
 
 Status: **Assistente IA encerrado com limitação externa documentada —
 homologação real 3/4**.

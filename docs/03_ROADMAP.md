@@ -35,3 +35,10 @@ Status: pendente.
 ## V9 — Deploy/documentação final
 
 Status: pendente.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

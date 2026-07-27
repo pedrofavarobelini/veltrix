@@ -53,3 +53,10 @@ A logo foi extraída a partir da imagem enviada pelo usuário. Para uma versão 
 - Conferir favicon no navegador.
 - Enviar mensagem com MockProvider.
 - Enviar mensagem com GeminiProvider se a chave estiver configurada no `.env`.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

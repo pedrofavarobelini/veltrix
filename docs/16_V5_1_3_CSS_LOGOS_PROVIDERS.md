@@ -57,3 +57,10 @@ docs/16_V5_1_3_CSS_LOGOS_PROVIDERS.md
 - Configurações locais preservadas.
 - `.env` fora do Git.
 - FinGuard não tocado.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

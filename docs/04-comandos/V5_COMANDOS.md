@@ -182,3 +182,10 @@ docs/13_V5_IDENTIDADE_VISUAL.md
 docs/09_STATUS_ATUAL.md
 VERSION.md
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

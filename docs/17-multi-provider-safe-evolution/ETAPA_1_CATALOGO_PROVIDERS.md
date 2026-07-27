@@ -96,3 +96,10 @@ no `snapshot()` de diagnóstico ou nos testes.
   foram entregues separadamente nas Etapas 3 e 4;
 - não altera o contrato público de `POST /api/orchestrate` nem a projeção
   consumida pelo frontend do FinGuard (`answer`, `suggestions`, `disclaimer`).
+
+---
+
+## Navegacao
+
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]
+- [[MOC_FECHAMENTOS]]

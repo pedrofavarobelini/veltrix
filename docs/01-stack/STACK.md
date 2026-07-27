@@ -33,3 +33,10 @@ Claude
 DeepSeek
 Grok
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

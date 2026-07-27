@@ -63,3 +63,10 @@ git commit -m "fix: preservar responsividade e limpar topo sidebar"
 
 git tag -a v5.1.9 -m "PedroCore IA V5.1.9 approved - responsive layout with clean header"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

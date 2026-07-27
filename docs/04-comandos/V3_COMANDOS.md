@@ -225,3 +225,10 @@ Resultado esperado:
 - Tag `v3.0.0` criada.
 - Tag `v2.0.0` preservada.
 - `.env` real não versionado.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

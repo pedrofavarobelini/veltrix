@@ -270,3 +270,10 @@ Os 3 ícones do topo interno continuavam aparecendo porque vinham de blocos dife
 ### Correção aplicada
 
 Foram removidos os blocos `window-dots` e `window-actions` do JSX e mantido CSS defensivo para ocultar resíduos.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

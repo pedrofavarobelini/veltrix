@@ -63,3 +63,10 @@ git commit -m "fix: remover definitivamente icones do topo interno"
 
 git tag -a v5.1.9 -m "PedroCore IA V5.1.9 approved - remove internal header icons definitively"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

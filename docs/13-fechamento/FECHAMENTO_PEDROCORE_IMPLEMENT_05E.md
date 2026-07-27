@@ -20,3 +20,10 @@ A arquitetura atual de providers é somente texto; enviar imagem a provider mult
 ## Limitação documentada
 
 QA visual real com provider multimodal fica para frente futura, com aprovação explícita, sanitização de imagem e revisão humana obrigatória — release gate jamais decide sozinho com base nisso.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

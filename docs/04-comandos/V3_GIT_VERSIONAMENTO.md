@@ -119,3 +119,10 @@ Após V3 aprovada e versionada localmente, iniciar V4:
 ```txt
 V4 — Melhorias de interface do chat e experiência de uso.
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

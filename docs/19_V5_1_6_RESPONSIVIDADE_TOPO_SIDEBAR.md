@@ -21,3 +21,10 @@ A V5.1.5 voltou a quebrar a responsividade porque o bloco CSS estrutural da V5.1
 ## Regra para próximas correções visuais
 
 Não substituir nem remover os blocos de responsividade já aprovados. Ajustes visuais pequenos devem ser aplicados por override incremental, nunca por reescrita destrutiva do CSS.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

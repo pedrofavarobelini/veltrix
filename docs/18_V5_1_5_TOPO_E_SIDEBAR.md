@@ -20,3 +20,10 @@ Corrigir dois pontos visuais apontados no teste real em notebook:
 ## Observação
 
 As configurações continuam disponíveis no painel direito de providers. O botão removido era redundante e causava confusão visual.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

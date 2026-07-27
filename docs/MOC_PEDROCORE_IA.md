@@ -1,6 +1,15 @@
 # MOC PedroCore IA
 
-## Fechamento atual — 2026-07-27
+## Encerramento final — CANÔNICO ATUAL
+
+- [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] - **PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO**. Assistente IA homologado **4/4**; nenhuma implementação obrigatória restante.
+- Suíte integral: `736 passed, 7 skipped`; eval `14/14`, `risk_level="none"`.
+- Grafo documental íntegro: zero órfãos, zero links quebrados, validado por `app.modules.docs_graph`.
+
+## Fechamento anterior — 2026-07-27 (HISTÓRICO)
+
+> Superado pelo encerramento final acima. A homologação 3/4 registrada nesta
+> seção descrevia o estado antes da execução real do cenário Organizar.
 
 - [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]] - **Assistente IA encerrado**, homologação real 3/4, Organizar como limitação externa aceita.
 - [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] - orçamento de saída, timeout de transporte, cliente Gemini assíncrono e certeza de término.
@@ -24,6 +33,8 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[MOC_VERSOES_STATUS]] - versoes, tags, status e changelog.
 - [[MOC_ESTUDO_PEDROCORE]] - notas de estudo e auditoria.
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - catálogo, identidade, binding, roteamento, health e fallback.
+- [[MOC_FECHAMENTOS]] - todos os fechamentos de frente, do MVP ao encerramento final.
+- [[MOC_HISTORICO_PEDROCORE]] - documentos históricos `V1`-`V5.1.9` e primeira organização da documentação.
 
 ## Documentos oficiais atuais
 

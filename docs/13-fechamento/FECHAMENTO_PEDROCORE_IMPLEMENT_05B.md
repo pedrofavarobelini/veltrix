@@ -11,3 +11,10 @@
 ## Garantias
 
 FinGuard permanece read-only: sem comandos, sem escrita, sem leitura de path real, sem reader, sem provider real por padrão. `/api/chat` legado intacto (teste dedicado). Nenhum acesso real ao FinGuard no pytest padrão.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

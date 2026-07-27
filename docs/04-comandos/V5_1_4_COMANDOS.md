@@ -63,3 +63,10 @@ git commit -m "fix: corrigir responsividade estrutural e foco das configuracoes"
 
 git tag -a v5.1.9 -m "PedroCore IA V5.1.9 approved - structural responsiveness and settings focus"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

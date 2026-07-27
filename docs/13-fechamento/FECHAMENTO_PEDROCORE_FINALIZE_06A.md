@@ -27,3 +27,10 @@
 ## Compatibilidade
 
 `/api/chat` legado intacto; todos os testes das fases anteriores continuam passando sem alteração.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

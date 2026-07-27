@@ -94,3 +94,10 @@ Invoke-RestMethod `
 ```
 
 Se a chave não estiver configurada, o sistema deve responder com fallback do MockProvider.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

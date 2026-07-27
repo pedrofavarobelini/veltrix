@@ -105,3 +105,10 @@ git status
 
 git ls-files | Select-String "\.env"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

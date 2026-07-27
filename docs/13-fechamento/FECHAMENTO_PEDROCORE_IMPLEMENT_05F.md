@@ -17,3 +17,10 @@
 ## Garantias
 
 Nenhum navegador aberto no pytest padrão; nenhuma dependência instalada; sem clique/digitação/submissão/login em qualquer configuração; FinGuard inacessível; release gate não avança com exploração.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

@@ -30,3 +30,10 @@ Não é um dashboard completo. Não é um SaaS. Não é uma central administrati
 - Destaque roxo/azul
 - Layout centralizado
 - Pouca informação na tela
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

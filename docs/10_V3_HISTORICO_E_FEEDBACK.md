@@ -166,3 +166,10 @@ docs/08_CHANGELOG.md
 docs/09_STATUS_ATUAL.md
 docs/10_V3_HISTORICO_E_FEEDBACK.md
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

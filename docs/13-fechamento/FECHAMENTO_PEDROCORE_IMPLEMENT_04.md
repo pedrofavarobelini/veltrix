@@ -61,3 +61,10 @@ O mapa detalhado por arquivo (linhas +/-) está no relatório da frente e no `gi
 - OCR real em frente futura.
 - QA visual real com provider multimodal em frente futura.
 - Playwright real em frente futura.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

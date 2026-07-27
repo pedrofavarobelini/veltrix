@@ -139,3 +139,10 @@ Escopo futuro sugerido (a ser detalhado e aprovado antes de iniciar):
 - Não chamar provider real sem controle explícito.
 
 Esta é apenas uma recomendação de escopo; a decisão de abrir `PEDROCORE-IMPLEMENT-01` e seu escopo definitivo dependem de aprovação em uma etapa futura, fora desta frente documental.
+
+---
+
+## Navegacao
+
+- [[MOC_FECHAMENTOS]]
+- [[MOC_PEDROCORE_IA]]

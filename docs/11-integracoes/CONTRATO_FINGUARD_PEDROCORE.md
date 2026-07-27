@@ -114,3 +114,10 @@ A integração real será feita em frente separada: o FinGuard ganhará um clien
 12. **Esta fase não executa comandos no FinGuard** — o PedroCore não executa comandos de nenhuma origem; `suggested_commands` são apenas strings.
 13. **Esta fase não altera banco real** — não há qualquer acesso a banco de dados; menções a banco real/produção em artefatos geram risco `critical` e bloqueio de avanço.
 14. **Provider real continua bloqueado por padrão** — `allow_real_provider=false` é o default; o bloqueio gera `PROVIDER_REAL_BLOCKED` e, em release gate, `RELEASE_GATE_BLOCKED`.
+
+---
+
+## Navegacao
+
+- [[MOC_INTEGRACOES]]
+- [[MOC_PEDROCORE_IA]]

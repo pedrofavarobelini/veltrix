@@ -120,3 +120,10 @@ projeção do frontend segue limitada a `answer`, `suggestions`, `disclaimer`.
 - não implementa multi-provider real, health, circuit breaker ou fallback
   entre providers reais;
 - não inicia a Etapa 5.
+
+---
+
+## Navegacao
+
+- [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]
+- [[MOC_FECHAMENTOS]]

@@ -139,3 +139,10 @@ V6 — Persistência real com banco de dados.
 ## Complemento visual da V5
 
 A V5 também aplica a logo oficial escolhida pelo usuário na sidebar, no avatar das respostas da IA e no favicon. O design aprovado da interface foi preservado.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

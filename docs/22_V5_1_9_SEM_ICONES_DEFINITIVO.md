@@ -12,3 +12,10 @@ Remover os ícones/círculos residuais que ainda apareciam no topo interno, sem 
 - Layout aprovado preservado.
 - Painel direito preservado.
 - Backend sem alteração funcional.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

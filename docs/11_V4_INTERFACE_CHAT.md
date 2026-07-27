@@ -99,3 +99,10 @@ A chave não foi renomeada para evitar perda do histórico local já salvo no na
 ## Resultado esperado
 
 A V4 deve deixar o PedroCore IA com aparência de protótipo profissional, mas sem alterar a arquitetura principal do projeto.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

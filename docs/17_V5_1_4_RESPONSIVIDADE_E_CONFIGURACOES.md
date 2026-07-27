@@ -32,3 +32,10 @@ Corrigir o problema persistente de responsividade em notebook e tornar o botão 
 - Histórico local.
 - Configurações locais.
 - Documentação Obsidian.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

@@ -63,3 +63,10 @@ git commit -m "fix: remover duplicidades do topo e botao historico"
 
 git tag -a v5.1.9 -m "PedroCore IA V5.1.9 approved - clean top and sidebar history"
 ```
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]

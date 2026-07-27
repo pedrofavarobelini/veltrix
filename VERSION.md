@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 26/07/2026
+Atualizado em: 27/07/2026
 
 ## Versão atual de produto
 
@@ -10,9 +10,25 @@ V5.1.9
 
 0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Frente atual
+## Frente atual — ENCERRAMENTO FINAL
 
-`PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01`: fechamento documental das Etapas 1–7 da evolução multi-provider segura, tomando `e389b2c` como último commit de implementação. Catálogo, identidade/autorização, binding, shadow, enforced, health/circuit breaker e fallback pre-dispatch estão concluídos. A arquitetura multi-provider está concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível. Última validação integral: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`, sem chamadas externas reais.
+`FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01`.
+
+```text
+PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO
+```
+
+- Assistente IA do FinGuard **homologado 4/4**: o cenário `Organizar` foi aprovado com Gemini real nesta frente (um único dispatch, `fallback=false`, `retry=0`). Os outros três cenários reaproveitam evidência real anterior já aprovada.
+- Validação integral **medida após todas as alterações**: `736 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`, sem chamadas externas reais na suíte.
+- Grafo documental Obsidian íntegro: 127 documentos, 686 links, zero órfãos, zero links quebrados, validado por `app.modules.docs_graph`.
+- Nova capacidade de QA documental: `apps/api/app/modules/docs_graph/` + `tests/test_docs_graph.py`.
+- Nenhuma implementação obrigatória restante.
+
+Documento canônico: `docs/19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01.md`.
+
+## Frente anterior (HISTÓRICO)
+
+`PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01`: fechamento documental das Etapas 1–7 da evolução multi-provider segura, tomando `e389b2c` como último commit de implementação. Catálogo, identidade/autorização, binding, shadow, enforced, health/circuit breaker e fallback pre-dispatch concluídos. Naquele momento a validação integral era `570 passed, 7 skipped, 2 warnings`. A arquitetura multi-provider está concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível.
 
 Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 

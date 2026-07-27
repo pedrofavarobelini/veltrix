@@ -36,3 +36,10 @@
 ## Decisão importante
 
 A V1.0.1 continua com MockProvider. Gemini real entra na V2.
+
+---
+
+## Navegacao
+
+- [[MOC_HISTORICO_PEDROCORE]]
+- [[MOC_PEDROCORE_IA]]
