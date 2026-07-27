@@ -33,6 +33,7 @@ from app.modules.providers.base import (
     ProviderOutputRejectedError,
     ProviderResponse,
     ProviderTransportTimeoutError,
+    TransportClose,
 )
 from app.modules.providers.gemini_provider import GeminiProvider
 from app.modules.shadow_routing.schemas import RoutingMode
@@ -351,20 +352,22 @@ def test_transport_timeout_completion_stays_ambiguous(enforced, monkeypatch):
     assert attempt["external_dispatch"] is True
 
 
-def test_local_transport_cancellation_is_recorded_without_claiming_remote_stop(
+def test_local_transport_close_is_recorded_without_claiming_remote_stop(
     enforced, monkeypatch
 ):
-    Spy(ProviderTransportTimeoutError("transporte expirou")).install(monkeypatch)
+    error = ProviderTransportTimeoutError("transporte expirou")
+    error.transport_close = TransportClose.CONFIRMED
+    Spy(error).install(monkeypatch)
 
     audit = _post().json()["audit"]
     attempt = audit["provider_attempts"][0]
 
-    assert attempt["transport_cancel_requested"] is True
-    assert attempt["transport_cancelled_locally"] is True
+    assert attempt["transport_close_requested"] is True
+    assert attempt["transport_close_outcome"] == TransportClose.CONFIRMED.value
     # A convivência dos dois fatos é justamente o ponto: transporte fechado
     # localmente E conclusão remota desconhecida.
     assert attempt["completion_certainty"] == "ambiguous"
-    assert audit["transport_cancelled_locally"] is True
+    assert audit["transport_close_outcome"] == TransportClose.CONFIRMED.value
 
 
 def test_orchestration_timeout_also_stays_ambiguous(enforced, monkeypatch):

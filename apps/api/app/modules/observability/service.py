@@ -476,9 +476,10 @@ class ObservabilityService:
         """Orçamento, tempos e término — somente números e rótulos.
 
         Nunca inclui prompt, resposta, contexto financeiro ou credencial. Note
-        que `transport_cancelled_locally` convive com
+        que `transport_close_outcome="confirmed"` convive com
         `completion_certainty="ambiguous"`: fechar a conexão local não prova
-        que a geração remota terminou.
+        que a geração remota terminou. `unknown` é o valor honesto quando o
+        fechamento foi pedido mas o resultado não é observável.
         """
         audit = outcome.audit
         if audit.output_budget_effective is None and not audit.provider_attempts:
@@ -492,8 +493,8 @@ class ObservabilityService:
             "budget_clamped": audit.output_budget_clamped,
             "orchestration_timeout_ms": audit.orchestration_timeout_ms,
             "transport_timeout_ms": audit.transport_timeout_ms,
-            "transport_cancel_requested": audit.transport_cancel_requested,
-            "transport_cancelled_locally": audit.transport_cancelled_locally,
+            "transport_close_requested": audit.transport_close_requested,
+            "transport_close_outcome": audit.transport_close_outcome,
             "finish_reason": audit.provider_finish_reason,
             "input_tokens": audit.provider_input_tokens,
             "output_tokens": audit.provider_output_tokens,
@@ -546,12 +547,10 @@ class ObservabilityService:
                     budget_clamped=item.get("budget_clamped"),
                     orchestration_timeout_ms=item.get("orchestration_timeout_ms"),
                     transport_timeout_ms=item.get("transport_timeout_ms"),
-                    transport_cancel_requested=bool(
-                        item.get("transport_cancel_requested")
+                    transport_close_requested=bool(
+                        item.get("transport_close_requested")
                     ),
-                    transport_cancelled_locally=bool(
-                        item.get("transport_cancelled_locally")
-                    ),
+                    transport_close_outcome=item.get("transport_close_outcome"),
                     finish_reason=item.get("finish_reason"),
                     input_tokens=item.get("input_tokens"),
                     output_tokens=item.get("output_tokens"),

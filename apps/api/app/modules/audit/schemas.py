@@ -82,9 +82,11 @@ class AuditMetadata(BaseModel):
     orchestration_timeout_ms: int | None = None
     transport_timeout_ms: int | None = None
     # Fatos de transporte LOCAL. Não são prova de término remoto: mesmo com
-    # ambos True, `completion_certainty` permanece `ambiguous`.
-    transport_cancel_requested: bool = False
-    transport_cancelled_locally: bool = False
+    # `transport_close_outcome="confirmed"`, `completion_certainty` permanece
+    # `ambiguous`. Solicitar o fechamento e confirmá-lo são fatos distintos, e
+    # `unknown` é o valor honesto quando o resultado não é observável.
+    transport_close_requested: bool = False
+    transport_close_outcome: str = "not_attempted"
     provider_finish_reason: str | None = None
     provider_input_tokens: int | None = None
     provider_output_tokens: int | None = None

@@ -45,6 +45,7 @@ from app.modules.providers.base import (
     ProviderOutputRejectedError,
     ProviderResponse,
     ProviderTransportTimeoutError,
+    TransportClose,
 )
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.shadow_routing.schemas import EliminationReason, RoutingMode
@@ -1071,11 +1072,12 @@ class OrchestrationService:
         audit.output_budget_clamped = attempt.get("budget_clamped")
         audit.orchestration_timeout_ms = attempt.get("orchestration_timeout_ms")
         audit.transport_timeout_ms = attempt.get("transport_timeout_ms")
-        audit.transport_cancel_requested = bool(
-            attempt.get("transport_cancel_requested")
+        audit.transport_close_requested = bool(
+            attempt.get("transport_close_requested")
         )
-        audit.transport_cancelled_locally = bool(
-            attempt.get("transport_cancelled_locally")
+        audit.transport_close_outcome = str(
+            attempt.get("transport_close_outcome")
+            or TransportClose.NOT_ATTEMPTED.value
         )
         audit.provider_finish_reason = attempt.get("finish_reason")
         audit.provider_input_tokens = attempt.get("input_tokens")
@@ -1440,8 +1442,11 @@ class OrchestrationService:
             "orchestration_timeout_ms": int(orchestration_timeout * 1_000),
             "transport_timeout_ms": transport_timeout_ms,
             # Fatos de transporte LOCAL. Nunca são prova de término remoto.
-            "transport_cancel_requested": False,
-            "transport_cancelled_locally": False,
+            # Solicitar o fechamento e confirmá-lo são fatos distintos: o
+            # `outcome` só vira `confirmed` quando o adapter observou o
+            # fechamento de verdade.
+            "transport_close_requested": False,
+            "transport_close_outcome": TransportClose.NOT_ATTEMPTED.value,
             # Metadados de término, preenchidos quando o provider os fornece.
             "finish_reason": None,
             "input_tokens": None,
@@ -1510,12 +1515,19 @@ class OrchestrationService:
             if isinstance(exc, ProviderOutputRejectedError):
                 attempt["finish_reason"] = exc.finish_reason
                 attempt["output_truncated"] = exc.truncated
-            elif external_dispatch and supports_cancel:
-                # Espera encerrada ou transporte expirado num adapter async: o
-                # cliente local É fechado. Registramos o fato de transporte sem
-                # jamais promovê-lo a prova de cancelamento remoto.
-                attempt["transport_cancel_requested"] = True
-                attempt["transport_cancelled_locally"] = True
+                # O custo já foi incorrido: os metadados não se perdem.
+                attempt["input_tokens"] = exc.input_tokens
+                attempt["output_tokens"] = exc.output_tokens
+                attempt["total_tokens"] = exc.total_tokens
+            if external_dispatch and supports_cancel:
+                # O fechamento foi solicitado. O RESULTADO só é conhecido
+                # quando o próprio adapter o observou e anexou à exceção;
+                # quando `asyncio.wait_for` cancela, a exceção que chega aqui
+                # é do `wait_for` e o resultado é honestamente desconhecido.
+                attempt["transport_close_requested"] = True
+                attempt["transport_close_outcome"] = getattr(
+                    exc, "transport_close", TransportClose.UNKNOWN
+                ).value
             after = provider_health_service.record(
                 key,
                 classification,
@@ -1535,6 +1547,11 @@ class OrchestrationService:
         attempt["output_tokens"] = getattr(result, "output_tokens", None)
         attempt["total_tokens"] = getattr(result, "total_tokens", None)
         attempt["output_truncated"] = bool(getattr(result, "truncated", False))
+        close_outcome = getattr(result, "transport_close", TransportClose.NOT_ATTEMPTED)
+        attempt["transport_close_requested"] = (
+            close_outcome is not TransportClose.NOT_ATTEMPTED
+        )
+        attempt["transport_close_outcome"] = close_outcome.value
         after = provider_health_service.record(
             key,
             FailureClassification.SUCCESS,

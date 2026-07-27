@@ -37,8 +37,8 @@ class ProviderAttempt(BaseModel):
     budget_clamped: bool | None = None
     orchestration_timeout_ms: int | None = None
     transport_timeout_ms: int | None = None
-    transport_cancel_requested: bool = False
-    transport_cancelled_locally: bool = False
+    transport_close_requested: bool = False
+    transport_close_outcome: str | None = None
     finish_reason: str | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
@@ -77,8 +77,8 @@ class ProviderAttempt(BaseModel):
             "budget_clamped": self.budget_clamped,
             "orchestration_timeout_ms": self.orchestration_timeout_ms,
             "transport_timeout_ms": self.transport_timeout_ms,
-            "transport_cancel_requested": self.transport_cancel_requested,
-            "transport_cancelled_locally": self.transport_cancelled_locally,
+            "transport_close_requested": self.transport_close_requested,
+            "transport_close_outcome": self.transport_close_outcome,
             "finish_reason": self.finish_reason,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,

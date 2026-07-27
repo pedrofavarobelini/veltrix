@@ -1,5 +1,25 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
+
+
+class TransportClose(str, Enum):
+    """Resultado observado do fechamento do transporte local.
+
+    Distingue explicitamente TENTATIVA de CONFIRMAÇÃO. `UNKNOWN` é o valor
+    honesto quando o fechamento foi solicitado mas o resultado não é
+    observável pelo chamador — por exemplo, quando `asyncio.wait_for` cancela
+    a coroutine e a exceção que chega ao pipeline é gerada pelo próprio
+    `wait_for`, não pelo adapter.
+
+    Nenhum destes valores é prova de cancelamento REMOTO. Mesmo `CONFIRMED`
+    significa apenas que o cliente HTTP local foi encerrado.
+    """
+
+    NOT_ATTEMPTED = "not_attempted"
+    CONFIRMED = "confirmed"
+    FAILED = "failed"
+    UNKNOWN = "unknown"
 
 
 def normalize_token_count(value: object) -> int | None:
@@ -40,6 +60,8 @@ class ProviderResponse:
     output_budget: int | None = None
     # Timeout de transporte efetivamente configurado no cliente.
     transport_timeout_ms: int | None = None
+    # Resultado OBSERVADO do fechamento do transporte local.
+    transport_close: TransportClose = TransportClose.NOT_ATTEMPTED
 
 
 class ProviderConfigError(Exception):
@@ -47,15 +69,22 @@ class ProviderConfigError(Exception):
 
 
 class ProviderExecutionError(Exception):
-    """Erro de execução da API do provider."""
+    """Erro de execução da API do provider.
+
+    `transport_close` carrega o resultado observado do fechamento do
+    transporte, quando o adapter conseguiu observá-lo.
+    """
+
+    transport_close: TransportClose = TransportClose.NOT_ATTEMPTED
 
 
 class ProviderTransportTimeoutError(ProviderExecutionError):
     """Timeout do transporte HTTP após o dispatch externo.
 
-    O transporte local expirou e a conexão foi encerrada localmente. Isso NÃO
-    prova que a geração remota parou: a certeza de conclusão permanece
-    ambígua e nenhum retry ou provider secundário é liberado por causa disso.
+    O transporte local expirou e o fechamento foi solicitado. Isso NÃO prova
+    que a geração remota parou: a certeza de conclusão permanece ambígua e
+    nenhum retry ou provider secundário é liberado por causa disso — nem
+    mesmo quando `transport_close` é `CONFIRMED`.
     """
 
 
@@ -67,6 +96,10 @@ class ProviderOutputRejectedError(ProviderExecutionError):
     mais importante é `MAX_TOKENS`, que sinaliza truncamento pelo orçamento de
     saída. Não existe chamada de continuação, retry nem provider secundário:
     o encerramento seguro existente (Mock) é aplicado.
+
+    Os metadados de uso são preservados: o custo já foi incorrido, então
+    descartá-los tornaria a contabilidade de tokens silenciosamente incompleta
+    justamente nos casos mais caros.
     """
 
     def __init__(
@@ -75,10 +108,20 @@ class ProviderOutputRejectedError(ProviderExecutionError):
         *,
         finish_reason: str | None = None,
         truncated: bool = False,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+        total_tokens: int | None = None,
+        output_budget: int | None = None,
+        transport_timeout_ms: int | None = None,
     ) -> None:
         super().__init__(message)
         self.finish_reason = finish_reason
         self.truncated = truncated
+        self.input_tokens = input_tokens
+        self.output_tokens = output_tokens
+        self.total_tokens = total_tokens
+        self.output_budget = output_budget
+        self.transport_timeout_ms = transport_timeout_ms
 
 
 class BaseAIProvider(ABC):

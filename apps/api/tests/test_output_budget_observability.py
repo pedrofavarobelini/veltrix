@@ -23,7 +23,11 @@ from app.modules.provider_health.service import (
     FLAG_CIRCUIT_ENABLED,
     provider_health_service,
 )
-from app.modules.providers.base import ProviderResponse, ProviderTransportTimeoutError
+from app.modules.providers.base import (
+    ProviderResponse,
+    ProviderTransportTimeoutError,
+    TransportClose,
+)
 from app.modules.providers.gemini_provider import GeminiProvider
 from app.modules.shadow_routing.schemas import RoutingMode
 from app.modules.shadow_routing.service import FLAG_ROUTING_MODE
@@ -168,18 +172,30 @@ def test_provider_attempt_carries_the_new_structured_fields(observable, monkeypa
     assert attempt["completion_certainty"] == "completed"
 
 
-def test_transport_cancellation_is_visible_next_to_the_ambiguity(
-    observable, monkeypatch
-):
-    _install(monkeypatch, ProviderTransportTimeoutError("transporte expirou"))
+def test_transport_close_is_visible_next_to_the_ambiguity(observable, monkeypatch):
+    error = ProviderTransportTimeoutError("transporte expirou")
+    error.transport_close = TransportClose.CONFIRMED
+    _install(monkeypatch, error)
 
     _post()
     record = _last_record()
     budget = record.generation_budget
     attempt = record.provider_attempts[0].model_dump()
 
-    assert budget["transport_cancelled_locally"] is True
+    assert budget["transport_close_outcome"] == TransportClose.CONFIRMED.value
     assert attempt["completion_certainty"] == "ambiguous"
+
+
+def test_failed_close_is_never_projected_as_confirmed(observable, monkeypatch):
+    error = ProviderTransportTimeoutError("transporte expirou")
+    error.transport_close = TransportClose.FAILED
+    _install(monkeypatch, error)
+
+    _post()
+    budget = _last_record().generation_budget
+
+    assert budget["transport_close_requested"] is True
+    assert budget["transport_close_outcome"] == TransportClose.FAILED.value
 
 
 def test_absent_metrics_stay_absent_instead_of_being_invented(

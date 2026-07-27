@@ -25,6 +25,7 @@ from app.modules.providers.base import (
     ProviderOutputRejectedError,
     ProviderResponse,
     ProviderTransportTimeoutError,
+    TransportClose,
     normalize_token_count,
 )
 
@@ -160,23 +161,38 @@ class GeminiProvider(BaseAIProvider):
                 contents=prompt,
                 config=genai_types.GenerateContentConfig(max_output_tokens=budget),
             )
-            return self._normalize(
+            result = self._normalize(
                 response,
                 model=model,
                 budget=budget,
                 timeout_ms=timeout_ms,
             )
-        except ProviderExecutionError:
+        except ProviderExecutionError as error:
+            # Inclui truncamento e finish_reason anormal, levantados por
+            # `_normalize`. O fechamento é observado e anexado à exceção.
+            error.transport_close = await self._aclose(client)
             raise
         except Exception as error:
+            close_outcome = await self._aclose(client)
             if _is_transport_timeout(error):
-                raise ProviderTransportTimeoutError(
+                translated: ProviderExecutionError = ProviderTransportTimeoutError(
                     "Transporte do Gemini expirou antes da conclusão da geração."
-                ) from error
-            raise ProviderExecutionError(f"Falha no GeminiProvider: {error}") from error
-        finally:
-            # Roda também quando a task é cancelada por `asyncio.wait_for`.
+                )
+            else:
+                translated = ProviderExecutionError(
+                    f"Falha no GeminiProvider: {error}"
+                )
+            translated.transport_close = close_outcome
+            raise translated from error
+        except BaseException:
+            # Cancelamento da task: o cliente ainda precisa ser fechado, mas o
+            # resultado não chega a ninguém — quem cancelou observa apenas o
+            # próprio cancelamento.
             await self._aclose(client)
+            raise
+
+        result.transport_close = await self._aclose(client)
+        return result
 
     # ------------------------------------------------------------------
     @staticmethod
@@ -219,6 +235,16 @@ class GeminiProvider(BaseAIProvider):
         input_tokens, output_tokens, total_tokens = _usage_of(response)
         text = getattr(response, "text", "") or ""
 
+        # O custo já foi incorrido nos caminhos abaixo: os metadados de uso
+        # viajam com a exceção em vez de serem descartados.
+        usage_kwargs = {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": total_tokens,
+            "output_budget": budget,
+            "transport_timeout_ms": timeout_ms,
+        }
+
         if finish_reason == FINISH_REASON_MAX_TOKENS:
             # Truncamento é evidência explícita do provider, jamais inferido do
             # tamanho do texto. Nenhuma continuação, nenhum retry.
@@ -226,6 +252,7 @@ class GeminiProvider(BaseAIProvider):
                 TRUNCATED_MESSAGE,
                 finish_reason=finish_reason,
                 truncated=True,
+                **usage_kwargs,
             )
 
         if finish_reason is not None and finish_reason not in _NORMAL_FINISH_REASONS:
@@ -236,6 +263,7 @@ class GeminiProvider(BaseAIProvider):
                 f"{ABNORMAL_FINISH_MESSAGE} (finish_reason={finish_reason})",
                 finish_reason=finish_reason,
                 truncated=False,
+                **usage_kwargs,
             )
 
         if not text.strip():
@@ -255,15 +283,19 @@ class GeminiProvider(BaseAIProvider):
         )
 
     @staticmethod
-    async def _aclose(client: object) -> None:
-        """Fecha o cliente assíncrono sem nunca mascarar o erro original."""
+    async def _aclose(client: object) -> TransportClose:
+        """Fecha o cliente e DEVOLVE o resultado observado.
+
+        Falha de fechamento nunca substitui a exceção em curso nem transforma
+        sucesso em erro — mas também nunca é registrada como fechamento
+        concluído. Tentativa e confirmação são fatos distintos.
+        """
         aio = getattr(client, "aio", None)
         aclose = getattr(aio, "aclose", None)
         if aclose is None:
-            return
+            return TransportClose.NOT_ATTEMPTED
         try:
             await aclose()
         except Exception:
-            # Falha de fechamento não pode substituir a exceção em curso nem
-            # transformar um sucesso em erro.
-            pass
+            return TransportClose.FAILED
+        return TransportClose.CONFIRMED
