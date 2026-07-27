@@ -166,6 +166,10 @@ _MODEL_CATALOG: tuple[ModelDefinition, ...] = (
         homologated=True,
         authorized=True,
         default_for_provider=True,
+        # Teto de saída do modelo (OUTPUT-BUDGET-CANCELLATION-01). Coincide com
+        # o teto global de segurança: quem realmente aperta o orçamento neste
+        # modelo é a política por task.
+        max_output_tokens=8192,
         notes="Modelo Gemini explicitamente homologado para o uso real atual.",
     ),
     ModelDefinition(
@@ -384,6 +388,16 @@ class ProviderCatalogService:
             ),
             None,
         )
+
+    def max_output_tokens_for(self, model_id: str | None) -> int | None:
+        """Teto de saída declarado para o modelo, quando existir.
+
+        Leitura pura do catálogo: modelo desconhecido ou sem teto próprio
+        devolve `None`, e o orçamento efetivo passa a depender apenas do teto
+        global e da política por task.
+        """
+        model = self.find_model(model_id)
+        return model.max_output_tokens if model is not None else None
 
     def default_model_for(self, provider_id: str | None) -> ModelDefinition | None:
         return next(

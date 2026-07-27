@@ -97,12 +97,22 @@ class ModelDefinition(BaseModel):
     compatible_tasks: tuple[str, ...] = (ANY_TASK,)
     excluded_tasks: tuple[str, ...] = ()
     aliases: tuple[str, ...] = ()
+    # Teto de saída do modelo (OUTPUT-BUDGET-CANCELLATION-01). É uma das três
+    # camadas do orçamento efetivo, junto do teto global e da política por
+    # task; nunca é enviado pelo consumidor. `None` significa "sem teto
+    # próprio declarado", não "ilimitado": o global e a task continuam valendo.
+    max_output_tokens: int | None = None
     notes: str = ""
 
     @model_validator(mode="after")
     def _check(self) -> ModelDefinition:
         if not self.model_id.strip():
             raise ValueError("model_id vazio não identifica modelo.")
+        if self.max_output_tokens is not None and self.max_output_tokens <= 0:
+            raise ValueError(
+                "max_output_tokens deve ser inteiro positivo quando declarado: "
+                f"{self.model_id}"
+            )
         if not self.provider_id.strip():
             raise ValueError(
                 f"modelo sem provider não pode existir no catálogo: {self.model_id!r}"
