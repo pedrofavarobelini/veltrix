@@ -69,3 +69,24 @@ class AuditMetadata(BaseModel):
     real_provider_attempt_record_count: int = 0
     authorization_result: str | None = None
     authorization_reason_code: str | None = None
+    # PROVIDER-OUTPUT-BUDGET-CANCELLATION-01 (aditivo, retrocompatível):
+    # orçamento de saída decidido pelo PedroCore, tempos aplicados e metadados
+    # de término. Nada aqui é sensível: são números e rótulos, nunca prompt,
+    # resposta, contexto financeiro ou credencial.
+    output_budget_effective: int | None = None
+    output_budget_source: str | None = None
+    output_budget_clamped: bool | None = None
+    output_budget_global_cap: int | None = None
+    output_budget_model_cap: int | None = None
+    output_budget_task_cap: int | None = None
+    orchestration_timeout_ms: int | None = None
+    transport_timeout_ms: int | None = None
+    # Fatos de transporte LOCAL. Não são prova de término remoto: mesmo com
+    # ambos True, `completion_certainty` permanece `ambiguous`.
+    transport_cancel_requested: bool = False
+    transport_cancelled_locally: bool = False
+    provider_finish_reason: str | None = None
+    provider_input_tokens: int | None = None
+    provider_output_tokens: int | None = None
+    provider_total_tokens: int | None = None
+    provider_output_truncated: bool = False

@@ -36,10 +36,15 @@ from app.modules.provider_health.service import (
     ProviderCircuitOpenError,
     provider_health_service,
 )
+from app.modules.output_budget.schemas import OutputBudget
+from app.modules.output_budget.service import output_budget_service
+from app.modules.provider_catalog.service import provider_catalog_service
 from app.modules.providers.base import (
     ProviderConfigError,
     ProviderExecutionError,
+    ProviderOutputRejectedError,
     ProviderResponse,
+    ProviderTransportTimeoutError,
 )
 from app.modules.providers.local_model_provider import local_model_ready
 from app.modules.shadow_routing.schemas import EliminationReason, RoutingMode
@@ -129,6 +134,22 @@ PROVIDER_REAL_UNAVAILABLE_WARNING = (
 )
 PROVIDER_TIMEOUT_ENV = "PEDROCORE_PROVIDER_TIMEOUT_SECONDS"
 PROVIDER_TIMEOUT_WARNING = "Provider excedeu o tempo limite; fallback seguro aplicado."
+PROVIDER_COMPLETION_AMBIGUOUS_WARNING = (
+    "A espera pelo provider terminou, mas não há prova de que a geração remota "
+    "tenha sido interrompida; nenhuma nova tentativa é iniciada."
+)
+PROVIDER_TRANSPORT_TIMEOUT_WARNING = (
+    "O transporte HTTP expirou e foi encerrado localmente; a conclusão remota "
+    "permanece desconhecida e nenhuma nova tentativa é iniciada."
+)
+PROVIDER_OUTPUT_TRUNCATED_WARNING = (
+    "Resposta do provider atingiu o orçamento de saída e ficou incompleta; "
+    "conteúdo parcial não foi publicado e o fallback seguro foi aplicado."
+)
+PROVIDER_OUTPUT_REJECTED_WARNING = (
+    "Provider encerrou a geração por condição anormal; resposta não utilizável "
+    "e fallback seguro aplicado."
+)
 PROVIDER_CIRCUIT_OPEN_WARNING = (
     "Provider temporariamente bloqueado pelo circuit breaker; fallback seguro aplicado."
 )
@@ -539,29 +560,18 @@ class OrchestrationService:
                                 ordinal=1,
                                 selection_reason=routing_decision.selection_reason,
                                 fallback_candidate=enforced_auto,
+                                task_type=strategy.task_type,
                             )
                             answer = result.answer
                             provider_used = result.provider
                             model_used = result.model
                         except Exception as exc:
-                            error = str(exc)
-                            if isinstance(exc, ProviderCircuitOpenError):
-                                error = PROVIDER_CIRCUIT_OPEN_WARNING
-                                error_code = codes.PROVIDER_CIRCUIT_OPEN
-                                provider_items.append(
-                                    make_warning(codes.PROVIDER_CIRCUIT_OPEN, error)
-                                )
-                            elif isinstance(exc, TimeoutError):
-                                error = PROVIDER_TIMEOUT_WARNING
-                                error_code = codes.PROVIDER_TIMEOUT
-                                provider_items.append(
-                                    make_warning(codes.PROVIDER_TIMEOUT, error)
-                                )
-                            elif isinstance(exc, ProviderConfigError):
-                                error_code = codes.PROVIDER_REAL_UNAVAILABLE
-                                provider_items.append(
-                                    make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
-                                )
+                            error, signal_code, signal_items = (
+                                self._provider_failure_signal(exc)
+                            )
+                            if signal_code is not None:
+                                error_code = signal_code
+                            provider_items.extend(signal_items)
                             secondary_result = None
                             if enforced_auto:
                                 try:
@@ -676,6 +686,7 @@ class OrchestrationService:
                                     "Provider selecionado explicitamente pelo caller."
                                 ),
                                 fallback_candidate=False,
+                                task_type=strategy.task_type,
                             )
                         else:
                             result = await self._generate_with_timeout(
@@ -683,27 +694,24 @@ class OrchestrationService:
                                 payload,
                                 prompt.enriched_system_prompt,
                                 binding.model_id,
+                                strategy.task_type,
                             )
                         answer = result.answer
                         provider_used = result.provider
                         model_used = result.model
                     except Exception as exc:
-                        error = str(exc)
-                        if isinstance(exc, ProviderCircuitOpenError):
-                            error = PROVIDER_CIRCUIT_OPEN_WARNING
-                            error_code = codes.PROVIDER_CIRCUIT_OPEN
-                            provider_items.append(
-                                make_warning(codes.PROVIDER_CIRCUIT_OPEN, error)
-                            )
-                        elif isinstance(exc, TimeoutError):
-                            error = PROVIDER_TIMEOUT_WARNING
-                            error_code = codes.PROVIDER_TIMEOUT
-                            provider_items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
-                        elif provider.real_provider and isinstance(exc, ProviderConfigError):
-                            error_code = codes.PROVIDER_REAL_UNAVAILABLE
-                            provider_items.append(
-                                make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error)
-                            )
+                        # Provider não-real sem configuração continua sendo
+                        # apenas indisponibilidade silenciosa, como antes.
+                        report_config_error = provider.real_provider or not isinstance(
+                            exc, ProviderConfigError
+                        )
+                        error, signal_code, signal_items = (
+                            self._provider_failure_signal(exc)
+                        )
+                        if report_config_error:
+                            if signal_code is not None:
+                                error_code = signal_code
+                            provider_items.extend(signal_items)
                         answer, provider_used, model_used = await self._mock_fallback(
                             payload, requested_provider, error, prompt.enriched_system_prompt
                         )
@@ -818,6 +826,7 @@ class OrchestrationService:
             if attempt.get("external_dispatch") is True
         )
         audit.real_provider_attempt_record_count = len(audit.provider_attempts)
+        self._apply_generation_audit(audit)
 
         shadow_active = shadow_decision.routing_mode is RoutingMode.SHADOW
         audit.shadow_enabled = shadow_active
@@ -913,7 +922,11 @@ class OrchestrationService:
         provider = provider_registry.get(LOCAL_MODEL_PROVIDER_NAME)
         try:
             result = await self._generate_with_timeout(
-                provider, payload, prompt.enriched_system_prompt, binding.model_id
+                provider,
+                payload,
+                prompt.enriched_system_prompt,
+                binding.model_id,
+                strategy.task_type,
             )
             items.append(
                 make_warning(
@@ -1042,6 +1055,102 @@ class OrchestrationService:
         ]
 
     @staticmethod
+    def _apply_generation_audit(audit) -> None:
+        """Consolida orçamento, tempos e término da ÚLTIMA tentativa real.
+
+        Sem tentativa real registrada (Mock, local_qa, bloqueio de policy), os
+        campos permanecem nos defaults seguros. Nenhuma métrica é inventada:
+        o que o provider não informou continua `None`.
+        """
+        if not audit.provider_attempts:
+            return
+        attempt = audit.provider_attempts[-1]
+
+        audit.output_budget_effective = attempt.get("output_budget")
+        audit.output_budget_source = attempt.get("budget_source")
+        audit.output_budget_clamped = attempt.get("budget_clamped")
+        audit.orchestration_timeout_ms = attempt.get("orchestration_timeout_ms")
+        audit.transport_timeout_ms = attempt.get("transport_timeout_ms")
+        audit.transport_cancel_requested = bool(
+            attempt.get("transport_cancel_requested")
+        )
+        audit.transport_cancelled_locally = bool(
+            attempt.get("transport_cancelled_locally")
+        )
+        audit.provider_finish_reason = attempt.get("finish_reason")
+        audit.provider_input_tokens = attempt.get("input_tokens")
+        audit.provider_output_tokens = attempt.get("output_tokens")
+        audit.provider_total_tokens = attempt.get("total_tokens")
+        audit.provider_output_truncated = bool(attempt.get("output_truncated"))
+
+        if audit.output_budget_effective is not None:
+            audit.output_budget_global_cap = output_budget_service.global_cap()
+            audit.output_budget_task_cap = output_budget_service.task_cap(
+                audit.task_type
+            )
+            audit.output_budget_model_cap = (
+                provider_catalog_service.max_output_tokens_for(attempt.get("model_id"))
+            )
+
+    @staticmethod
+    def _provider_failure_signal(exc: Exception) -> tuple[str, str | None, list[WarningItem]]:
+        """Traduz a falha estruturada de uma tentativa em contrato estável.
+
+        `error_code` permanece o conjunto já conhecido pelo FinGuard sempre que
+        possível: timeout de transporte continua sendo `PROVIDER_TIMEOUT`. Os
+        estados novos entram como warnings adicionais, que são aditivos por
+        contrato e não quebram consumidor existente.
+        """
+        error = str(exc)
+        error_code: str | None = None
+        items: list[WarningItem] = []
+
+        if isinstance(exc, ProviderCircuitOpenError):
+            error = PROVIDER_CIRCUIT_OPEN_WARNING
+            error_code = codes.PROVIDER_CIRCUIT_OPEN
+            items.append(make_warning(codes.PROVIDER_CIRCUIT_OPEN, error))
+        elif isinstance(exc, ProviderOutputRejectedError):
+            if exc.truncated:
+                error = PROVIDER_OUTPUT_TRUNCATED_WARNING
+                error_code = codes.PROVIDER_OUTPUT_TRUNCATED
+            else:
+                error = PROVIDER_OUTPUT_REJECTED_WARNING
+                error_code = codes.PROVIDER_OUTPUT_REJECTED
+            items.append(make_warning(error_code, error))
+        elif isinstance(exc, ProviderTransportTimeoutError):
+            # Contrato estável: o consumidor continua vendo PROVIDER_TIMEOUT.
+            error = PROVIDER_TIMEOUT_WARNING
+            error_code = codes.PROVIDER_TIMEOUT
+            items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
+            items.append(
+                make_warning(
+                    codes.PROVIDER_TRANSPORT_TIMEOUT,
+                    PROVIDER_TRANSPORT_TIMEOUT_WARNING,
+                )
+            )
+            items.append(
+                make_warning(
+                    codes.PROVIDER_COMPLETION_AMBIGUOUS,
+                    PROVIDER_COMPLETION_AMBIGUOUS_WARNING,
+                )
+            )
+        elif isinstance(exc, TimeoutError):
+            error = PROVIDER_TIMEOUT_WARNING
+            error_code = codes.PROVIDER_TIMEOUT
+            items.append(make_warning(codes.PROVIDER_TIMEOUT, error))
+            items.append(
+                make_warning(
+                    codes.PROVIDER_COMPLETION_AMBIGUOUS,
+                    PROVIDER_COMPLETION_AMBIGUOUS_WARNING,
+                )
+            )
+        elif isinstance(exc, ProviderConfigError):
+            error_code = codes.PROVIDER_REAL_UNAVAILABLE
+            items.append(make_warning(codes.PROVIDER_REAL_UNAVAILABLE, error))
+
+        return error, error_code, items
+
+    @staticmethod
     def _denial_message(decision) -> str:
         """Distingue negação por identidade de negação por projeto/ambiente."""
         if decision.error_code == codes.CALLER_IDENTITY_AMBIGUOUS:
@@ -1066,12 +1175,48 @@ class OrchestrationService:
         return SELECTION_MODE_EXPLICIT
 
     @staticmethod
-    def _provider_timeout_seconds() -> float:
+    def provider_timeout_seconds() -> float:
+        """Orçamento temporal da espera da orquestração, em SEGUNDOS."""
         raw = (os.environ.get(PROVIDER_TIMEOUT_ENV) or "30").strip()
         try:
             return min(120.0, max(0.05, float(raw)))
         except ValueError:
             return 30.0
+
+    @staticmethod
+    def _provider_timeout_seconds() -> float:
+        return OrchestrationService.provider_timeout_seconds()
+
+    @staticmethod
+    def _transport_timeout_ms(orchestration_timeout_seconds: float) -> int:
+        """Atalho de leitura para a regra central de derivação do transporte."""
+        return output_budget_service.transport_timeout_ms(
+            orchestration_timeout_seconds
+        )
+
+    def generation_plan_for(
+        self,
+        provider,
+        model: str,
+        task_type: str,
+        orchestration_timeout_seconds: float | None = None,
+    ) -> tuple[OutputBudget | None, int | None]:
+        """Resolve orçamento de saída e timeout de transporte da tentativa.
+
+        Só se aplica a adapters que declaram `supports_generation_budget`.
+        Mock, `local_qa` e `local_model` seguem exatamente o caminho anterior.
+        Nada aqui lê payload, metadata ou contexto: o consumidor não participa
+        da decisão de orçamento.
+        """
+        if not getattr(provider, "supports_generation_budget", False):
+            return None, None
+        if orchestration_timeout_seconds is None:
+            orchestration_timeout_seconds = self._provider_timeout_seconds()
+        budget = output_budget_service.resolve(
+            task_type=task_type,
+            model_cap=provider_catalog_service.max_output_tokens_for(model),
+        )
+        return budget, self._transport_timeout_ms(orchestration_timeout_seconds)
 
     @staticmethod
     def _real_fallback_enabled() -> bool:
@@ -1205,6 +1350,7 @@ class OrchestrationService:
                 ordinal=2,
                 selection_reason=secondary_decision.selection_reason,
                 fallback_candidate=False,
+                task_type=task_type,
             )
         except Exception:
             audit.real_fallback_reason = (
@@ -1236,12 +1382,16 @@ class OrchestrationService:
         ordinal: int,
         selection_reason: str,
         fallback_candidate: bool,
+        task_type: str,
     ):
         """Executa uma tentativa identificada e atualiza o circuito.
 
         A classificação é baseada em tipos estruturados, nunca em texto de
-        exception. ``TimeoutError`` é sempre conclusão ambígua porque os
-        adapters atuais usam clientes síncronos dentro de ``asyncio.to_thread``.
+        exception. Qualquer expiração de tempo após o dispatch — a espera da
+        orquestração (``TimeoutError``) ou o transporte HTTP
+        (``ProviderTransportTimeoutError``) — permanece conclusão AMBÍGUA:
+        encerrar a espera ou fechar a conexão local não prova que a geração
+        remota parou.
         """
         attempt_id = str(uuid.uuid4())
         started_at = datetime.now(timezone.utc).isoformat()
@@ -1249,6 +1399,14 @@ class OrchestrationService:
         key = provider_health_service.key(environment, provider.name, model)
         permit = provider_health_service.acquire(key)
         before = permit.snapshot
+        orchestration_timeout = self._provider_timeout_seconds()
+        plan = self.generation_plan_for(
+            provider, model, task_type, orchestration_timeout
+        )
+        budget, transport_timeout_ms = plan
+        supports_cancel = bool(
+            getattr(provider, "supports_transport_cancellation", False)
+        )
 
         attempt = {
             "request_id": audit.audit_id,
@@ -1273,6 +1431,23 @@ class OrchestrationService:
                 if fallback_candidate
                 else "Fallback real não se aplica a esta seleção."
             ),
+            # Orçamento e tempo decididos pelo PedroCore para esta tentativa.
+            "output_budget": budget.effective_budget if budget is not None else None,
+            "budget_source": (
+                budget.budget_source.value if budget is not None else None
+            ),
+            "budget_clamped": budget.budget_clamped if budget is not None else None,
+            "orchestration_timeout_ms": int(orchestration_timeout * 1_000),
+            "transport_timeout_ms": transport_timeout_ms,
+            # Fatos de transporte LOCAL. Nunca são prova de término remoto.
+            "transport_cancel_requested": False,
+            "transport_cancelled_locally": False,
+            # Metadados de término, preenchidos quando o provider os fornece.
+            "finish_reason": None,
+            "input_tokens": None,
+            "output_tokens": None,
+            "total_tokens": None,
+            "output_truncated": False,
         }
 
         def finish(
@@ -1325,11 +1500,22 @@ class OrchestrationService:
                 payload,
                 enriched_system_prompt,
                 model,
+                task_type,
+                plan=plan,
             )
         except Exception as exc:
             classification, certainty, external_dispatch = (
                 self._classify_provider_failure(exc)
             )
+            if isinstance(exc, ProviderOutputRejectedError):
+                attempt["finish_reason"] = exc.finish_reason
+                attempt["output_truncated"] = exc.truncated
+            elif external_dispatch and supports_cancel:
+                # Espera encerrada ou transporte expirado num adapter async: o
+                # cliente local É fechado. Registramos o fato de transporte sem
+                # jamais promovê-lo a prova de cancelamento remoto.
+                attempt["transport_cancel_requested"] = True
+                attempt["transport_cancelled_locally"] = True
             after = provider_health_service.record(
                 key,
                 classification,
@@ -1344,6 +1530,11 @@ class OrchestrationService:
             )
             raise
 
+        attempt["finish_reason"] = getattr(result, "finish_reason", None)
+        attempt["input_tokens"] = getattr(result, "input_tokens", None)
+        attempt["output_tokens"] = getattr(result, "output_tokens", None)
+        attempt["total_tokens"] = getattr(result, "total_tokens", None)
+        attempt["output_truncated"] = bool(getattr(result, "truncated", False))
         after = provider_health_service.record(
             key,
             FailureClassification.SUCCESS,
@@ -1362,6 +1553,25 @@ class OrchestrationService:
     def _classify_provider_failure(
         error: Exception,
     ) -> tuple[FailureClassification, CompletionCertainty, bool]:
+        if isinstance(error, ProviderTransportTimeoutError):
+            # O transporte local expirou e a conexão foi encerrada. Isso NÃO é
+            # prova de que a geração remota parou: a certeza continua ambígua,
+            # exatamente como no timeout da orquestração.
+            return (
+                FailureClassification.COMPLETION_AMBIGUOUS,
+                CompletionCertainty.AMBIGUOUS,
+                True,
+            )
+        if isinstance(error, ProviderOutputRejectedError):
+            # A chamada externa TERMINOU: a resposta chegou, mas não é
+            # utilizável (truncada por orçamento ou finish_reason anormal).
+            # `provider_non_retryable` não degrada o circuito e não é
+            # classificação segura para provider secundário.
+            return (
+                FailureClassification.PROVIDER_NON_RETRYABLE,
+                CompletionCertainty.COMPLETED,
+                True,
+            )
         if isinstance(error, TimeoutError):
             return (
                 FailureClassification.COMPLETION_AMBIGUOUS,
@@ -1392,24 +1602,42 @@ class OrchestrationService:
         payload: ChatRequest,
         enriched_system_prompt: str,
         model: str,
+        task_type: str,
+        plan: tuple[OutputBudget | None, int | None] | None = None,
     ):
         """Executa o adapter com o modelo JÁ VALIDADO pelo binding.
 
         O adapter nunca recebe `payload.model` diretamente: só a combinação
-        provider+modelo aprovada pelo PedroCore chega até aqui.
+        provider+modelo aprovada pelo PedroCore chega até aqui. O mesmo vale
+        para o orçamento de saída e o timeout de transporte, ambos resolvidos
+        internamente e nunca influenciados pelo consumidor.
         """
         if not isinstance(model, str) or not model.strip():
             raise ProviderExecutionError(
                 "Adapter não pode executar sem model_id validado pelo PedroCore."
             )
+
+        orchestration_timeout = self._provider_timeout_seconds()
+        if plan is None:
+            plan = self.generation_plan_for(
+                provider, model, task_type, orchestration_timeout
+            )
+        budget, transport_timeout_ms = plan
+
+        generation_kwargs: dict[str, int] = {}
+        if budget is not None and transport_timeout_ms is not None:
+            generation_kwargs["output_budget"] = budget.effective_budget
+            generation_kwargs["transport_timeout_ms"] = transport_timeout_ms
+
         return await asyncio.wait_for(
             provider.generate_response(
                 message=payload.message,
                 mode=payload.mode,
                 model=model,
                 system_prompt=enriched_system_prompt,
+                **generation_kwargs,
             ),
-            timeout=self._provider_timeout_seconds(),
+            timeout=orchestration_timeout,
         )
 
     def build_assistant_payload(

@@ -31,6 +31,19 @@ class ProviderAttempt(BaseModel):
     duration_ms: float | None = None
     fallback_eligible: bool = False
     fallback_decision_reason: str | None = None
+    # OUTPUT-BUDGET-CANCELLATION-01: números e rótulos, nunca conteúdo.
+    output_budget: int | None = None
+    budget_source: str | None = None
+    budget_clamped: bool | None = None
+    orchestration_timeout_ms: int | None = None
+    transport_timeout_ms: int | None = None
+    transport_cancel_requested: bool = False
+    transport_cancelled_locally: bool = False
+    finish_reason: str | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
+    output_truncated: bool = False
 
     @model_serializer(mode="plain")
     def serialize_attempt(self) -> dict[str, Any]:
@@ -59,6 +72,18 @@ class ProviderAttempt(BaseModel):
             "duration_ms": self.duration_ms,
             "fallback_eligible": self.fallback_eligible,
             "fallback_decision_reason": self.fallback_decision_reason,
+            "output_budget": self.output_budget,
+            "budget_source": self.budget_source,
+            "budget_clamped": self.budget_clamped,
+            "orchestration_timeout_ms": self.orchestration_timeout_ms,
+            "transport_timeout_ms": self.transport_timeout_ms,
+            "transport_cancel_requested": self.transport_cancel_requested,
+            "transport_cancelled_locally": self.transport_cancelled_locally,
+            "finish_reason": self.finish_reason,
+            "input_tokens": self.input_tokens,
+            "output_tokens": self.output_tokens,
+            "total_tokens": self.total_tokens,
+            "output_truncated": self.output_truncated,
         }
 
 
@@ -81,6 +106,8 @@ class ExecutionRecord(BaseModel):
     provider_selected: str | None = None
     provider_effective: str | None = None
     provider_attempts: list[ProviderAttempt] = Field(default_factory=list)
+    # Orçamento de saída e tempos decididos pelo PedroCore (OUTPUT-BUDGET-01).
+    generation_budget: dict[str, Any] | None = None
     fallback: bool = False
     fallback_reason: str | None = None
     duration_ms: float = 0.0

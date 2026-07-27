@@ -7,11 +7,14 @@ from app.modules.caller_identity.schemas import CallerRole
 from app.modules.observability.sanitizer import sanitize_text
 from app.modules.observability.schemas import GeminiSmokeRequest, GeminiSmokeResponse
 from app.modules.observability.service import observability_service
+from app.modules.orchestration.service import orchestration_service
 from app.modules.provider_binding.service import provider_binding_service
 from app.modules.providers.registry import provider_registry
 from app.modules.real_features import service as real_features
 
 SYNTHETIC_PAYLOAD = "PEDROCORE_GEMINI_SMOKE_V1"
+# Task usada só para resolver a política de orçamento do smoke sintético.
+SMOKE_TASK_TYPE = "assistant_chat"
 SYNTHETIC_PROMPT = "Responda apenas com a palavra OK."
 NETWORK_NOTICE = "Esta ação faz uma chamada de rede ao Gemini."
 COST_NOTICE = "Esta ação pode gerar custo no provedor configurado."
@@ -71,6 +74,20 @@ class GeminiSmokeService:
                 "Binding Gemini sem modelo default explícito, homologado e autorizado.",
             )
 
+        # O smoke usa exatamente a mesma política de orçamento e de tempo do
+        # pipeline: nada aqui define números próprios.
+        orchestration_timeout = orchestration_service.provider_timeout_seconds()
+        budget, transport_timeout_ms = orchestration_service.generation_plan_for(
+            provider,
+            binding.model_id,
+            SMOKE_TASK_TYPE,
+            orchestration_timeout,
+        )
+        generation_kwargs: dict[str, int] = {}
+        if budget is not None and transport_timeout_ms is not None:
+            generation_kwargs["output_budget"] = budget.effective_budget
+            generation_kwargs["transport_timeout_ms"] = transport_timeout_ms
+
         started = time.perf_counter()
         try:
             result = await asyncio.wait_for(
@@ -82,8 +99,9 @@ class GeminiSmokeService:
                         "Smoke técnico sintético. Não solicite nem use dados financeiros, "
                         "relatórios, arquivos ou informações do usuário."
                     ),
+                    **generation_kwargs,
                 ),
-                timeout=30.0,
+                timeout=orchestration_timeout,
             )
             response = GeminiSmokeResponse(
                 status="ok",

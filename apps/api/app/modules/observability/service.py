@@ -206,6 +206,7 @@ class ObservabilityService:
             provider_selected=provider_selected,
             provider_effective=outcome.provider_used,
             provider_attempts=attempts,
+            generation_budget=self._generation_budget_projection(outcome),
             fallback=outcome.fallback_used,
             fallback_reason=error,
             duration_ms=round(duration_ms, 2),
@@ -216,6 +217,10 @@ class ObservabilityService:
             memory_consulted=outcome.memory_used,
             memory_created=False,
             error=error,
+            # Constante por construção, não por omissão: não existe retry no
+            # adapter, na orquestração nem no SDK (o default do google-genai é
+            # `stop_after_attempt(1)` e o PedroCore nunca passa
+            # `HttpRetryOptions`). Uma chamada lógica = no máximo um dispatch.
             retry={"attempted": False, "count": 0},
             timeline=timeline,
             result_returned={
@@ -467,6 +472,36 @@ class ObservabilityService:
         }
 
     @staticmethod
+    def _generation_budget_projection(outcome: Any) -> dict[str, Any] | None:
+        """Orçamento, tempos e término — somente números e rótulos.
+
+        Nunca inclui prompt, resposta, contexto financeiro ou credencial. Note
+        que `transport_cancelled_locally` convive com
+        `completion_certainty="ambiguous"`: fechar a conexão local não prova
+        que a geração remota terminou.
+        """
+        audit = outcome.audit
+        if audit.output_budget_effective is None and not audit.provider_attempts:
+            return None
+        return {
+            "global_cap": audit.output_budget_global_cap,
+            "model_cap": audit.output_budget_model_cap,
+            "task_cap": audit.output_budget_task_cap,
+            "effective_budget": audit.output_budget_effective,
+            "budget_source": audit.output_budget_source,
+            "budget_clamped": audit.output_budget_clamped,
+            "orchestration_timeout_ms": audit.orchestration_timeout_ms,
+            "transport_timeout_ms": audit.transport_timeout_ms,
+            "transport_cancel_requested": audit.transport_cancel_requested,
+            "transport_cancelled_locally": audit.transport_cancelled_locally,
+            "finish_reason": audit.provider_finish_reason,
+            "input_tokens": audit.provider_input_tokens,
+            "output_tokens": audit.provider_output_tokens,
+            "total_tokens": audit.provider_total_tokens,
+            "output_truncated": audit.provider_output_truncated,
+        }
+
+    @staticmethod
     def _selected_provider(outcome: Any) -> str | None:
         requested = outcome.provider_requested
         if outcome.provider_used == "none":
@@ -506,6 +541,22 @@ class ObservabilityService:
                     duration_ms=item.get("duration_ms"),
                     fallback_eligible=bool(item.get("fallback_eligible")),
                     fallback_decision_reason=item.get("fallback_decision_reason"),
+                    output_budget=item.get("output_budget"),
+                    budget_source=item.get("budget_source"),
+                    budget_clamped=item.get("budget_clamped"),
+                    orchestration_timeout_ms=item.get("orchestration_timeout_ms"),
+                    transport_timeout_ms=item.get("transport_timeout_ms"),
+                    transport_cancel_requested=bool(
+                        item.get("transport_cancel_requested")
+                    ),
+                    transport_cancelled_locally=bool(
+                        item.get("transport_cancelled_locally")
+                    ),
+                    finish_reason=item.get("finish_reason"),
+                    input_tokens=item.get("input_tokens"),
+                    output_tokens=item.get("output_tokens"),
+                    total_tokens=item.get("total_tokens"),
+                    output_truncated=bool(item.get("output_truncated")),
                 )
                 for item in structured
             ]
