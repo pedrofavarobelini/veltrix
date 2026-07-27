@@ -1,5 +1,48 @@
 # PedroCore IA — Changelog
 
+## FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01
+
+Status: **Assistente IA encerrado com limitação externa documentada —
+homologação real 3/4**.
+
+- Auditoria do intervalo `d973456..c459e80` confirmou dois defeitos residuais,
+  corrigidos em `b0d637b`:
+  - `transport_cancelled_locally=true` era derivado de uma flag de capacidade
+    da classe do adapter, não do fechamento real, e `_aclose()` engolia a
+    exceção — um fechamento que falhava virava "concluído". Agora `_aclose()`
+    devolve o resultado observado e os campos passaram a ser
+    `transport_close_requested` e `transport_close_outcome`
+    (`not_attempted`/`confirmed`/`failed`/`unknown`). Tentativa e confirmação
+    são fatos distintos; `unknown` é o valor honesto quando o resultado não é
+    observável.
+  - `ProviderOutputRejectedError` descartava `usage_metadata`, orçamento e
+    timeout justamente onde o custo já foi incorrido. Agora os preserva até
+    auditoria e observabilidade; ausência continua produzindo `None`.
+- Itens auditados sem defeito: taxonomia, lifecycle, contrato público da SPA,
+  valores de budget e as alterações de teste da frente anterior (só assinatura
+  `**kwargs`, zero asserção tocada).
+- Homologação real do Organizar: **exatamente um dispatch autorizado**,
+  `task_type=finance_advice`, `provider=auto`, sem modelo do consumidor.
+  Resultado: `provider_used=mock`, `fallback_used=true`, `duration_ms=3523`.
+  Uma única tentativa, sem retry, sem segundo provider, sem paralelismo, e
+  resposta pública sem detalhe técnico.
+- A causa no lado do provider **não pôde ser determinada**: a projeção de
+  observabilidade vive em ring buffer na memória e foi perdida no teardown. A
+  assinatura difere da histórica (3,5 s contra ~30 s/~60 s) e isso não foi
+  explicado.
+- Diagnóstico estrutural contra porta local morta (zero tráfego externo)
+  comprovou que cliente async, `HttpOptions.timeout`,
+  `GenerateContentConfig.max_output_tokens`, propagação de erro e `aclose()`
+  funcionam. **Nenhum defeito local objetivo foi demonstrado**, portanto não
+  houve repetição, aumento de timeout, mudança de prompt/budget nem ativação
+  de outro provider.
+- Estado final: Dívidas, Economizar e Crescer aprovados; Organizar como
+  limitação externa aceita; Gemini único provider real; uma IA por requisição.
+- Validação: `721 passed, 7 skipped`; eval `14/14`, `risk_level="none"`; Ruff
+  aprovado nos arquivos tocados; uma única chamada real (a autorizada).
+- Documentação: [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+- Sem push, sem tag, sem alteração de dependência.
+
 ## PEDROCORE-PROVIDER-OUTPUT-BUDGET-CANCELLATION-01
 
 Status: **orçamento de saída, timeout de transporte e cliente assíncrono

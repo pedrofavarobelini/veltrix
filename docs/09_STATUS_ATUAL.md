@@ -4,7 +4,34 @@ Checkpoint documental atual: [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPA
 
 Atualizado em: 27/07/2026
 
-## Frente mais recente
+## Assistente IA — ENCERRADO
+
+`FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01` —
+[[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+
+```text
+ASSISTENTE IA ENCERRADO COM LIMITAÇÃO EXTERNA DOCUMENTADA — HOMOLOGAÇÃO REAL 3/4
+```
+
+```text
+Dívidas      aprovado
+Economizar   aprovado
+Crescer      aprovado
+Organizar    limitação externa aceita
+```
+
+A homologação real do Organizar consumiu o único dispatch autorizado e
+terminou em fallback seguro (`provider_used=mock`, `duration_ms=3523`). A causa
+no lado do provider não pôde ser determinada — a observabilidade é um ring
+buffer em memória e foi perdida no teardown — e a assinatura difere da
+histórica (~30 s/~60 s). Um diagnóstico estrutural local comprovou que o
+adapter async, o orçamento e o timeout de transporte funcionam; **nenhum
+defeito local objetivo foi demonstrado**, então não houve repetição nem nova
+implementação.
+
+Nenhuma implementação obrigatória permanece no Assistente IA.
+
+## Frente anterior
 
 `PEDROCORE-PROVIDER-OUTPUT-BUDGET-CANCELLATION-01` —
 [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].

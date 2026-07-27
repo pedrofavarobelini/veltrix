@@ -4,6 +4,28 @@
 
 > Nota DOCFIX: o estado atual canônico está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]]. Seções históricas de planejamento foram preservadas, mas devem ser lidas como contexto da época em que foram escritas.
 
+## FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01
+
+Status: **encerrada. O Assistente IA está fechado.**
+
+```text
+ASSISTENTE IA ENCERRADO COM LIMITAÇÃO EXTERNA DOCUMENTADA — HOMOLOGAÇÃO REAL 3/4
+```
+
+Fechamento em
+[[../18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+
+Entregue: auditoria residual com duas correções (certeza de fechamento do
+transporte e metadados de truncamento), QA local integral e o único dispatch
+real autorizado do cenário Organizar.
+
+Não entregue: aprovação do Organizar. O dispatch terminou em fallback seguro e
+a causa no lado do provider não pôde ser determinada. Nenhum defeito local
+objetivo foi demonstrado.
+
+**Nenhuma nova frente do Assistente IA deve ser aberta.** O projeto segue para
+a próxima frente funcional do FinGuard.
+
 ## PEDROCORE-PROVIDER-OUTPUT-BUDGET-CANCELLATION-01
 
 Status: **concluída com limitação documentada**.

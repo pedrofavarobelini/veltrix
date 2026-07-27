@@ -13,6 +13,15 @@ health e fallback do PedroCore.
 - Validação acumulada: `570 passed, 7 skipped, 2 warnings`; eval harness
   `14/14`, `risk_level="none"`.
 
+## Encerramento do Assistente IA
+
+- [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]]
+  — auditoria residual, duas correções, homologação real única do Organizar e
+  veredito de encerramento (**3/4**, limitação externa aceita).
+- Correções: certeza de fechamento do transporte (`transport_close_outcome`) e
+  preservação de `usage_metadata` no caminho de truncamento.
+- Nenhuma nova frente do Assistente IA deve ser aberta.
+
 ## Evolução posterior
 
 - [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]

@@ -4,6 +4,15 @@ Mapa de comandos, testes padrao e testes opt-in.
 
 ## Resultado atual — 2026-07-27
 
+- Fechamento: [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+- Backend integral: `721 passed, 7 skipped, 2 warnings`.
+- Novo arquivo: `test_provider_close_and_truncation_metadata.py` — certeza de
+  fechamento do transporte e preservação de tokens no truncamento.
+- Uma única chamada real foi executada em todo o encerramento: o dispatch
+  autorizado do cenário Organizar.
+
+## Resultado anterior — 2026-07-27 (output budget)
+
 - Fechamento: [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
 - Backend integral: `703 passed, 7 skipped, 2 warnings`.
 - Eval harness: `14/14 passed`, `risk_level="none"`.

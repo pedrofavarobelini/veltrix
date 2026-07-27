@@ -53,7 +53,12 @@ Mapa dos limites de seguranca do PedroCore IA.
 - Documentos historicos fora dos MOCs podem refletir fases antigas.
 - **Cancelamento remoto não comprovável**: após um timeout de transporte, o
   PedroCore fecha a conexão local, mas não há prova de que a geração remota
-  tenha parado. Ver
-  [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
+  tenha parado. Nem mesmo `transport_close_outcome="confirmed"` altera isso.
+  Ver
+  [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+  e [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+- Diagnóstico de falha de provider real vive em ring buffer **em memória**: ele
+  não sobrevive ao encerramento do processo, e por isso a causa da última falha
+  do cenário Organizar não pôde ser determinada.
 - Valores de orçamento de saída derivam do `response_style` das tasks, não de
   medição real de tokens; podem precisar de ajuste após sonda autorizada.

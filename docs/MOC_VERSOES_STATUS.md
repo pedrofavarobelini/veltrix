@@ -16,6 +16,7 @@ Mapa de versao, status, changelog e fechamento.
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]]
 - [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
+- [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]] — Assistente IA encerrado (3/4)
 
 ## Tags e commits
 

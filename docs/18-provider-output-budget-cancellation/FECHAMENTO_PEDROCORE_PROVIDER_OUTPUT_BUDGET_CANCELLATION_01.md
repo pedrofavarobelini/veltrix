@@ -3,6 +3,17 @@
 Detalhamento técnico em
 [[PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]].
 
+> **Evolução posterior.** A frente
+> `FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01` auditou este trabalho e
+> corrigiu dois defeitos residuais no commit `b0d637b`: o fechamento de
+> transporte era registrado como concluído sem evidência, e os metadados de
+> uso eram descartados no caminho de truncamento. Ver
+> [[PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+>
+> Os campos `transport_cancel_requested` e `transport_cancelled_locally`
+> citados abaixo foram substituídos por `transport_close_requested` e
+> `transport_close_outcome`, que distinguem tentativa de confirmação.
+
 ---
 
 ## 1. Escopo executado

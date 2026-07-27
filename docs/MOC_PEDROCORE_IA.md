@@ -2,6 +2,7 @@
 
 ## Fechamento atual — 2026-07-27
 
+- [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]] - **Assistente IA encerrado**, homologação real 3/4, Organizar como limitação externa aceita.
 - [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] - orçamento de saída, timeout de transporte, cliente Gemini assíncrono e certeza de término.
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - mapa central das Etapas 1–7, correções e evolução posterior.
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] - fechamento técnico e documental consolidado.

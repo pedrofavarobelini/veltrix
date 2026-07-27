@@ -816,6 +816,8 @@ Após esta consolidação, não há pendência arquitetural nas Etapas 1–7. H�
 - Fallback Mock pode mascarar erro se consumidor ignorar `fallback_used`.
 - Timeout de provider tem conclusão ambígua: não é cancelamento comprovado e nunca permite tentativa secundária. Desde [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] o adapter Gemini é assíncrono e fecha o transporte local, mas fechar a conexão continua não provando que a geração remota parou.
 - Orçamento de saída (`min(global_cap, model_cap, task_cap)`) e timeout de transporte são decididos só pelo PedroCore; o consumidor não tem campo para influenciá-los. Os valores derivam do `response_style` das tasks, não de medição real de tokens.
+- Fechamento do transporte distingue tentativa de confirmação (`transport_close_requested` e `transport_close_outcome`); `unknown` é o valor honesto quando o resultado não é observável. Nem mesmo `confirmed` prova término remoto. Ver [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
+- Assistente IA do FinGuard: **encerrado** com homologação real 3/4 e o cenário Organizar como limitação externa aceita.
 - Resposta com `finish_reason=MAX_TOKENS` é tratada como incompleta: texto parcial não é publicado, e não há continuação, retry nem segundo provider.
 - Circuit breaker é local por processo, usa relógio monotônico e fica default-off; não substitui health distribuído.
 - Fallback real é default-off e só aceita `provider_pre_dispatch + not_dispatched + external_dispatch=false`.

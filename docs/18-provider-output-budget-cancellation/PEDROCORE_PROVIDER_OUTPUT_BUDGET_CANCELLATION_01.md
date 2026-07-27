@@ -260,8 +260,11 @@ Fechar a conexão local não prova que o modelo parou de gerar do outro lado.
 Por isso:
 
 - os fatos de transporte são registrados como
-  `transport_cancel_requested` e `transport_cancelled_locally`;
-- a certeza de conclusão **permanece** `ambiguous`;
+  `transport_close_requested` e `transport_close_outcome`
+  (`not_attempted` · `confirmed` · `failed` · `unknown`), que distinguem
+  tentativa de confirmação — ver [[PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]];
+- a certeza de conclusão **permanece** `ambiguous`, mesmo com o fechamento
+  local confirmado;
 - nenhum estado chamado `cancelamento_real` foi criado;
 - `X-Server-Timeout` **não** é descrito como garantia de cancelamento remoto.
 
@@ -302,7 +305,7 @@ Campos novos na auditoria e na projeção local — todos numéricos ou rótulos
 output_budget_effective     output_budget_source      output_budget_clamped
 output_budget_global_cap    output_budget_model_cap   output_budget_task_cap
 orchestration_timeout_ms    transport_timeout_ms
-transport_cancel_requested  transport_cancelled_locally
+transport_close_requested   transport_close_outcome
 provider_finish_reason      provider_output_truncated
 provider_input_tokens       provider_output_tokens    provider_total_tokens
 ```
