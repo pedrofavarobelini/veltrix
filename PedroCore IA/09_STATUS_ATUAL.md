@@ -1,6 +1,18 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 27/07/2026
+Atualizado em: 02/08/2026
+
+## Reorganização documental canônica — 2026-08-02
+
+O vault canônico passou de `docs/` para `PedroCore IA/`, preservando com hash
+e correspondência de conteúdo os 127/127 documentos rastreados anteriores.
+Com o [[MANIFESTO_REORGANIZACAO_20260802]], o grafo atual contém 128 documentos
+e 697 links resolvidos, sem órfãos, links quebrados, ambiguidades, basenames
+duplicados ou becos sem saída. O teste direcionado concluiu com
+`15 passed, 1 warning` e o validador canônico também saiu com código zero.
+
+Esta reconciliação alterou somente a raiz documental e seu validador. Não
+reabriu providers, orquestração, políticas, frontend nem homologações reais.
 
 ## ENCERRAMENTO FINAL — CANÔNICO ATUAL
 
@@ -29,8 +41,8 @@ FinGuard passou a **persistir o diagnóstico em disco antes do teardown**, em ve
 de apenas imprimi-lo num processo prestes a morrer.
 
 Suíte integral após todas as alterações: `736 passed, 7 skipped, 2 warnings`;
-eval `14/14`, `risk_level="none"`. Grafo documental íntegro (127 documentos,
-686 links, zero órfãos).
+eval `14/14`, `risk_level="none"`. Grafo documental atual íntegro (128
+documentos, 697 links resolvidos, zero órfãos).
 
 Arquitetura multi-provider: concluída. Multi-provider automático operacional:
 não — somente `gemini + gemini-3.5-flash` está homologado e elegível. Isso é
@@ -93,9 +105,9 @@ históricos de ~30 s e ~60 s.
 
 ## Status oficial
 
-Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag final local e aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`. `v6.0.0` permanece como tag do MVP backend e aponta para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`). Este é o documento de status oficial do projeto; prevalece sobre qualquer status antigo/duplicado ainda presente em `docs/`.
+Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag final local e aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`. `v6.0.0` permanece como tag do MVP backend e aponta para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`). Este é o documento de status oficial do projeto; prevalece sobre qualquer status histórico/duplicado ainda presente em `PedroCore IA/`.
 
-DOCFIX anterior: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md` e MOCs Obsidian em `docs/MOC_*.md` organizam a leitura atual sem alterar código.
+DOCFIX anterior: `PedroCore IA/00_MAPEAMENTO_GERAL_PEDROCORE.md` e os MOCs Obsidian em `PedroCore IA/MOC_*.md` organizam a leitura atual sem alterar código funcional.
 
 Frente mais recente: Etapa 7 de
 `PEDROCORE-MULTI-PROVIDER-SAFE-EVOLUTION`. O fallback real controlado existe
@@ -243,7 +255,7 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 
 ## Riscos atuais
 
-- **Documentação duplicada:** ainda existem pares de arquivos conflitantes em `docs/` (ex.: `docs/03_ROADMAP.md` vs `docs/03-versoes/ROADMAP.md`, `docs/09-status/STATUS_ATUAL.md` desatualizado) que não foram removidos nesta etapa, apenas sinalizados.
+- **Documentação histórica duplicada:** ainda existem pares em `PedroCore IA/` (ex.: `03_ROADMAP.md` vs `03-versoes/ROADMAP.md`, `09-status/STATUS_ATUAL.md` desatualizado). Foram preservados por prudência; o status canônico é este arquivo.
 - **Provider real autorizado explicitamente:** qualquer execução manual com provider real, chave/configuração disponível e `allow_real_provider=true` pode gerar chamada externa/custo. Testes padrão devem usar `mock` ou `local_qa`.
 - **Fallback Mock silencioso:** o fallback automático para `MockProvider` evita quebrar a interface, mas pode mascarar falhas reais de provider se o consumidor não checar explicitamente o campo `fallback_used` — especialmente relevante para futuros consumidores externos e para qualquer caso de uso de QA (ver Decisão Técnica 014).
 - **Structured response parcial:** `/api/orchestrate` já retorna `qa`, `release_gate`, `visual_qa_analysis`, `exploration`, `warnings` e `audit`, mas `answer` continua texto livre; otimização dinâmica por custo/qualidade/task ainda não existe.
@@ -254,4 +266,4 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 - Push para GitHub/portfólio e deploy.
 - Execução real de OCR, QA visual multimodal e Playwright somente com flags, dependências instaladas manualmente e revisão humana.
 - Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI explicitamente; fluxo crítico continua exigindo autorização e revisão específica.
-- Saneamento adicional de documentação histórica/duplicada, se o usuário quiser reduzir ruído do vault.
+- Saneamento adicional de documentação histórica/duplicada dentro de `PedroCore IA/`, se o usuário quiser reduzir ruído do vault.

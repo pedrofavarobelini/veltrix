@@ -107,7 +107,10 @@ def test_link_markdown_relativo_e_reconhecido():
 
 
 def test_resolucao_por_basename_e_por_caminho():
-    documentos = ["docs/MOC_PEDROCORE_IA.md", "docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md"]
+    documentos = [
+        "PedroCore IA/MOC_PEDROCORE_IA.md",
+        "PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md",
+    ]
     by_path = {}
     by_basename = {}
     for path in documentos:
@@ -116,14 +119,19 @@ def test_resolucao_por_basename_e_por_caminho():
         by_basename[path.rsplit("/", 1)[-1].removesuffix(".md").lower()] = [path]
 
     alvo, ambiguo = resolve_target(
-        "13-fechamento/FECHAMENTO_PEDROCORE_FINAL", "docs/MOC_PEDROCORE_IA.md", by_path, by_basename
+        "13-fechamento/FECHAMENTO_PEDROCORE_FINAL",
+        "PedroCore IA/MOC_PEDROCORE_IA.md",
+        by_path,
+        by_basename,
     )
-    assert alvo == "docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md"
+    assert alvo == "PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md"
     assert ambiguo is False
 
 
 def test_alvo_inexistente_nao_resolve():
-    alvo, ambiguo = resolve_target("NAO_EXISTE", "docs/MOC_PEDROCORE_IA.md", {}, {})
+    alvo, ambiguo = resolve_target(
+        "NAO_EXISTE", "PedroCore IA/MOC_PEDROCORE_IA.md", {}, {}
+    )
     assert alvo is None
     assert ambiguo is False
 

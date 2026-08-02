@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 27/07/2026
+Atualizado em: 02/08/2026
 
 ## Versão atual de produto
 
@@ -20,23 +20,27 @@ PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO
 
 - Assistente IA do FinGuard **homologado 4/4**: o cenário `Organizar` foi aprovado com Gemini real nesta frente (um único dispatch, `fallback=false`, `retry=0`). Os outros três cenários reaproveitam evidência real anterior já aprovada.
 - Validação integral **medida após todas as alterações**: `736 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`, sem chamadas externas reais na suíte.
-- Grafo documental Obsidian íntegro: 127 documentos, 686 links, zero órfãos, zero links quebrados, validado por `app.modules.docs_graph`.
+- Grafo documental Obsidian íntegro: 128 documentos, 697 links resolvidos, zero órfãos, zero links quebrados, validado por `app.modules.docs_graph`.
 - Nova capacidade de QA documental: `apps/api/app/modules/docs_graph/` + `tests/test_docs_graph.py`.
 - Nenhuma implementação obrigatória restante.
 
-Documento canônico: `docs/19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01.md`.
+Documento canônico: `PedroCore IA/19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01.md`.
+
+Vault canônico desde 2026-08-02: `PedroCore IA/`. A reorganização preservou
+127/127 documentos anteriores; ver
+`PedroCore IA/MANIFESTO_REORGANIZACAO_20260802.md`.
 
 ## Frente anterior (HISTÓRICO)
 
 `PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01`: fechamento documental das Etapas 1–7 da evolução multi-provider segura, tomando `e389b2c` como último commit de implementação. Catálogo, identidade/autorização, binding, shadow, enforced, health/circuit breaker e fallback pre-dispatch concluídos. Naquele momento a validação integral era `570 passed, 7 skipped, 2 warnings`. A arquitetura multi-provider está concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível.
 
-Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
+Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
-DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `docs/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
+DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `PedroCore IA/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 
-Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
+Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
-Checkpoint histórico: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento QA/safety commitado em `d6106b7`. Naquele checkpoint: Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+Checkpoint histórico: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento QA/safety commitado em `d6106b7`. Naquele checkpoint: Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `PedroCore IA/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
 
 Frente documental anterior: `PEDROCORE-DOCS-GRAPH-LINKING-01` — linkagem Markdown/Obsidian em documentação, sem alteração de código.
 
@@ -75,5 +79,5 @@ Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
 - Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI mediante decisão explícita.
 - Push para GitHub/portfólio e deploy — decisões humanas futuras.
 - Execução real de OCR/multimodal/Playwright somente com flags, dependências instaladas manualmente e revisão humana.
-- Saneamento adicional de documentos históricos duplicados, se o usuário quiser reduzir ruído do vault.
+- Saneamento adicional de documentos históricos duplicados dentro de `PedroCore IA/`, se o usuário quiser reduzir ruído do vault.
 - Bloco 12 (dashboard/logs/admin): cancelado por decisão de produto — não é pendência.

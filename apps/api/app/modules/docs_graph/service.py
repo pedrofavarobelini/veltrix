@@ -48,8 +48,8 @@ from app.modules.docs_graph.schemas import (
 # apps/api/app/modules/docs_graph/service.py -> repositório
 REPO_ROOT = Path(__file__).resolve().parents[5]
 
-DOCS_DIR = "docs"
-ROOT_MOC = "docs/MOC_PEDROCORE_IA.md"
+DOCS_DIR = "PedroCore IA"
+ROOT_MOC = "PedroCore IA/MOC_PEDROCORE_IA.md"
 
 # Diretórios de configuração do Obsidian: não são documentos do vault.
 IGNORED_PARTS = {".obsidian", ".git", "node_modules", "__pycache__", ".venv"}
@@ -134,7 +134,7 @@ def resolve_target(
     if source_dir and source_dir != ".":
         candidates.append(_normalize(f"{source_dir}/{target}").lower())
         candidates.append(_normalize(f"{source_dir}/{target}.md").lower())
-    # Wikilinks do vault costumam ser relativos à raiz de `docs/`.
+    # Wikilinks do vault costumam ser relativos à raiz canônica do vault.
     candidates.append(f"{DOCS_DIR}/{target}".lower())
     candidates.append(f"{DOCS_DIR}/{target}.md".lower())
 

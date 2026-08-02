@@ -40,6 +40,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 
 - `README.md` (raiz do repositório)
 - `VERSION.md` (raiz do repositório)
+- [[MANIFESTO_REORGANIZACAO_20260802]] - prova de preservação e nova raiz canônica do vault.
 - [[09_STATUS_ATUAL]]
 - [[08_CHANGELOG]]
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]

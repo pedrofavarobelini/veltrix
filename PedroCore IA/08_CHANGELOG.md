@@ -1,5 +1,22 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-DOCS-VAULT-REORGANIZATION-20260802
+
+Status: **reorganização documental validada, sem reabrir o core funcional**.
+
+- A raiz canônica do vault passou de `docs/` para `PedroCore IA/`.
+- Os 127/127 Markdown antes rastreados foram localizados na nova árvore com
+  conteúdo byte a byte idêntico antes desta reconciliação; zero perda.
+- [[MANIFESTO_REORGANIZACAO_20260802]] acrescentado e ligado ao MOC raiz.
+- `app.modules.docs_graph` e seus testes passaram a usar a nova raiz.
+- Resultado atual: 128 documentos, 697 links resolvidos, zero órfãos, zero
+  links quebrados; teste direcionado `15 passed, 1 warning`.
+- `README.md`, `VERSION.md` e [[09_STATUS_ATUAL]] reconciliados com o caminho
+  atual. Referências históricas internas a `docs/` foram preservadas quando
+  descrevem fielmente uma frente anterior.
+- Nenhum provider real, rede, `.env`, frontend ou código do pipeline foi
+  alterado.
+
 ## FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01
 
 Status: **PedroCore encerrado — core operacional concluído. Assistente IA
