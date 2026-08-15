@@ -52,6 +52,23 @@ Fonte de verdade no código: `app/modules/task_router/service.py` (strategies),
 | `PEDROCORE_ENABLE_LOCAL_MODEL` | `false` | local_model `configured=false` |
 | `PEDROCORE_ENFORCE_PROJECT_POLICY` | `true` | única flag default-true (segurança por padrão) |
 
+## Consumer Structa
+
+| Eixo | Regra inicial |
+| --- | --- |
+| project | `structa`, matching exato |
+| identity | somente `registered` |
+| role | somente `technical_tool` |
+| task | somente `qa_report_analysis` |
+| provider real | somente Gemini |
+| ambiente | somente não produtivo |
+| opt-in | `allow_real_provider=true` ainda obrigatório |
+| fallback real | default-off |
+
+Task crítica fora da allowlist é bloqueada pelo policy enforcement antes de
+qualquer provider. A matriz de provider não ganhou wildcard nem novo eixo; a
+restrição de task permanece no Project Context existente.
+
 ## Comportamento esperado (resumo verificável)
 
 - Payload aninhado (`context`/`metadata`/campo extra) **não** ativa provider real.
@@ -61,7 +78,7 @@ Fonte de verdade no código: `app/modules/task_router/service.py` (strategies),
 
 Testes que fixam esta matriz: `test_provider_real_safety.py`,
 `test_policy_negative_cases.py`, `test_orchestrate_contract_safety.py`,
-`test_eval_harness_extended.py`.
+`test_eval_harness_extended.py` e `test_structa_consumer_onboarding.py`.
 
 ## Links relacionados
 
@@ -70,3 +87,4 @@ Testes que fixam esta matriz: `test_provider_real_safety.py`,
 - [[PROVIDER_REAL_SAFETY]]
 - [[../MOC_QA_RELEASE_GATE]]
 - [[../00_MAPEAMENTO_GERAL_PEDROCORE]]
+- [[../17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]]

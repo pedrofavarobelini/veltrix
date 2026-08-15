@@ -1,6 +1,19 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 02/08/2026
+Atualizado em: 14/08/2026
+
+## PEDROCORE-STRUCTA-CONSUMER-01 — PASS
+
+O Structa foi registrado como consumer externo read-only de menor privilégio:
+`project_id=structa`, identidade `registered`, papel `technical_tool`, task
+única `qa_report_analysis` e autorização somente para Gemini em ambiente não
+produtivo. Safe mode e fallback real continuam default-off. Consumers,
+providers, roles e tasks fora da matriz permanecem negados.
+
+Validação: 66 testes focados; suite integral com `751 passed, 7 skipped, 2
+warnings`; Ruff focado e build web PASS; zero rede/provider real. Gate:
+[[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]]. A
+Etapa 13 do Structa não foi iniciada.
 
 ## Reorganização documental canônica — 2026-08-02
 

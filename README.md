@@ -1,6 +1,15 @@
 # PedroCore IA
 
-## ENCERRAMENTO FINAL — CANÔNICO ATUAL
+## MICROFRENTE ATUAL — STRUCTA CONSUMER
+
+`PEDROCORE-STRUCTA-CONSUMER-01` registrou o Structa como consumer oficial de
+menor privilégio: `project_id=structa`, identidade `registered`, papel
+`technical_tool`, somente `qa_report_analysis` e somente Gemini em ambiente
+não produtivo. Provider real e fallback real continuam default-off. A frente
+foi inteiramente offline (`plannedRealCalls=0`, `actualRealCalls=0`) e está em
+`PedroCore IA/17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01.md`.
+
+## ENCERRAMENTO DO CORE — PRESERVADO
 
 ```text
 PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO
@@ -62,6 +71,7 @@ de validação estão em `PedroCore IA/MANIFESTO_REORGANIZACAO_20260802.md`.
 - **QA Safety Hardening** (`PEDROCORE-QA-SAFETY-HARDENING-01`): guard estrutural contra provider real em testes, Report Memory safety, policy negativa, contrato `/api/orchestrate` e eval harness estendido. Provider real e rede real nao foram chamados em testes; Report Memory segue default-off e nao e treinamento; `local_model` real, FinGuard e `qa:finalize:02` ficaram fora de escopo.
 - **Observabilidade local/QA**: store volátil sanitizado, limitado e default-off; endpoints `/api/observability/*`; painel `#/observability`; provider solicitado/efetivo, tentativas, fallback, timeline, QA, memória, avaliação, release gate e audit ID visíveis apenas no PedroCore. Memória técnica não altera pesos e treinamento de modelo não foi implementado.
 - **Evolução multi-provider segura (Etapas 1–7)**: catálogo explícito, identidade/autorização por projeto, binding total de provider/modelo, shadow routing, roteamento `enforced` determinístico, circuit breaker local/default-off e fallback real estritamente pre-dispatch/default-off. O motor está concluído; diversificação real continua bloqueada até a homologação de um segundo provider/modelo.
+- **Consumer Structa**: `origin_system=Structa` resolve para `structa`; somente credencial registrada `technical_tool`, task `qa_report_analysis`, Gemini e ambiente não produtivo podem ser autorizados. Sem credencial, com role indevido, provider diferente ou origem desconhecida, o fluxo falha fechado antes de chamada real.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
 - Cliente HTTP do Assistente no FinGuard e replay local integrado estão implementados. OCR real, QA visual real com provider multimodal, Playwright real, persistência da observabilidade e deploy/push ainda são opcionais e exigem aprovação própria. Bloco 12 (dashboard público/admin) permanece cancelado por decisão de produto.
@@ -94,6 +104,13 @@ O PedroCore IA é o **orquestrador central de IA do ecossistema de projetos Pedr
 O FinGuard é um projeto externo e independente. Do lado PedroCore, o contrato controlado já reconhece `origin_system=finguard` e `origin_system=finguard-local` em `POST /api/orchestrate`, com tasks permitidas, policy forte, Artifact Reader bloqueado para FinGuard e provider real bloqueado por padrão. O PedroCore não altera código, dados, migrations, seeds, testes ou configuração do FinGuard, não executa comandos nele, não lê path real do repositório e não faz commit nele.
 
 Para o Assistente IA do FinGuard, o contrato comum é pedir `provider=auto` sem escolher modelo; o PedroCore resolve identidade, autorização, provider e modelo. Execução real exige `allow_real_provider=true`, credencial própria registrada no PedroCore e binding elegível. O FinGuard não recebe nem repassa chaves. Neste checkpoint, somente Gemini está homologado e elegível.
+
+## Relação com o Structa
+
+O Structa é consumer externo independente e read-only. Seu onboarding não
+reutiliza identidade ou permissões FinGuard/PedroCore, não acessa o repositório
+Structa e não executa filesystem, Executor ou Planner. Uma chamada real
+continua proibida até Gate próprio do Structa com autorização humana nova.
 
 ## Providers
 

@@ -119,6 +119,7 @@ Default **negar**. Combinações registradas:
 | --- | --- | --- | --- | --- |
 | `registered` | `finguard`, `finguard-local` | `common_consumer`, `technical_tool` | dev/local/test/qa/staging | `gemini` |
 | `registered` | `finguard`, `finguard-local` | `common_consumer`, `technical_tool` | produção (regra própria) | `gemini` |
+| `registered` | `structa` | `technical_tool` | dev/local/test/qa/staging | `gemini` |
 | `registered`, `local_trusted` | `pedrocore` | `technical_tool` | dev/local/test/qa/staging | `gemini` |
 
 `ambiguous` não aparece em nenhuma regra. Produção tem regra própria e nunca
@@ -147,6 +148,12 @@ caller autenticado
 `allow_real_provider` continua existindo e continua obrigatório, mas é
 **consentimento da requisição**, nunca autorização: sozinho, jamais libera
 provider real.
+
+O onboarding [[PEDROCORE_STRUCTA_CONSUMER_01]] reutiliza esta cadeia sem
+bypass. Para Structa, somente uma credencial `registered`, papel
+`technical_tool`, ambiente não produtivo, Gemini e a task
+`qa_report_analysis` permitida pelo Project Context podem chegar ao ponto de
+autorização. `local_trusted`, produção e demais providers continuam negados.
 
 ## Negar não vira chamada real
 

@@ -1,5 +1,13 @@
 # MOC PedroCore IA
 
+## Consumer Structa — ATUAL
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]] —
+  onboarding least-privilege, registry oficial, Report Intelligence e zero
+  inferências.
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]] —
+  Gate próprio PASS; não é a Etapa 13 do Structa.
+
 ## Encerramento final — CANÔNICO ATUAL
 
 - [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] - **PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO**. Assistente IA homologado **4/4**; nenhuma implementação obrigatória restante.

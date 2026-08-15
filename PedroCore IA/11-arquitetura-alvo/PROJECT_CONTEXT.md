@@ -6,7 +6,7 @@
 
 O Project Context é a camada que:
 
-- Representa sistemas externos do ecossistema Pedro (ex.: FinGuard) como entidades configuráveis dentro do PedroCore.
+- Representa sistemas externos do ecossistema Pedro (ex.: FinGuard e Structa) como entidades configuráveis dentro do PedroCore.
 - Armazena metadados planejados sobre o sistema de origem (nome de exibição, identificador, tipo de projeto).
 - Define os limites do que o PedroCore pode ou não fazer em relação àquele projeto (ex.: quais `task_type` são permitidos, se é somente leitura, se pode ou não "sugerir comandos").
 - Guarda configurações planejadas por projeto (ex.: preferências de provider, nível de rigor esperado nas respostas).
@@ -39,6 +39,15 @@ Campos ilustrados:
 
 O contexto atual é configuração interna em memória, não banco de dados e não leitura de repositórios externos. `finguard` e `finguard-local` são representações internas seguras; não apontam para path real do FinGuard.
 
+O `structa` também é uma representação interna read-only. Seu escopo inicial
+é exclusivamente `qa_report_analysis`; não possui filesystem, comandos,
+Executor ou Planner. A resolução normaliza caixa e espaços, mas continua
+exata: `Structa` resolve para `structa`, enquanto `StructaXYZ` permanece
+`unknown`.
+
 ## Estado de implementação
 
-Implementado em `apps/api/app/modules/project_context/`. Resolve `pedrocore`, `finguard`, `finguard-local` e `unknown`; avalia `allowed_tasks`; mantém FinGuard read-only e sem execução/escrita.
+Implementado em `apps/api/app/modules/project_context/`. Resolve `pedrocore`,
+`finguard`, `finguard-local`, `structa` e `unknown`; avalia `allowed_tasks`;
+mantém consumers externos read-only e sem execução/escrita. Ver
+[[../17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]].

@@ -1,5 +1,12 @@
 # MOC Versoes Status
 
+## Frente atual — 2026-08-14
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]]
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]]
+- Estado: Structa registrado como consumer de menor privilégio; Gate PASS
+  offline; provider real default-off; nenhuma Etapa 13 executada.
+
 Mapa de versao, status, changelog e fechamento.
 
 ## Estado atual

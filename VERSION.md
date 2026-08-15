@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 02/08/2026
+Atualizado em: 14/08/2026
 
 ## Versão atual de produto
 
@@ -10,7 +10,20 @@ V5.1.9
 
 0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Frente atual — ENCERRAMENTO FINAL
+## Frente atual — onboarding seguro do Structa
+
+`PEDROCORE-STRUCTA-CONSUMER-01`.
+
+- Project Context `structa`, somente `qa_report_analysis`.
+- Caller Identity pelo `PEDROCORE_CALLER_REGISTRY`, com identidade
+  `registered` e papel `technical_tool`.
+- Gemini autorizado somente em ambiente não produtivo e somente após opt-in
+  explícito; demais providers negados.
+- `allow_real_provider=false` e fallback real false permanecem defaults.
+- Validação offline: `751 passed, 7 skipped, 2 warnings`; zero inferências.
+- Gate: [[PedroCore IA/17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]].
+
+## Frente anterior — ENCERRAMENTO FINAL
 
 `FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01`.
 

@@ -2,6 +2,15 @@
 
 Mapa de integracoes controladas do lado PedroCore.
 
+## Structa
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]]
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]]
+- Consumer externo read-only, identidade própria `registered`, papel
+  `technical_tool`, somente `qa_report_analysis` e Gemini não produtivo.
+- Provider real continua default-off e depende de Gate separado do Structa.
+- Structa não herda identidade ou permissões FinGuard/PedroCore.
+
 ## FinGuard
 
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secao 20.

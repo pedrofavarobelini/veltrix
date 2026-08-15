@@ -1,5 +1,26 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-STRUCTA-CONSUMER-01 — 14/08/2026
+
+Status: **onboarding least-privilege validado offline**.
+
+- Project Context canônico `structa`, matching exato e somente
+  `qa_report_analysis`.
+- Caller Identity pelo registry existente: `registered` + `technical_tool`;
+  sem credencial, mismatch, role inadequado e caller desconhecido falham
+  fechados.
+- Provider Authorization explícita somente para Gemini em ambientes não
+  produtivos; OpenAI, Claude, DeepSeek, Grok e produção permanecem negados.
+- `allow_real_provider=false` e fallback real false preservados.
+- Testes focados `66 passed`; suite integral `751 passed, 7 skipped, 2
+  warnings`; build web e Ruff focado PASS.
+- Grafo canônico: 130 documentos, 726 links resolvidos, zero violações.
+- Cinco arquivos locais `PedroCore IA/.obsidian/` preservados byte a byte e
+  regularizados por regras de ignore para paths exatos; zero exclusão.
+- Porta 3333/FinGuard preservada; Structa repo e `.env` real intocados.
+- `plannedRealCalls=0`, `actualRealCalls=0`; nenhum provider externo chamado.
+- Gate: [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]].
+
 ## PEDROCORE-DOCS-VAULT-REORGANIZATION-20260802
 
 Status: **reorganização documental validada, sem reabrir o core funcional**.

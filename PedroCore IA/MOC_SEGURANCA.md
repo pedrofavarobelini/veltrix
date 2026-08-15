@@ -15,6 +15,8 @@ Mapa dos limites de seguranca do PedroCore IA.
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - segurança ponta a ponta das Etapas 1–7.
 - [[17-multi-provider-safe-evolution/FIX_CREDENCIAL_COMPARTILHADA]] - credencial global não concede identidade privilegiada.
 - [[17-multi-provider-safe-evolution/FIX_HOMOLOGACAO_CONFIGURACAO_MODELOS]] - configuração runtime não homologa modelo.
+- [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]] - onboarding Structa com identidade registrada, role/task/provider mínimos e threat model.
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]] - evidência offline de autorização e negações sem provider real.
 
 ## Controles principais
 
@@ -35,6 +37,7 @@ Mapa dos limites de seguranca do PedroCore IA.
 - Binding: provider e modelo devem formar par explícito, homologado e autorizado; configuração não promove catálogo.
 - Circuit breaker: local por processo, default-off, separado por environment/provider/model.
 - Fallback real: default-off, somente para `provider_pre_dispatch + not_dispatched + external_dispatch=false`, no máximo um secundário; timeout nunca qualifica.
+- Structa: somente `registered + technical_tool + qa_report_analysis + gemini` em ambiente não produtivo; `local_trusted`, wildcard e providers diferentes são negados.
 
 ## Codigo relacionado
 

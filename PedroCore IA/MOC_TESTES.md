@@ -2,6 +2,18 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
+## Resultado atual — 2026-08-14
+
+- Frente: [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]].
+- Gate: [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]].
+- Focados: `66 passed, 2 warnings`.
+- Backend integral: `751 passed, 7 skipped, 2 warnings`.
+- Ruff dos arquivos alterados: PASS; build web: PASS.
+- Grafo documental: 130 documentos, 726 links, zero violações.
+- Guard autouse confirmou zero adapters reais e zero rede externa.
+- Ruff integral conserva um F401 preexistente em `test_report_memory.py`, fora
+  do diff desta frente.
+
 ## Resultado atual — 2026-07-27
 
 - Fechamento: [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
@@ -105,3 +117,4 @@ Auditoria local documentada:
 - Safety hardening: `test_provider_real_safety.py`, `test_report_memory_safety.py`, `test_policy_negative_cases.py`, `test_orchestrate_contract_safety.py`, `test_eval_harness_extended.py`.
 - Observabilidade/Gemini opt-in: `test_observability.py`, `test_gemini_smoke.py`.
 - Multi-provider seguro: `test_provider_catalog.py`, `test_caller_identity_authorization.py`, `test_shared_credential_privilege.py`, `test_provider_model_binding.py`, `test_shadow_routing.py`, `test_provider_routing_enforced.py`, `test_provider_health_circuit_breaker.py`, `test_provider_real_fallback_controlled.py`.
+- Consumer Structa: `test_structa_consumer_onboarding.py` — 15 casos offline de project context, identidade, provider/task policy, defaults e regressões FinGuard/PedroCore.

@@ -3,6 +3,14 @@
 Mapa oficial da evolução segura de providers, modelos, identidade, routing,
 health e fallback do PedroCore.
 
+## Consumer Structa
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]] —
+  Project Context, Caller Identity registrada e autorização exclusiva Gemini
+  para `qa_report_analysis`, sem wildcard.
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]] —
+  prova offline allowed/denied, contadores reais `0/0` e Gate PASS.
+
 ## Fechamento consolidado
 
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] — fonte
@@ -75,6 +83,7 @@ health e fallback do PedroCore.
 - `apps/api/tests/test_provider_routing_enforced.py`
 - `apps/api/tests/test_provider_health_circuit_breaker.py`
 - `apps/api/tests/test_provider_real_fallback_controlled.py`
+- `apps/api/tests/test_structa_consumer_onboarding.py`
 
 ## Status e histórico
 
