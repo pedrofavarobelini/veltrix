@@ -110,6 +110,17 @@ _RULES: tuple[AuthorizationRule, ...] = (
     ),
     AuthorizationRule(
         identity_strengths=frozenset({IdentityStrength.REGISTERED}),
+        project_ids=frozenset({"structa"}),
+        caller_roles=frozenset({CallerRole.TECHNICAL_TOOL}),
+        environments=NON_PRODUCTION_ENVIRONMENTS,
+        providers=frozenset({"gemini"}),
+        notes=(
+            "Structa fora de producao, somente como ferramenta tecnica com "
+            "credencial registrada e escopo de task controlado pelo Project Context."
+        ),
+    ),
+    AuthorizationRule(
+        identity_strengths=frozenset({IdentityStrength.REGISTERED}),
         project_ids=frozenset({"finguard", "finguard-local"}),
         caller_roles=frozenset({CallerRole.COMMON_CONSUMER, CallerRole.TECHNICAL_TOOL}),
         environments=PRODUCTION_ENVIRONMENTS,

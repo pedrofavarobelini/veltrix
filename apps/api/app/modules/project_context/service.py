@@ -45,6 +45,15 @@ _FINGUARD_NOTES = (
     "sem leitura direta de repositório, sem execução de comandos e sem escrita."
 )
 
+_STRUCTA_ALLOWED_TASKS = ["qa_report_analysis"]
+
+_STRUCTA_NOTES = (
+    "Consumer externo read-only; recebe somente contratos sinteticos e "
+    "sanitizados de Report Intelligence, sem filesystem, comandos, Executor "
+    "ou Planner. Provider real permanece default-off e exige identidade "
+    "registrada independente."
+)
+
 _PROJECTS: dict[str, dict[str, object]] = {
     "pedrocore": {
         "display_name": "PedroCore IA",
@@ -86,10 +95,16 @@ _PROJECTS: dict[str, dict[str, object]] = {
         "allowed_tasks": list(_FINGUARD_ALLOWED_TASKS),
         "notes": _FINGUARD_NOTES,
     },
+    "structa": {
+        "display_name": "Structa",
+        "allowed_tasks": list(_STRUCTA_ALLOWED_TASKS),
+        "notes": _STRUCTA_NOTES,
+    },
 }
 
 # Origens tratadas como FinGuard: sempre read-only, sem reader, sem execução.
 FINGUARD_ORIGIN_SYSTEMS = {"finguard", "finguard-local"}
+STRUCTA_ORIGIN_SYSTEMS = {"structa"}
 
 
 class ProjectContextResolver:
