@@ -38,3 +38,8 @@ Thumbs.db
 
 # Obsidian local config
 docs/.obsidian/
+/PedroCore IA/.obsidian/app.json
+/PedroCore IA/.obsidian/appearance.json
+/PedroCore IA/.obsidian/core-plugins.json
+/PedroCore IA/.obsidian/graph.json
+/PedroCore IA/.obsidian/workspace.json
