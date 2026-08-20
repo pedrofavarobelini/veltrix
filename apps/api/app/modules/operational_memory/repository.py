@@ -35,6 +35,8 @@ class OperationalMemoryRepository(Protocol):
         self, project_id: str, pattern_id: str
     ) -> OperationalMemoryEntry | None: ...
 
+    def get_memory(self, project_id: str, memory_id: str) -> OperationalMemoryEntry | None: ...
+
     def save_evaluation(
         self, candidate: LearningCandidate, memory: OperationalMemoryEntry
     ) -> bool: ...
@@ -103,6 +105,9 @@ class InMemoryOperationalMemoryRepository:
             ),
             None,
         )
+
+    def get_memory(self, project_id: str, memory_id: str) -> OperationalMemoryEntry | None:
+        return self._memories.get(project_id, {}).get(memory_id)
 
     def save_evaluation(self, candidate: LearningCandidate, memory: OperationalMemoryEntry) -> bool:
         candidates = self._candidates.setdefault(candidate.project_id, {})
@@ -343,6 +348,19 @@ class PostgreSQLOperationalMemoryRepository:
                 return OperationalMemoryEntry.model_validate(row[0]) if row else None
         except psycopg.Error as exc:
             raise ReportMemoryRepositoryError("Falha ao consultar operational memory.") from exc
+
+    def get_memory(self, project_id: str, memory_id: str) -> OperationalMemoryEntry | None:
+        try:
+            with self._connect() as connection, connection.cursor() as cursor:
+                cursor.execute(
+                    """SELECT payload FROM pedrocore_operational_memory
+                    WHERE project_id = %s AND memory_id = %s""",
+                    (project_id, memory_id),
+                )
+                row = cursor.fetchone()
+                return OperationalMemoryEntry.model_validate(row[0]) if row else None
+        except psycopg.Error as exc:
+            raise ReportMemoryRepositoryError("Falha ao consultar Operational Memory.") from exc
 
     def save_evaluation(self, candidate: LearningCandidate, memory: OperationalMemoryEntry) -> bool:
         candidate_values = candidate.model_dump(mode="python")

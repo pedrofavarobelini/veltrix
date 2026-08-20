@@ -8,6 +8,7 @@ from app.modules.interaction_outcomes.router import router as interaction_outcom
 from app.modules.observability.router import router as observability_router
 from app.modules.operational_memory.router import router as operational_memory_router
 from app.modules.retrieval.router import router as retrieval_router
+from app.modules.safe_reuse.router import router as safe_reuse_router
 from app.modules.orchestration.router import router as orchestration_router
 from app.modules.report_memory.router import router as report_memory_router
 
@@ -59,4 +60,5 @@ app.include_router(report_memory_router, prefix="/api")
 app.include_router(interaction_outcomes_router, prefix="/api")
 app.include_router(operational_memory_router, prefix="/api")
 app.include_router(retrieval_router, prefix="/api")
+app.include_router(safe_reuse_router, prefix="/api")
 app.include_router(observability_router, prefix="/api")
