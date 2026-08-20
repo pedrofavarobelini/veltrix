@@ -1,13 +1,18 @@
-import os
 import time
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from app.modules.caller_identity.schemas import (
+    SHARED_OR_UNKNOWN_PROJECT_ID,
+    AuthenticatedCallerContext,
+    CallerRole,
+    IdentityStrength,
+)
+from app.modules.caller_identity.service import caller_identity_service
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
 from app.modules.orchestration.router import (
-    API_KEY_ENV_VAR,
     API_KEY_HEADER,
     AUTH_INVALID_REASON,
     AUTH_MISSING_REASON,
@@ -23,10 +28,27 @@ from app.modules.report_memory.schemas import (
 from app.modules.report_memory.service import report_memory_service
 
 # Rotas de memória técnica (PEDROCORE-REPORT-MEMORY-01).
-# Mesma autenticação interna opcional do /api/orchestrate. Nenhuma rota lê
-# path/arquivo: relatórios chegam exclusivamente por payload.
+# Reutiliza a mesma Caller Identity de /api/orchestrate. Nenhuma rota lê
+# path/arquivo: relatórios chegam exclusivamente por payload. O project_id do
+# payload é uma alegação e nunca uma identidade soberana.
 
 router = APIRouter(tags=["Report Memory"])
+
+REPORT_ROLE_REASON = (
+    "Rotas de Report Memory exigem caller com papel technical_tool; "
+    "consumidor comum não pode analisar, gravar ou consultar memória técnica."
+)
+REPORT_PROJECT_REASON = (
+    "project_id solicitado não corresponde ao projeto autenticado da credencial."
+)
+LEGACY_PROJECT_REASON = (
+    "Credencial compartilhada LEGACY não prova projeto e só pode usar o namespace "
+    f"{SHARED_OR_UNKNOWN_PROJECT_ID!r}; projetos concretos exigem credencial registrada."
+)
+LEGACY_WARNING = (
+    "Fluxo LEGACY com credencial compartilhada: autenticado sem identidade de projeto; "
+    f"acesso restrito ao namespace {SHARED_OR_UNKNOWN_PROJECT_ID!r}."
+)
 
 
 def _auth_error(error_code: str, reason: str) -> JSONResponse:
@@ -41,25 +63,104 @@ def _auth_error(error_code: str, reason: str) -> JSONResponse:
     )
 
 
-def _check_auth(request: Request) -> tuple[JSONResponse | None, list[WarningItem]]:
-    configured_key = (os.environ.get(API_KEY_ENV_VAR) or "").strip()
-    if configured_key:
-        provided = request.headers.get(API_KEY_HEADER)
-        if provided is None:
-            return _auth_error(codes.INTERNAL_AUTH_MISSING, AUTH_MISSING_REASON), []
-        if provided != configured_key:
-            return _auth_error(codes.INTERNAL_AUTH_INVALID, AUTH_INVALID_REASON), []
-        return None, []
-    return None, [
-        make_warning(codes.INTERNAL_AUTH_NOT_CONFIGURED, AUTH_NOT_CONFIGURED_WARNING)
-    ]
+def _authorization_error(error_code: str, reason: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={
+            "status": "blocked",
+            "error_code": error_code,
+            "blocked_reason": reason,
+            "warning_codes": [error_code],
+        },
+    )
+
+
+def _check_auth(
+    request: Request, project_id: str
+) -> tuple[
+    JSONResponse | None,
+    list[WarningItem],
+    AuthenticatedCallerContext | None,
+]:
+    """Resolve caller e autoriza exatamente um projeto, sempre fail-closed.
+
+    `credential_id` é o producer interno da requisição V1. Papel e ambiente
+    também vêm da identidade; nenhum desses valores pode ser definido pelo
+    payload de Report Memory.
+    """
+    provided = request.headers.get(API_KEY_HEADER)
+    registry_configured = caller_identity_service.registry_configured()
+    shared_key_configured = caller_identity_service.shared_key_configured()
+    resolution = caller_identity_service.resolve(provided)
+
+    if resolution.rejected:
+        error_code = resolution.error_code or codes.CALLER_CREDENTIAL_UNKNOWN
+        reason = resolution.reason or "Credencial não reconhecida pelo PedroCore."
+        # Compatibilidade do contrato HTTP histórico da chave interna.
+        if shared_key_configured and not registry_configured:
+            if provided is None:
+                error_code, reason = codes.INTERNAL_AUTH_MISSING, AUTH_MISSING_REASON
+            else:
+                error_code, reason = codes.INTERNAL_AUTH_INVALID, AUTH_INVALID_REASON
+        return _auth_error(error_code, reason), [], None
+
+    caller = resolution.context
+    if caller is None:
+        return _auth_error(
+            codes.CALLER_CREDENTIAL_UNKNOWN,
+            "Nenhuma identidade de caller pôde ser resolvida.",
+        ), [], None
+
+    normalized_project = project_id.strip().lower()
+    warnings: list[WarningItem] = []
+
+    if caller.identity_strength is IdentityStrength.REGISTERED:
+        origin_claim = caller_identity_service.validate_origin_claim(
+            caller, normalized_project, normalized_project
+        )
+        if origin_claim.rejected or caller.project_id != normalized_project:
+            return _authorization_error(
+                codes.CALLER_ORIGIN_MISMATCH, REPORT_PROJECT_REASON
+            ), [], None
+        if caller.caller_role is not CallerRole.TECHNICAL_TOOL:
+            return _authorization_error(
+                codes.CALLER_REPORT_ACCESS_NOT_ALLOWED, REPORT_ROLE_REASON
+            ), [], None
+    elif caller.identity_strength is IdentityStrength.AMBIGUOUS:
+        if normalized_project != SHARED_OR_UNKNOWN_PROJECT_ID:
+            return _authorization_error(
+                codes.CALLER_IDENTITY_AMBIGUOUS, LEGACY_PROJECT_REASON
+            ), [], None
+        warnings.append(
+            make_warning(codes.CALLER_IDENTITY_SHARED_CREDENTIAL, LEGACY_WARNING)
+        )
+    elif caller.identity_strength is IdentityStrength.LOCAL_TRUSTED:
+        # Retrocompatibilidade dev/local existente. Em produção, a ausência de
+        # identidade registrada é tratada como credencial ausente.
+        if caller.environment in {"prod", "production"}:
+            return _auth_error(
+                codes.CALLER_CREDENTIAL_MISSING,
+                "Report Memory exige identidade registrada em produção.",
+            ), [], None
+        warnings.append(
+            make_warning(
+                codes.INTERNAL_AUTH_NOT_CONFIGURED, AUTH_NOT_CONFIGURED_WARNING
+            )
+        )
+    else:
+        return _authorization_error(
+            codes.CALLER_IDENTITY_AMBIGUOUS,
+            "Força de identidade não autorizada para Report Memory.",
+        ), [], None
+
+    return None, warnings, caller
 
 
 @router.post("/reports/analyze", response_model=ReportAnalyzeResponse)
 def analyze_report(payload: TechnicalReportInput, request: Request):
     """Analisa um relatório técnico sem persistir nada."""
     started = time.perf_counter()
-    error, warnings = _check_auth(request)
+    error, warnings, caller = _check_auth(request, payload.project_id)
     if error is not None:
         return error
 
@@ -82,6 +183,7 @@ def analyze_report(payload: TechnicalReportInput, request: Request):
         payload=payload,
         response=response,
         duration_ms=(time.perf_counter() - started) * 1_000,
+        caller=caller,
     )
     return response
 
@@ -90,7 +192,7 @@ def analyze_report(payload: TechnicalReportInput, request: Request):
 def ingest_report(payload: TechnicalReportInput, request: Request):
     """Ingere um relatório na memória técnica (se habilitada)."""
     started = time.perf_counter()
-    error, warnings = _check_auth(request)
+    error, warnings, caller = _check_auth(request, payload.project_id)
     if error is not None:
         return error
 
@@ -113,6 +215,7 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
         payload=payload,
         response=response,
         duration_ms=(time.perf_counter() - started) * 1_000,
+        caller=caller,
     )
     return response
 
@@ -123,7 +226,7 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
 )
 def project_memory_summary(project_id: str, request: Request):
     """Snapshot agregado da memória técnica do projeto — sem ler repositório."""
-    error, warnings = _check_auth(request)
+    error, warnings, _caller = _check_auth(request, project_id)
     if error is not None:
         return error
 

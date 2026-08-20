@@ -198,6 +198,17 @@ class CallerIdentityService:
 
         internal_key = (os.environ.get(FLAG_INTERNAL_API_KEY) or "").strip()
         if internal_key:
+            provided = (provided_credential or "").strip()
+            if not provided:
+                return CallerResolution(
+                    error_code=codes.CALLER_CREDENTIAL_MISSING,
+                    reason=CREDENTIAL_MISSING_REASON,
+                )
+            if not hmac.compare_digest(internal_key, provided):
+                return CallerResolution(
+                    error_code=codes.CALLER_CREDENTIAL_UNKNOWN,
+                    reason=CREDENTIAL_UNKNOWN_REASON,
+                )
             return CallerResolution(context=self._shared_context(internal_key))
 
         return CallerResolution(context=self.default_context())

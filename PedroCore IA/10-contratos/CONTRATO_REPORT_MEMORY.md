@@ -1,7 +1,7 @@
 # Contrato — Report Memory
 
 Frente: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` (Fase B)
-Atualizado em: 09/07/2026
+Atualizado em: 20/08/2026
 
 Links: [[CONTRATO_ECOSYSTEM_ASSISTANT]] | [[../14-intelligence-layer/REPORT_MEMORY]] | [[../14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]]
 
@@ -22,7 +22,18 @@ Links: [[CONTRATO_ECOSYSTEM_ASSISTANT]] | [[../14-intelligence-layer/REPORT_MEMO
 
 ## 3. Rotas
 
-Autenticação: mesma regra opcional do `/api/orchestrate` (`PEDROCORE_INTERNAL_API_KEY` + `X-PedroCore-Api-Key`).
+Autorização: as três rotas reutilizam `caller_identity`. O `project_id` do
+payload/path é apenas uma alegação e precisa coincidir com o projeto da
+credencial registrada; o papel exigido é `technical_tool`. Credencial ausente,
+inválida, sem capacidade ou de outro projeto falha fechado (`401`/`403`).
+
+Compatibilidade LEGACY:
+
+- sem autenticação configurada, o modo dev/local existente continua ativo e
+  identificado como `local_trusted`; produção exige identidade registrada;
+- `PEDROCORE_INTERNAL_API_KEY` continua autenticando, mas não prova projeto:
+  sua identidade `ambiguous` fica restrita ao namespace
+  `shared_or_unknown` e não acessa projetos concretos.
 
 ### `POST /api/reports/analyze`
 
@@ -53,6 +64,12 @@ Nunca há leitura de arquivo/repositório: só o que foi previamente ingerido po
 
 ## 5. Segurança
 
+- `producer`, papel e ambiente vêm da identidade resolvida, nunca do payload;
+  observabilidade registra somente `credential_id`/fingerprint não secreto.
+- Caller registrado do projeto A não analisa, grava nem consulta memória do
+  projeto B; tentativas retornam `CALLER_ORIGIN_MISMATCH`.
+- Credencial LEGACY não pode transformar `project_id` declarado em provenance;
+  tentativa contra projeto concreto retorna `CALLER_IDENTITY_AMBIGUOUS`.
 - Nenhum segredo é armazenado: sanitização redige padrões `api_key/token/password/senha/secret/chave = valor`.
 - Nenhuma rota aceita path ou arquivo local.
 - Nenhum provider é chamado por essas rotas.

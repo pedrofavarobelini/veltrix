@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.core.config import settings
+from app.modules.caller_identity.schemas import AuthenticatedCallerContext
 from app.modules.evaluation.service import evaluation_service
 from app.modules.observability.sanitizer import sanitize_payload, sanitize_text
 from app.modules.observability.schemas import (
@@ -276,6 +277,7 @@ class ObservabilityService:
         payload: Any,
         response: Any,
         duration_ms: float,
+        caller: AuthenticatedCallerContext | None = None,
     ) -> None:
         if not self.enabled():
             return
@@ -295,6 +297,20 @@ class ObservabilityService:
             or payload_sanitized.get("project_id")
             or "unknown"
         )
+        caller_projection = (
+            {
+                "producer": caller.credential_id,
+                "credential_id": caller.credential_id,
+                "authenticated": caller.authenticated,
+                "identity_strength": caller.identity_strength.value,
+                "project_id_authenticated": caller.project_id,
+                "project_id_authorized": payload_sanitized.get("project_id"),
+                "caller_role": caller.caller_role.value,
+                "environment": caller.environment,
+            }
+            if caller is not None
+            else None
+        )
         self._append(
             ExecutionRecord(
                 execution_id=execution_id,
@@ -305,6 +321,7 @@ class ObservabilityService:
                 status=status,
                 payload_sanitized=payload_sanitized,
                 removed_fields=list(dict.fromkeys(removed_fields)),
+                caller=caller_projection,
                 duration_ms=round(duration_ms, 2),
                 public_response=sanitize_text(payload_sanitized.get("summary") or ""),
                 release_gate=release_gate,
