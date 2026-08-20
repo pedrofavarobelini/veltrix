@@ -242,9 +242,16 @@ def test_guard_fires_if_real_provider_is_invoked_directly(real_provider_guard):
         pytest.skip("guard desativado por PEDROCORE_RUN_REAL_PROVIDER_TESTS=true")
 
     provider = provider_registry.get("gemini")
+    assert provider is not None
 
     with pytest.raises(RuntimeError, match="REAL_PROVIDER_CALL_BLOCKED_BY_TEST_GUARD"):
-        asyncio.run(provider.generate_response(message="Teste", mode="tecnico"))
+        asyncio.run(
+            provider.generate_response(
+                message="Teste",
+                mode="tecnico",
+                model=provider.default_model,
+            )
+        )
 
     assert real_provider_guard == ["gemini"]
 

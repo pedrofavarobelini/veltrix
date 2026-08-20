@@ -138,7 +138,9 @@ def test_secrets_are_redacted_before_storage(monkeypatch):
         ),
     )
 
-    entries = report_memory_service._repository().list("demo-project")
+    repository = report_memory_service._repository()
+    assert repository is not None
+    entries = repository.list("demo-project")
     assert len(entries) == 1
     assert "sk-super-secreta-12345" not in (entries[0].summary or "")
     assert "[REDACTED]" in (entries[0].summary or "")
