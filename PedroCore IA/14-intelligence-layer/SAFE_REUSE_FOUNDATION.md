@@ -24,3 +24,4 @@ segurança.
 
 - [[CONTRATO_SAFE_REUSE]]
 - [[RETRIEVAL_V1]]
+- [[RISK_ENGINE_FOUNDATION]]
