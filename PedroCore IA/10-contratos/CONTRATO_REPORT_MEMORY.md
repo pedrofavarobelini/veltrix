@@ -13,12 +13,16 @@ Links: [[CONTRATO_ECOSYSTEM_ASSISTANT]] | [[../14-intelligence-layer/REPORT_MEMO
 
 | Flag | Default | Valores |
 |---|---|---|
-| `PEDROCORE_REPORT_MEMORY_PERSISTENCE` | `off` | `off` \| `memory` \| `local_json` |
+| `PEDROCORE_REPORT_MEMORY_PERSISTENCE` | `off` | `off` \| `memory` \| `local_json` \| `postgresql` |
 | `PEDROCORE_REPORT_MEMORY_DIR` | vazio | diretório para `local_json` (obrigatório nesse modo) |
+| `PEDROCORE_REPORT_MEMORY_DATABASE_URL` | vazio | URL exclusiva, obrigatória para PostgreSQL |
+| `PEDROCORE_REPORT_MEMORY_RETENTION_DAYS` | `90` | 1 a 3650 dias |
 
 - `off` — nada é guardado nem consultado (ingest responde `status="disabled"`).
 - `memory` — repositório in-process volátil (máx. 50 entradas por projeto).
 - `local_json` — um arquivo JSON por projeto no diretório configurado pelo operador; conteúdo sanitizado (segredos redigidos com `[REDACTED]`); dados de runtime não devem ser commitados; nunca grava em `.env`.
+- `postgresql` — persistência operacional sem limite de 50; exige migração
+  explícita e nunca cai silenciosamente para outro repository.
 
 ## 3. Rotas
 
@@ -53,6 +57,14 @@ No mesmo projeto, repetir `report_id` retorna `status="duplicate"`,
 ### `GET /api/project-memory/{project_id}/summary`
 
 Snapshot agregado (`ProjectMemorySnapshot`): `last_known_status`, `last_report_at`, `latest_commit`, `latest_branch`, `completed_milestones`, `unresolved_risks`, `recurring_signals`, `next_recommended_steps`, `confidence`, `source_count`. Sem leitura de repositório externo; memória isolada por `project_id`.
+
+### Consulta e deleção operacional
+
+- `GET /api/project-memory/{project_id}/reports?limit=&offset=`: paginação
+  autorizada, total separado do tamanho da página.
+- `DELETE /api/project-memory/{project_id}`: deleção explícita apenas do projeto
+  autenticado; caller de outro projeto recebe 403.
+- Falha de banco/configuração retorna 503 `REPORT_PERSISTENCE_UNAVAILABLE`.
 
 ## 4. Integração com /api/orchestrate
 

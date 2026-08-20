@@ -1,7 +1,7 @@
 # Report Memory — Memória Técnica Controlada
 
-Frente: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` (Fase B)
-Atualizado em: 09/07/2026
+Frente: `PEDROCORE-OPERATIONAL-PERSISTENCE` — IMPLEMENTED
+Atualizado em: 20/08/2026
 
 Links: [[REPORT_INTELLIGENCE_FOUNDATION]] | [[../10-contratos/CONTRATO_REPORT_MEMORY]] | [[EVALUATION_FOUNDATION]]
 
@@ -11,13 +11,13 @@ Evolução da Report Intelligence Foundation para memória técnica **controlada
 
 - `ReportMemoryEntry` — relatório ingerido + sinais + riscos + marcos.
 - `ProjectMemorySnapshot` — agregado por projeto (status, riscos, sinais recorrentes, próximos passos, confiança determinística).
-- Repositórios: in-memory (padrão quando habilitada) e `local_json` opcional.
+- Repository Contract único: `InMemory`, `LocalJson` e `PostgreSQL`.
 
 ## 2. O que NÃO é
 
 - Não é treinamento, fine-tuning ou autoaprendizado — relatórios viram **sinais e histórico**, nunca pesos.
 - Não é RAG/embeddings — o snapshot é agregação determinística.
-- Não é banco de dados novo — in-process por padrão; `local_json` é arquivo simples opcional, default OFF.
+- PostgreSQL é opt-in e nunca recebe fallback silencioso para memória local.
 - Não lê arquivos nem repositórios: relatórios chegam exclusivamente por payload.
 
 ## 3. Fluxo
@@ -28,7 +28,7 @@ POST /api/reports/ingest
   -> extract_signals (determinístico)
   -> evaluate_report_signals (crítico => revisão humana)
   -> redação de segredos ([REDACTED])
-  -> repositório configurado (off | memory | local_json)
+  -> repositório configurado (off | memory | local_json | postgresql)
   -> memory_id + ProjectMemorySnapshot
 
 POST /api/orchestrate (context_from_memory=true)
@@ -40,13 +40,30 @@ POST /api/orchestrate (context_from_memory=true)
 
 - `PEDROCORE_REPORT_MEMORY_PERSISTENCE=off` por padrão — nada guardado.
 - `context_from_memory=false` por padrão — nada consultado.
-- Máx. 50 entradas por projeto; snapshot lista no máximo 5 itens por categoria.
+- Máx. 50 entradas por projeto apenas em `memory`/`local_json`; PostgreSQL não
+  herda esse limite e expõe consulta paginada.
 - Memória isolada por `project_id`.
 - Testes de persistência usam `tmp_path`; dados de runtime não são versionados.
 
-## 5. Testes
+## 5. PostgreSQL, privacy e lifecycle
 
-`apps/api/tests/test_report_memory.py`: default off, analyze sem persistência, ingestão/snapshot, criticidade de provider real, isolamento por projeto, redação de segredos, `local_json` com tmp_path, integração `context_from_memory` (off/on/disabled).
+- URL exclusiva: `PEDROCORE_REPORT_MEMORY_DATABASE_URL`; nunca reutiliza outra
+  `DATABASE_URL` implicitamente.
+- Migração aditiva `migrations/0001_operational_reports.sql`, aplicada apenas
+  pelo comando explícito `python -m app.modules.report_memory.migrate`.
+- Campos relacionais cobrem projeto, report ID, schema, producer, correlações,
+  lifecycle e timestamps; conteúdo extensível e sanitizado fica em JSONB.
+- `PEDROCORE_REPORT_MEMORY_RETENTION_DAYS` define retenção (default 90 dias).
+- `GET /api/project-memory/{project_id}/reports` pagina dados autorizados;
+  `DELETE /api/project-memory/{project_id}` faz deleção isolada e explícita.
+- Falha de configuração, conexão ou schema retorna 503
+  `REPORT_PERSISTENCE_UNAVAILABLE`; nenhum repositório alternativo é usado.
+
+## 6. Testes
+
+`test_operational_persistence.py` prova migração idempotente, ingestão,
+reconnect, query paginada, mais de 50 entradas, isolamento/IDOR, duplicidade,
+retenção, deleção e falha de banco sem fallback.
 
 ## Links relacionados
 

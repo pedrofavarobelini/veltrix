@@ -1,7 +1,7 @@
 import os
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.modules.contracts import codes
@@ -17,6 +17,9 @@ from app.modules.report_intelligence.service import report_intelligence_service
 from app.modules.report_memory.repository import (
     InMemoryReportMemoryRepository,
     LocalJsonReportMemoryRepository,
+    PostgreSQLReportMemoryRepository,
+    ReportMemoryRepository,
+    ReportMemoryRepositoryConfigurationError,
 )
 from app.modules.report_memory.schemas import ProjectMemorySnapshot, ReportMemoryEntry
 
@@ -33,11 +36,14 @@ from app.modules.report_memory.schemas import ProjectMemorySnapshot, ReportMemor
 
 FLAG_PERSISTENCE = "PEDROCORE_REPORT_MEMORY_PERSISTENCE"
 FLAG_MEMORY_DIR = "PEDROCORE_REPORT_MEMORY_DIR"
+FLAG_DATABASE_URL = "PEDROCORE_REPORT_MEMORY_DATABASE_URL"
+FLAG_RETENTION_DAYS = "PEDROCORE_REPORT_MEMORY_RETENTION_DAYS"
 
 MODE_OFF = "off"
 MODE_MEMORY = "memory"
 MODE_LOCAL_JSON = "local_json"
-VALID_MODES = {MODE_OFF, MODE_MEMORY, MODE_LOCAL_JSON}
+MODE_POSTGRESQL = "postgresql"
+VALID_MODES = {MODE_OFF, MODE_MEMORY, MODE_LOCAL_JSON, MODE_POSTGRESQL}
 
 MEMORY_DISABLED_WARNING = (
     "Memória técnica desabilitada (PEDROCORE_REPORT_MEMORY_PERSISTENCE=off); "
@@ -51,6 +57,7 @@ MEMORY_USED_WARNING = (
 
 MAX_CONTEXT_BLOCK_CHARS = 2_000
 _SNAPSHOT_LIST_LIMIT = 5
+_SNAPSHOT_SOURCE_LIMIT = 500
 
 _SECRET_PATTERN = re.compile(
     r"(?i)\b(api[_-]?key|secret|token|password|senha|chave)\b\s*[:=]\s*\S+"
@@ -60,6 +67,14 @@ _SECRET_PATTERN = re.compile(
 def persistence_mode() -> str:
     raw = (os.environ.get(FLAG_PERSISTENCE) or MODE_OFF).strip().lower()
     return raw if raw in VALID_MODES else MODE_OFF
+
+
+def retention_days() -> int:
+    raw = (os.environ.get(FLAG_RETENTION_DAYS) or "90").strip()
+    try:
+        return min(3_650, max(1, int(raw)))
+    except ValueError:
+        return 90
 
 
 def _redact(text: str | None) -> str | None:
@@ -92,13 +107,14 @@ class ReportMemoryService:
     def __init__(self) -> None:
         self._memory_repo = InMemoryReportMemoryRepository()
         self._json_repos: dict[str, LocalJsonReportMemoryRepository] = {}
+        self._postgres_repos: dict[str, PostgreSQLReportMemoryRepository] = {}
 
     # -- infra -----------------------------------------------------------
 
     def enabled(self) -> bool:
         return persistence_mode() != MODE_OFF
 
-    def _repository(self) -> InMemoryReportMemoryRepository | None:
+    def _repository(self) -> ReportMemoryRepository | None:
         mode = persistence_mode()
         if mode == MODE_MEMORY:
             return self._memory_repo
@@ -111,12 +127,24 @@ class ReportMemoryService:
                 repo = LocalJsonReportMemoryRepository(directory)
                 self._json_repos[directory] = repo
             return repo
+        if mode == MODE_POSTGRESQL:
+            database_url = (os.environ.get(FLAG_DATABASE_URL) or "").strip()
+            if not database_url:
+                raise ReportMemoryRepositoryConfigurationError(
+                    f"{FLAG_DATABASE_URL} é obrigatória no modo postgresql."
+                )
+            repo = self._postgres_repos.get(database_url)
+            if repo is None:
+                repo = PostgreSQLReportMemoryRepository(database_url)
+                self._postgres_repos[database_url] = repo
+            return repo
         return None
 
     def reset(self) -> None:
         """Limpa o estado in-process (uso em testes)."""
         self._memory_repo.clear()
         self._json_repos.clear()
+        self._postgres_repos.clear()
 
     # -- análise sem persistência -----------------------------------------
 
@@ -204,9 +232,7 @@ class ReportMemoryService:
 
         repo = self._repository()
         if repo is None:
-            warnings.append(
-                make_warning(codes.REPORT_MEMORY_DISABLED, MEMORY_DISABLED_WARNING)
-            )
+            warnings.append(make_warning(codes.REPORT_MEMORY_DISABLED, MEMORY_DISABLED_WARNING))
             return None, None, warnings, False
 
         if report_id is not None:
@@ -221,6 +247,9 @@ class ReportMemoryService:
                 return existing, self.snapshot(normalized.project_id), warnings, True
 
         now = datetime.now(timezone.utc).isoformat()
+        retention_until = (
+            datetime.now(timezone.utc) + timedelta(days=retention_days())
+        ).isoformat()
         entry = ReportMemoryEntry(
             memory_id=str(uuid.uuid4()),
             report_id=report_id,
@@ -240,13 +269,15 @@ class ReportMemoryService:
                 s.summary
                 for s in signals
                 if s.signal_type
-                in {"qa_failed", "database_safety_risk", "architecture_risk",
-                    "release_gate_blocked"}
+                in {
+                    "qa_failed",
+                    "database_safety_risk",
+                    "architecture_risk",
+                    "release_gate_blocked",
+                }
             ],
             completed_milestones=[
-                s.summary
-                for s in signals
-                if s.signal_type in {"qa_passed", "release_gate_passed"}
+                s.summary for s in signals if s.signal_type in {"qa_passed", "release_gate_passed"}
             ],
             next_steps=_redact_list(normalized.next_steps),
             findings=_redact_list(normalized.findings),
@@ -255,9 +286,26 @@ class ReportMemoryService:
             evidence=_sanitize_value(normalized.evidence),
             created_at=normalized.created_at or now,
             updated_at=now,
+            retention_until=retention_until,
             metadata=_sanitize_value(normalized.metadata or {}),
         )
-        repo.add(entry)
+        if not repo.add(entry):
+            existing = (
+                repo.get_by_report_id(normalized.project_id, report_id)
+                if report_id is not None
+                else None
+            )
+            if existing is None:
+                raise ReportMemoryRepositoryConfigurationError(
+                    "Repository recusou persistência sem retornar entrada existente."
+                )
+            warnings.append(
+                make_warning(
+                    codes.REPORT_DUPLICATE_IGNORED,
+                    "report_id concorrente já persistido; nenhum efeito duplicado foi criado.",
+                )
+            )
+            return existing, self.snapshot(normalized.project_id), warnings, True
 
         return entry, self.snapshot(normalized.project_id), warnings, False
 
@@ -269,7 +317,13 @@ class ReportMemoryService:
             return None
 
         normalized_project = project_id.strip().lower()
-        entries = repo.list(normalized_project)
+        source_count = repo.count(normalized_project)
+        offset = max(0, source_count - _SNAPSHOT_SOURCE_LIMIT)
+        entries = repo.list(
+            normalized_project,
+            limit=_SNAPSHOT_SOURCE_LIMIT,
+            offset=offset,
+        )
         if not entries:
             return None
 
@@ -290,13 +344,9 @@ class ReportMemoryService:
                 if item not in next_steps:
                     next_steps.append(item)
             for signal in entry.signals:
-                signal_counts[signal.signal_type] = (
-                    signal_counts.get(signal.signal_type, 0) + 1
-                )
+                signal_counts[signal.signal_type] = signal_counts.get(signal.signal_type, 0) + 1
 
-        recurring = sorted(
-            [name for name, count in signal_counts.items() if count >= 2]
-        )
+        recurring = sorted([name for name, count in signal_counts.items() if count >= 2])
         confidence = round(min(0.9, 0.3 + 0.1 * len(entries)), 2)
 
         return ProjectMemorySnapshot(
@@ -310,8 +360,32 @@ class ReportMemoryService:
             recurring_signals=recurring,
             next_recommended_steps=next_steps[-_SNAPSHOT_LIST_LIMIT:],
             confidence=confidence,
-            source_count=len(entries),
+            source_count=source_count,
         )
+
+    def page(
+        self, project_id: str, *, limit: int, offset: int
+    ) -> tuple[list[ReportMemoryEntry], int]:
+        repo = self._repository()
+        if repo is None:
+            return [], 0
+        normalized_project = project_id.strip().lower()
+        return (
+            repo.list(normalized_project, limit=limit, offset=offset),
+            repo.count(normalized_project),
+        )
+
+    def delete_project(self, project_id: str) -> int:
+        repo = self._repository()
+        if repo is None:
+            return 0
+        return repo.delete_project(project_id.strip().lower())
+
+    def apply_retention(self, now: datetime | None = None) -> int:
+        repo = self._repository()
+        if repo is None:
+            return 0
+        return repo.delete_expired(now)
 
     def context_block(self, project_id: str) -> tuple[str | None, list[WarningItem]]:
         """Bloco textual limitado do snapshot para o Prompt Builder.
@@ -319,15 +393,11 @@ class ReportMemoryService:
         Retorna (None, warnings) quando a memória está desabilitada ou vazia.
         """
         if not self.enabled():
-            return None, [
-                make_warning(codes.REPORT_MEMORY_DISABLED, MEMORY_DISABLED_WARNING)
-            ]
+            return None, [make_warning(codes.REPORT_MEMORY_DISABLED, MEMORY_DISABLED_WARNING)]
 
         snapshot = self.snapshot(project_id)
         if snapshot is None:
-            return None, [
-                make_warning(codes.REPORT_MEMORY_EMPTY, MEMORY_EMPTY_WARNING)
-            ]
+            return None, [make_warning(codes.REPORT_MEMORY_EMPTY, MEMORY_EMPTY_WARNING)]
 
         lines = [
             f"project_id: {snapshot.project_id}",
@@ -341,9 +411,7 @@ class ReportMemoryService:
         if snapshot.completed_milestones:
             lines.append("marcos_concluidos: " + "; ".join(snapshot.completed_milestones))
         if snapshot.next_recommended_steps:
-            lines.append(
-                "proximos_passos: " + "; ".join(snapshot.next_recommended_steps)
-            )
+            lines.append("proximos_passos: " + "; ".join(snapshot.next_recommended_steps))
         lines.append("Nota: memória técnica não é treinamento; é contexto consultável.")
 
         block = "\n".join(lines)[:MAX_CONTEXT_BLOCK_CHARS]

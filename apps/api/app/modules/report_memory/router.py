@@ -1,6 +1,6 @@
 import time
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import JSONResponse
 
 from app.modules.caller_identity.schemas import (
@@ -26,11 +26,14 @@ from app.modules.report_intelligence.schemas import (
 from app.modules.report_intelligence.service import report_intelligence_service
 from app.modules.report_memory.schemas import (
     ProjectMemorySummaryResponse,
+    ReportMemoryDeleteResponse,
+    ReportMemoryPageResponse,
     ReportAnalyzeResponse,
     ReportAnalyzeV2Response,
     ReportIngestResponse,
     ReportIngestV2Response,
 )
+from app.modules.report_memory.repository import ReportMemoryRepositoryError
 from app.modules.report_memory.service import report_memory_service
 
 # Rotas de memória técnica (PEDROCORE-REPORT-MEMORY-01).
@@ -85,6 +88,21 @@ def _authorization_error(error_code: str, reason: str) -> JSONResponse:
     )
 
 
+def _persistence_error() -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        content={
+            "status": "blocked",
+            "error_code": codes.REPORT_PERSISTENCE_UNAVAILABLE,
+            "blocked_reason": (
+                "Persistência operacional indisponível ou não migrada; "
+                "nenhum fallback foi aplicado."
+            ),
+            "warning_codes": [codes.REPORT_PERSISTENCE_UNAVAILABLE],
+        },
+    )
+
+
 def _check_auth(
     request: Request, project_id: str
 ) -> tuple[
@@ -116,10 +134,14 @@ def _check_auth(
 
     caller = resolution.context
     if caller is None:
-        return _auth_error(
-            codes.CALLER_CREDENTIAL_UNKNOWN,
-            "Nenhuma identidade de caller pôde ser resolvida.",
-        ), [], None
+        return (
+            _auth_error(
+                codes.CALLER_CREDENTIAL_UNKNOWN,
+                "Nenhuma identidade de caller pôde ser resolvida.",
+            ),
+            [],
+            None,
+        )
 
     normalized_project = project_id.strip().lower()
     warnings: list[WarningItem] = []
@@ -129,46 +151,54 @@ def _check_auth(
             caller, normalized_project, normalized_project
         )
         if origin_claim.rejected or caller.project_id != normalized_project:
-            return _authorization_error(
-                codes.CALLER_ORIGIN_MISMATCH, REPORT_PROJECT_REASON
-            ), [], None
+            return (
+                _authorization_error(codes.CALLER_ORIGIN_MISMATCH, REPORT_PROJECT_REASON),
+                [],
+                None,
+            )
         if caller.caller_role is not CallerRole.TECHNICAL_TOOL:
-            return _authorization_error(
-                codes.CALLER_REPORT_ACCESS_NOT_ALLOWED, REPORT_ROLE_REASON
-            ), [], None
+            return (
+                _authorization_error(codes.CALLER_REPORT_ACCESS_NOT_ALLOWED, REPORT_ROLE_REASON),
+                [],
+                None,
+            )
     elif caller.identity_strength is IdentityStrength.AMBIGUOUS:
         if normalized_project != SHARED_OR_UNKNOWN_PROJECT_ID:
-            return _authorization_error(
-                codes.CALLER_IDENTITY_AMBIGUOUS, LEGACY_PROJECT_REASON
-            ), [], None
-        warnings.append(
-            make_warning(codes.CALLER_IDENTITY_SHARED_CREDENTIAL, LEGACY_WARNING)
-        )
+            return (
+                _authorization_error(codes.CALLER_IDENTITY_AMBIGUOUS, LEGACY_PROJECT_REASON),
+                [],
+                None,
+            )
+        warnings.append(make_warning(codes.CALLER_IDENTITY_SHARED_CREDENTIAL, LEGACY_WARNING))
     elif caller.identity_strength is IdentityStrength.LOCAL_TRUSTED:
         # Retrocompatibilidade dev/local existente. Em produção, a ausência de
         # identidade registrada é tratada como credencial ausente.
         if caller.environment in {"prod", "production"}:
-            return _auth_error(
-                codes.CALLER_CREDENTIAL_MISSING,
-                "Report Memory exige identidade registrada em produção.",
-            ), [], None
-        warnings.append(
-            make_warning(
-                codes.INTERNAL_AUTH_NOT_CONFIGURED, AUTH_NOT_CONFIGURED_WARNING
+            return (
+                _auth_error(
+                    codes.CALLER_CREDENTIAL_MISSING,
+                    "Report Memory exige identidade registrada em produção.",
+                ),
+                [],
+                None,
             )
+        warnings.append(
+            make_warning(codes.INTERNAL_AUTH_NOT_CONFIGURED, AUTH_NOT_CONFIGURED_WARNING)
         )
     else:
-        return _authorization_error(
-            codes.CALLER_IDENTITY_AMBIGUOUS,
-            "Força de identidade não autorizada para Report Memory.",
-        ), [], None
+        return (
+            _authorization_error(
+                codes.CALLER_IDENTITY_AMBIGUOUS,
+                "Força de identidade não autorizada para Report Memory.",
+            ),
+            [],
+            None,
+        )
 
     return None, warnings, caller
 
 
-def _check_producer(
-    caller: AuthenticatedCallerContext, producer: str
-) -> JSONResponse | None:
+def _check_producer(caller: AuthenticatedCallerContext, producer: str) -> JSONResponse | None:
     if producer.strip() != caller.credential_id:
         return _authorization_error(
             codes.CALLER_REPORT_PRODUCER_MISMATCH,
@@ -222,9 +252,12 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
     assert caller is not None
 
     envelope = report_intelligence_service.adapt_v1(payload, caller)
-    entry, snapshot, signals, evaluation, ingest_warnings, duplicate = (
-        report_memory_service.ingest_envelope(envelope)
-    )
+    try:
+        entry, snapshot, signals, evaluation, ingest_warnings, duplicate = (
+            report_memory_service.ingest_envelope(envelope)
+        )
+    except ReportMemoryRepositoryError:
+        return _persistence_error()
     warnings.extend(ingest_warnings)
 
     response = ReportIngestResponse(
@@ -294,9 +327,12 @@ def ingest_report_v2(payload: IntelligenceReportEnvelopeV2, request: Request):
     if producer_error is not None:
         return producer_error
 
-    entry, snapshot, signals, evaluation, ingest_warnings, duplicate = (
-        report_memory_service.ingest_envelope(payload)
-    )
+    try:
+        entry, snapshot, signals, evaluation, ingest_warnings, duplicate = (
+            report_memory_service.ingest_envelope(payload)
+        )
+    except ReportMemoryRepositoryError:
+        return _persistence_error()
     warnings.extend(ingest_warnings)
     response = ReportIngestV2Response(
         status="duplicate" if duplicate else ("ok" if entry is not None else "disabled"),
@@ -338,11 +374,12 @@ def project_memory_summary(project_id: str, request: Request):
                 "Memória técnica desabilitada; nenhum snapshot disponível.",
             )
         )
-        return ProjectMemorySummaryResponse(
-            status="disabled", snapshot=None, warnings=warnings
-        )
+        return ProjectMemorySummaryResponse(status="disabled", snapshot=None, warnings=warnings)
 
-    snapshot = report_memory_service.snapshot(project_id)
+    try:
+        snapshot = report_memory_service.snapshot(project_id)
+    except ReportMemoryRepositoryError:
+        return _persistence_error()
     if snapshot is None:
         warnings.append(
             make_warning(
@@ -350,6 +387,60 @@ def project_memory_summary(project_id: str, request: Request):
                 "Memória técnica sem registros para este projeto.",
             )
         )
-    return ProjectMemorySummaryResponse(
-        status="ok", snapshot=snapshot, warnings=warnings
+    return ProjectMemorySummaryResponse(status="ok", snapshot=snapshot, warnings=warnings)
+
+
+@router.get(
+    "/project-memory/{project_id}/reports",
+    response_model=ReportMemoryPageResponse,
+)
+def project_memory_reports(
+    project_id: str,
+    request: Request,
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    """Consulta paginada; o limite de 50 do modo local não limita PostgreSQL."""
+    error, warnings, _caller = _check_auth(request, project_id)
+    if error is not None:
+        return error
+    if not report_memory_service.enabled():
+        return ReportMemoryPageResponse(
+            status="disabled",
+            project_id=project_id.strip().lower(),
+            limit=limit,
+            offset=offset,
+            warnings=warnings,
+        )
+    try:
+        items, total = report_memory_service.page(project_id, limit=limit, offset=offset)
+    except ReportMemoryRepositoryError:
+        return _persistence_error()
+    return ReportMemoryPageResponse(
+        project_id=project_id.strip().lower(),
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+        warnings=warnings,
+    )
+
+
+@router.delete(
+    "/project-memory/{project_id}",
+    response_model=ReportMemoryDeleteResponse,
+)
+def delete_project_memory(project_id: str, request: Request):
+    """Deleção explícita e isolada para privacy/retention; nunca em lote global."""
+    error, warnings, _caller = _check_auth(request, project_id)
+    if error is not None:
+        return error
+    try:
+        deleted = report_memory_service.delete_project(project_id)
+    except ReportMemoryRepositoryError:
+        return _persistence_error()
+    return ReportMemoryDeleteResponse(
+        project_id=project_id.strip().lower(),
+        deleted=deleted,
+        warnings=warnings,
     )

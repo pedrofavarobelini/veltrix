@@ -27,6 +27,7 @@ class ReportMemoryEntry(BaseModel):
     source_commit: str | None = None
     branch: str | None = None
     status: str
+    lifecycle: str = "active"
     summary: str | None = None
     signals: list[ReportSignal] = Field(default_factory=list)
     safety_flags: list[str] = Field(default_factory=list)
@@ -39,6 +40,7 @@ class ReportMemoryEntry(BaseModel):
     evidence: list[str | dict] = Field(default_factory=list)
     created_at: str | None = None
     updated_at: str | None = None
+    retention_until: str | None = None
     metadata: dict | None = None
 
 
@@ -115,4 +117,21 @@ class ProjectMemorySummaryResponse(BaseModel):
 
     status: str = "ok"
     snapshot: ProjectMemorySnapshot | None = None
+    warnings: list[WarningItem] = Field(default_factory=list)
+
+
+class ReportMemoryPageResponse(BaseModel):
+    status: str = "ok"
+    project_id: str
+    items: list[ReportMemoryEntry] = Field(default_factory=list)
+    total: int = 0
+    limit: int
+    offset: int
+    warnings: list[WarningItem] = Field(default_factory=list)
+
+
+class ReportMemoryDeleteResponse(BaseModel):
+    status: str = "ok"
+    project_id: str
+    deleted: int = 0
     warnings: list[WarningItem] = Field(default_factory=list)
