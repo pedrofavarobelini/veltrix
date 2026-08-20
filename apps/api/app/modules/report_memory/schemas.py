@@ -2,7 +2,11 @@ from pydantic import BaseModel, Field
 
 from app.modules.contracts.codes import WarningItem
 from app.modules.evaluation.schemas import EvaluationResult
-from app.modules.report_intelligence.schemas import ReportSignal, TechnicalReportInput
+from app.modules.report_intelligence.schemas import (
+    IntelligenceReportEnvelopeV2,
+    ReportSignal,
+    TechnicalReportInput,
+)
 
 
 class ReportMemoryEntry(BaseModel):
@@ -13,9 +17,13 @@ class ReportMemoryEntry(BaseModel):
     """
 
     memory_id: str
+    report_id: str | None = None
+    schema_version: str = "1"
+    producer: str | None = None
     project_id: str
     report_type: str
     source_run_id: str | None = None
+    conversation_id: str | None = None
     source_commit: str | None = None
     branch: str | None = None
     status: str
@@ -25,6 +33,10 @@ class ReportMemoryEntry(BaseModel):
     unresolved_risks: list[str] = Field(default_factory=list)
     completed_milestones: list[str] = Field(default_factory=list)
     next_steps: list[str] = Field(default_factory=list)
+    findings: list[str] = Field(default_factory=list)
+    suggested_fixes: list[str] = Field(default_factory=list)
+    source_signals: list[dict] = Field(default_factory=list)
+    evidence: list[str | dict] = Field(default_factory=list)
     created_at: str | None = None
     updated_at: str | None = None
     metadata: dict | None = None
@@ -70,6 +82,27 @@ class ReportIngestResponse(BaseModel):
 
     status: str = "ok"
     stored: bool = False
+    duplicate: bool = False
+    memory_id: str | None = None
+    snapshot: ProjectMemorySnapshot | None = None
+    signals: list[ReportSignal] = Field(default_factory=list)
+    evaluation: EvaluationResult | None = None
+    warnings: list[WarningItem] = Field(default_factory=list)
+
+
+class ReportAnalyzeV2Response(BaseModel):
+    status: str = "ok"
+    report: IntelligenceReportEnvelopeV2
+    signals: list[ReportSignal] = Field(default_factory=list)
+    evaluation: EvaluationResult
+    warnings: list[WarningItem] = Field(default_factory=list)
+
+
+class ReportIngestV2Response(BaseModel):
+    status: str = "ok"
+    stored: bool = False
+    duplicate: bool = False
+    report_id: str
     memory_id: str | None = None
     snapshot: ProjectMemorySnapshot | None = None
     signals: list[ReportSignal] = Field(default_factory=list)

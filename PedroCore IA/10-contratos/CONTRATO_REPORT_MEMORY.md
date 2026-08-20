@@ -35,17 +35,20 @@ Compatibilidade LEGACY:
   sua identidade `ambiguous` fica restrita ao namespace
   `shared_or_unknown` e não acessa projetos concretos.
 
-### `POST /api/reports/analyze`
+### V1 LEGACY — `POST /api/reports/analyze` e `/api/reports/ingest`
 
-Recebe `TechnicalReportInput`, normaliza, extrai sinais e avalia — **sem persistir nada**, mesmo com memória habilitada.
+Recebe `TechnicalReportInput` e aplica o adapter V1 → V2 antes da lógica de
+domínio. `analyze` não persiste; `ingest` preserva o comportamento histórico.
 
-Resposta: `{status, report, signals, evaluation, warnings}`.
+### V2 — `POST /api/reports/v2/analyze` e `/api/reports/v2/ingest`
 
-### `POST /api/reports/ingest`
+Recebe `IntelligenceReportEnvelopeV2` (`schema_version=2.0`) com payload tipado
+`interaction_quality`, `qa_evidence`, `risk_analysis` ou `execution_outcome`.
+Versões desconhecidas são rejeitadas. `producer` é validado contra o
+`credential_id`; o payload não pode forjar provenance.
 
-Normaliza, extrai sinais, avalia e grava na memória configurada.
-
-Resposta: `{status, stored, memory_id, snapshot, signals, evaluation, warnings}` — `status="disabled"`/`stored=false` quando a persistência está `off`.
+No mesmo projeto, repetir `report_id` retorna `status="duplicate"`,
+`stored=false` e `REPORT_DUPLICATE_IGNORED`, sem criar uma segunda entrada.
 
 ### `GET /api/project-memory/{project_id}/summary`
 

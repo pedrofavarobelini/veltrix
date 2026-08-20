@@ -2,12 +2,17 @@ import os
 import re
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
 from app.modules.evaluation.schemas import EvaluationResult
 from app.modules.evaluation.service import evaluation_service
-from app.modules.report_intelligence.schemas import ReportSignal, TechnicalReportInput
+from app.modules.report_intelligence.schemas import (
+    IntelligenceReportEnvelopeV2,
+    ReportSignal,
+    TechnicalReportInput,
+)
 from app.modules.report_intelligence.service import report_intelligence_service
 from app.modules.report_memory.repository import (
     InMemoryReportMemoryRepository,
@@ -67,6 +72,22 @@ def _redact_list(values: list[str]) -> list[str]:
     return [redacted for value in values if (redacted := _redact(value)) is not None]
 
 
+def _sanitize_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return _redact(value)
+    if isinstance(value, list):
+        return [_sanitize_value(item) for item in value]
+    if isinstance(value, dict):
+        sanitized: dict[str, Any] = {}
+        for key, item in value.items():
+            if re.search(r"(?i)(api[_-]?key|secret|token|password|senha|chave)", key):
+                sanitized[key] = "[REDACTED]"
+            else:
+                sanitized[key] = _sanitize_value(item)
+        return sanitized
+    return value
+
+
 class ReportMemoryService:
     def __init__(self) -> None:
         self._memory_repo = InMemoryReportMemoryRepository()
@@ -107,6 +128,14 @@ class ReportMemoryService:
         evaluation = evaluation_service.evaluate_report_signals(signals)
         return normalized, signals, evaluation
 
+    def analyze_envelope(
+        self, report: IntelligenceReportEnvelopeV2
+    ) -> tuple[IntelligenceReportEnvelopeV2, list[ReportSignal], EvaluationResult]:
+        normalized = report_intelligence_service.normalize_envelope(report)
+        signals = report_intelligence_service.extract_signals_v2(normalized)
+        evaluation = evaluation_service.evaluate_report_signals(signals)
+        return normalized, signals, evaluation
+
     # -- ingestão ---------------------------------------------------------
 
     def ingest(
@@ -119,6 +148,53 @@ class ReportMemoryService:
         list[WarningItem],
     ]:
         normalized, signals, evaluation = self.analyze(report)
+        entry, snapshot, warnings, _duplicate = self._persist(
+            normalized,
+            signals,
+            report_id=normalized.report_id,
+            schema_version="1",
+            producer=None,
+            conversation_id=normalized.conversation_id,
+        )
+        return entry, snapshot, signals, evaluation, warnings
+
+    def ingest_envelope(
+        self, report: IntelligenceReportEnvelopeV2
+    ) -> tuple[
+        ReportMemoryEntry | None,
+        ProjectMemorySnapshot | None,
+        list[ReportSignal],
+        EvaluationResult,
+        list[WarningItem],
+        bool,
+    ]:
+        normalized, signals, evaluation = self.analyze_envelope(report)
+        technical = report_intelligence_service.technical_view(normalized)
+        entry, snapshot, warnings, duplicate = self._persist(
+            technical,
+            signals,
+            report_id=normalized.report_id,
+            schema_version=normalized.schema_version,
+            producer=normalized.producer,
+            conversation_id=normalized.conversation_id,
+        )
+        return entry, snapshot, signals, evaluation, warnings, duplicate
+
+    def _persist(
+        self,
+        normalized: TechnicalReportInput,
+        signals: list[ReportSignal],
+        *,
+        report_id: str | None,
+        schema_version: str,
+        producer: str | None,
+        conversation_id: str | None,
+    ) -> tuple[
+        ReportMemoryEntry | None,
+        ProjectMemorySnapshot | None,
+        list[WarningItem],
+        bool,
+    ]:
         warnings: list[WarningItem] = [
             make_warning(
                 codes.REPORT_MEMORY_IS_NOT_TRAINING,
@@ -131,14 +207,29 @@ class ReportMemoryService:
             warnings.append(
                 make_warning(codes.REPORT_MEMORY_DISABLED, MEMORY_DISABLED_WARNING)
             )
-            return None, None, signals, evaluation, warnings
+            return None, None, warnings, False
+
+        if report_id is not None:
+            existing = repo.get_by_report_id(normalized.project_id, report_id)
+            if existing is not None:
+                warnings.append(
+                    make_warning(
+                        codes.REPORT_DUPLICATE_IGNORED,
+                        "report_id já ingerido neste projeto; nenhum efeito duplicado foi criado.",
+                    )
+                )
+                return existing, self.snapshot(normalized.project_id), warnings, True
 
         now = datetime.now(timezone.utc).isoformat()
         entry = ReportMemoryEntry(
             memory_id=str(uuid.uuid4()),
+            report_id=report_id,
+            schema_version=schema_version,
+            producer=producer,
             project_id=normalized.project_id,
             report_type=normalized.report_type,
             source_run_id=normalized.run_id,
+            conversation_id=conversation_id,
             source_commit=normalized.commit,
             branch=normalized.branch,
             status=normalized.status,
@@ -158,13 +249,17 @@ class ReportMemoryService:
                 if s.signal_type in {"qa_passed", "release_gate_passed"}
             ],
             next_steps=_redact_list(normalized.next_steps),
+            findings=_redact_list(normalized.findings),
+            suggested_fixes=_redact_list(normalized.suggested_fixes),
+            source_signals=_sanitize_value(normalized.signals),
+            evidence=_sanitize_value(normalized.evidence),
             created_at=normalized.created_at or now,
             updated_at=now,
-            metadata=None,
+            metadata=_sanitize_value(normalized.metadata or {}),
         )
         repo.add(entry)
 
-        return entry, self.snapshot(normalized.project_id), signals, evaluation, warnings
+        return entry, self.snapshot(normalized.project_id), warnings, False
 
     # -- consulta ---------------------------------------------------------
 

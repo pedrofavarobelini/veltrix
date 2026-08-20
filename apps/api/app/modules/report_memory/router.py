@@ -19,11 +19,17 @@ from app.modules.orchestration.router import (
     AUTH_NOT_CONFIGURED_WARNING,
 )
 from app.modules.observability.service import observability_service
-from app.modules.report_intelligence.schemas import TechnicalReportInput
+from app.modules.report_intelligence.schemas import (
+    IntelligenceReportEnvelopeV2,
+    TechnicalReportInput,
+)
+from app.modules.report_intelligence.service import report_intelligence_service
 from app.modules.report_memory.schemas import (
     ProjectMemorySummaryResponse,
     ReportAnalyzeResponse,
+    ReportAnalyzeV2Response,
     ReportIngestResponse,
+    ReportIngestV2Response,
 )
 from app.modules.report_memory.service import report_memory_service
 
@@ -48,6 +54,10 @@ LEGACY_PROJECT_REASON = (
 LEGACY_WARNING = (
     "Fluxo LEGACY com credencial compartilhada: autenticado sem identidade de projeto; "
     f"acesso restrito ao namespace {SHARED_OR_UNKNOWN_PROJECT_ID!r}."
+)
+PRODUCER_MISMATCH_REASON = (
+    "producer declarado não corresponde ao credential_id autenticado; "
+    "provenance nunca pode ser definida pelo payload."
 )
 
 
@@ -156,6 +166,17 @@ def _check_auth(
     return None, warnings, caller
 
 
+def _check_producer(
+    caller: AuthenticatedCallerContext, producer: str
+) -> JSONResponse | None:
+    if producer.strip() != caller.credential_id:
+        return _authorization_error(
+            codes.CALLER_REPORT_PRODUCER_MISMATCH,
+            PRODUCER_MISMATCH_REASON,
+        )
+    return None
+
+
 @router.post("/reports/analyze", response_model=ReportAnalyzeResponse)
 def analyze_report(payload: TechnicalReportInput, request: Request):
     """Analisa um relatório técnico sem persistir nada."""
@@ -163,8 +184,11 @@ def analyze_report(payload: TechnicalReportInput, request: Request):
     error, warnings, caller = _check_auth(request, payload.project_id)
     if error is not None:
         return error
+    assert caller is not None
 
-    normalized, signals, evaluation = report_memory_service.analyze(payload)
+    envelope = report_intelligence_service.adapt_v1(payload, caller)
+    normalized_v2, signals, evaluation = report_memory_service.analyze_envelope(envelope)
+    normalized = report_intelligence_service.technical_view(normalized_v2)
     warnings.append(
         make_warning(
             codes.REPORT_MEMORY_IS_NOT_TRAINING,
@@ -195,15 +219,18 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
     error, warnings, caller = _check_auth(request, payload.project_id)
     if error is not None:
         return error
+    assert caller is not None
 
-    entry, snapshot, signals, evaluation, ingest_warnings = (
-        report_memory_service.ingest(payload)
+    envelope = report_intelligence_service.adapt_v1(payload, caller)
+    entry, snapshot, signals, evaluation, ingest_warnings, duplicate = (
+        report_memory_service.ingest_envelope(envelope)
     )
     warnings.extend(ingest_warnings)
 
     response = ReportIngestResponse(
-        status="ok" if entry is not None else "disabled",
-        stored=entry is not None,
+        status="duplicate" if duplicate else ("ok" if entry is not None else "disabled"),
+        stored=entry is not None and not duplicate,
+        duplicate=duplicate,
         memory_id=entry.memory_id if entry is not None else None,
         snapshot=snapshot,
         signals=signals,
@@ -212,6 +239,80 @@ def ingest_report(payload: TechnicalReportInput, request: Request):
     )
     observability_service.record_report(
         task="report_ingestion",
+        payload=payload,
+        response=response,
+        duration_ms=(time.perf_counter() - started) * 1_000,
+        caller=caller,
+    )
+    return response
+
+
+@router.post("/reports/v2/analyze", response_model=ReportAnalyzeV2Response)
+def analyze_report_v2(payload: IntelligenceReportEnvelopeV2, request: Request):
+    """Analisa Common Envelope V2 sem persistência ou interpretação de versão futura."""
+    started = time.perf_counter()
+    error, warnings, caller = _check_auth(request, payload.project_id)
+    if error is not None:
+        return error
+    assert caller is not None
+    producer_error = _check_producer(caller, payload.producer)
+    if producer_error is not None:
+        return producer_error
+
+    normalized, signals, evaluation = report_memory_service.analyze_envelope(payload)
+    warnings.append(
+        make_warning(
+            codes.REPORT_MEMORY_IS_NOT_TRAINING,
+            "Relatórios V2 não treinam IA; esta análise gera apenas sinais.",
+        )
+    )
+    response = ReportAnalyzeV2Response(
+        report=normalized,
+        signals=signals,
+        evaluation=evaluation,
+        warnings=warnings,
+    )
+    observability_service.record_report(
+        task="report_v2_analysis",
+        payload=normalized,
+        response=response,
+        duration_ms=(time.perf_counter() - started) * 1_000,
+        caller=caller,
+    )
+    return response
+
+
+@router.post("/reports/v2/ingest", response_model=ReportIngestV2Response)
+def ingest_report_v2(payload: IntelligenceReportEnvelopeV2, request: Request):
+    """Ingere envelope V2 com isolamento e idempotência por projeto/report_id."""
+    started = time.perf_counter()
+    error, warnings, caller = _check_auth(request, payload.project_id)
+    if error is not None:
+        return error
+    assert caller is not None
+    producer_error = _check_producer(caller, payload.producer)
+    if producer_error is not None:
+        return producer_error
+
+    entry, snapshot, signals, evaluation, ingest_warnings, duplicate = (
+        report_memory_service.ingest_envelope(payload)
+    )
+    warnings.extend(ingest_warnings)
+    response = ReportIngestV2Response(
+        status="duplicate" if duplicate else ("ok" if entry is not None else "disabled"),
+        stored=entry is not None and not duplicate,
+        duplicate=duplicate,
+        report_id=(entry.report_id or payload.report_id.strip())
+        if entry is not None
+        else payload.report_id.strip(),
+        memory_id=entry.memory_id if entry is not None else None,
+        snapshot=snapshot,
+        signals=signals,
+        evaluation=evaluation,
+        warnings=warnings,
+    )
+    observability_service.record_report(
+        task="report_v2_ingestion",
         payload=payload,
         response=response,
         duration_ms=(time.perf_counter() - started) * 1_000,

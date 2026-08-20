@@ -1,9 +1,17 @@
 import re
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from app.modules.caller_identity.schemas import AuthenticatedCallerContext
 
 from app.modules.report_intelligence.schemas import (
+    IntelligenceReportEnvelopeV2,
+    IntelligenceReportType,
     ReportMemorySummary,
     ReportSignal,
     TechnicalReportInput,
+    payload_model_for,
 )
 
 # Report Intelligence Foundation (PEDROCORE-MODEL-FOUNDATION-01).
@@ -89,6 +97,18 @@ def _clean_list(values: list[str]) -> list[str]:
     return result
 
 
+def _clean_evidence(values: list[str | dict[str, Any]]) -> list[str | dict[str, Any]]:
+    result: list[str | dict[str, Any]] = []
+    for value in values[:_MAX_LIST_ITEMS]:
+        if isinstance(value, str):
+            cleaned = _clean_text(value)
+            if cleaned is not None:
+                result.append(cleaned)
+        elif isinstance(value, dict):
+            result.append(dict(value))
+    return result
+
+
 def _matches_any(patterns: list[str], corpus: str) -> str | None:
     for pattern in patterns:
         match = re.search(pattern, corpus, re.IGNORECASE)
@@ -98,13 +118,119 @@ def _matches_any(patterns: list[str], corpus: str) -> str | None:
 
 
 class ReportIntelligenceService:
+    def adapt_v1(
+        self,
+        report: TechnicalReportInput,
+        caller: AuthenticatedCallerContext,
+    ) -> IntelligenceReportEnvelopeV2:
+        """Adapta V1 ao envelope interno V2 sem confiar provenance ao payload."""
+        legacy_type = report.report_type.strip().lower()
+        try:
+            report_type = IntelligenceReportType(legacy_type)
+        except ValueError:
+            report_type = IntelligenceReportType.QA_EVIDENCE
+
+        common: dict[str, Any] = {
+            "status": report.status,
+            "legacy_report_type": legacy_type,
+            "source": report.source,
+            "branch": report.branch,
+            "commit": report.commit,
+            "summary": report.summary,
+            "safety_flags": list(report.safety_flags),
+            "findings": list(report.findings),
+            "suggested_fixes": list(report.suggested_fixes),
+            "next_steps": list(report.next_steps),
+            "signals": list(report.signals),
+            "evidence": list(report.evidence),
+            "metadata": dict(report.metadata or {}),
+        }
+        payload_type = payload_model_for(report_type)
+        return IntelligenceReportEnvelopeV2.model_validate(
+            {
+                "report_id": report.report_id or str(uuid.uuid4()),
+                "report_type": report_type,
+                "producer": caller.credential_id,
+                "project_id": report.project_id,
+                "run_id": report.run_id,
+                "conversation_id": report.conversation_id,
+                "created_at": report.created_at
+                or datetime.now(timezone.utc).isoformat(),
+                "payload": payload_type(**common).model_dump(),
+            }
+        )
+
+    def normalize_envelope(
+        self, report: IntelligenceReportEnvelopeV2
+    ) -> IntelligenceReportEnvelopeV2:
+        payload_data = report.payload.model_dump()
+        for field in (
+            "status",
+            "legacy_report_type",
+            "source",
+            "branch",
+            "commit",
+            "summary",
+        ):
+            if field in payload_data:
+                payload_data[field] = _clean_text(payload_data[field])
+        payload_data["status"] = (payload_data["status"] or "").lower()
+        for field in (
+            "safety_flags",
+            "findings",
+            "suggested_fixes",
+            "next_steps",
+        ):
+            payload_data[field] = _clean_list(payload_data[field])
+        payload_data["evidence"] = _clean_evidence(payload_data["evidence"])
+        payload_data["signals"] = [dict(item) for item in payload_data["signals"]]
+        return IntelligenceReportEnvelopeV2(
+            schema_version=report.schema_version,
+            report_id=report.report_id.strip(),
+            report_type=report.report_type,
+            producer=report.producer.strip(),
+            project_id=report.project_id.strip().lower(),
+            run_id=_clean_text(report.run_id),
+            conversation_id=_clean_text(report.conversation_id),
+            created_at=report.created_at.strip(),
+            payload=type(report.payload)(**payload_data),
+        )
+
+    def technical_view(
+        self, report: IntelligenceReportEnvelopeV2
+    ) -> TechnicalReportInput:
+        normalized = self.normalize_envelope(report)
+        payload = normalized.payload
+        return TechnicalReportInput(
+            report_id=normalized.report_id,
+            project_id=normalized.project_id,
+            report_type=payload.legacy_report_type or normalized.report_type.value,
+            source=payload.source,
+            run_id=normalized.run_id,
+            conversation_id=normalized.conversation_id,
+            branch=payload.branch,
+            commit=payload.commit,
+            status=payload.status,
+            summary=payload.summary,
+            safety_flags=payload.safety_flags,
+            findings=payload.findings,
+            suggested_fixes=payload.suggested_fixes,
+            next_steps=payload.next_steps,
+            signals=payload.signals,
+            evidence=payload.evidence,
+            created_at=normalized.created_at,
+            metadata=payload.metadata,
+        )
+
     def normalize_report(self, report: TechnicalReportInput) -> TechnicalReportInput:
         """Normalização determinística: trim, lowercase de status, dedupe de listas."""
         return TechnicalReportInput(
             project_id=report.project_id.strip().lower(),
             report_type=report.report_type.strip().lower(),
+            report_id=_clean_text(report.report_id),
             source=_clean_text(report.source),
             run_id=_clean_text(report.run_id),
+            conversation_id=_clean_text(report.conversation_id),
             branch=_clean_text(report.branch),
             commit=_clean_text(report.commit),
             status=report.status.strip().lower(),
@@ -113,9 +239,16 @@ class ReportIntelligenceService:
             findings=_clean_list(report.findings),
             suggested_fixes=_clean_list(report.suggested_fixes),
             next_steps=_clean_list(report.next_steps),
+            signals=[dict(item) for item in report.signals],
+            evidence=_clean_evidence(report.evidence),
             created_at=_clean_text(report.created_at),
-            metadata=report.metadata,
+            metadata=dict(report.metadata or {}),
         )
+
+    def extract_signals_v2(
+        self, report: IntelligenceReportEnvelopeV2
+    ) -> list[ReportSignal]:
+        return self.extract_signals(self.technical_view(report))
 
     def extract_signals(self, report: TechnicalReportInput) -> list[ReportSignal]:
         """Extrai sinais conservadores e explicáveis; nunca decide sozinho."""

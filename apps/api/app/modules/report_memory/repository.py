@@ -29,6 +29,18 @@ class InMemoryReportMemoryRepository:
             return entries[-limit:]
         return entries
 
+    def get_by_report_id(
+        self, project_id: str, report_id: str
+    ) -> ReportMemoryEntry | None:
+        return next(
+            (
+                entry
+                for entry in self._entries.get(project_id, [])
+                if entry.report_id == report_id
+            ),
+            None,
+        )
+
     def clear(self) -> None:
         self._entries.clear()
 
