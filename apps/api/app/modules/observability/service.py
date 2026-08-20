@@ -141,6 +141,57 @@ class ObservabilityService:
                 None,
             )
 
+    def record_retrieval(
+        self,
+        response: Any,
+        query: Any,
+        traces: list[Any],
+    ) -> None:
+        """Record IDs, scores and decisions, never search terms or memory text."""
+        if not self.enabled():
+            return
+        selected_ids = [item.memory_id for item in response.items]
+        candidate_projection = [
+            {
+                "memory_id": item.memory_id,
+                "score": item.score,
+                "selected": item.selected,
+                "rejection_reasons": list(item.rejection_reasons),
+            }
+            for item in traces
+        ]
+        self._append(
+            ExecutionRecord(
+                execution_id=response.query_id,
+                audit_id=response.query_id,
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                origin_system="pedrocore",
+                task="operational_memory_retrieval",
+                status=response.status,
+                payload_sanitized={
+                    "query_id": response.query_id,
+                    "project_id": response.project_id,
+                    "task_type": query.task_type,
+                    "policy_version": response.policy_version,
+                    "max_results": query.max_results,
+                    "max_context_chars": query.max_context_chars,
+                },
+                removed_fields=["keywords"],
+                memory_consulted=True,
+                timeline=[
+                    TimelineEvent(stage="retrieval_started", status="ok", offset_ms=0.0),
+                    TimelineEvent(stage="candidates_ranked", status="completed"),
+                    TimelineEvent(stage="context_bounded", status="completed"),
+                ],
+                result_returned={
+                    "policy_version": response.policy_version,
+                    "selected_memory_ids": selected_ids,
+                    "candidates": candidate_projection,
+                    "context_chars": response.context_chars,
+                },
+            )
+        )
+
     def record_orchestration(self, payload: Any, outcome: Any, duration_ms: float) -> None:
         if not self.enabled():
             return

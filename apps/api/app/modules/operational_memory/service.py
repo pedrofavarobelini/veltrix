@@ -110,6 +110,10 @@ class OperationalMemoryService:
             return repository
         return None
 
+    def repository_for_retrieval(self) -> OperationalMemoryRepository | None:
+        """Expose the same configured store to the read-only retrieval layer."""
+        return self._repository()
+
     def reset(self) -> None:
         self._memory_repository.clear()
         self._json_repositories.clear()

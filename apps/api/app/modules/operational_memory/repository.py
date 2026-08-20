@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -54,6 +56,14 @@ class OperationalMemoryRepository(Protocol):
         pattern_type: PatternType | None = None,
         lifecycle: MemoryLifecycle | None = None,
     ) -> int: ...
+
+    def search_memory(
+        self,
+        project_id: str,
+        *,
+        keywords: list[str],
+        limit: int = 200,
+    ) -> list[tuple[OperationalMemoryEntry, float]]: ...
 
     def delete_project(self, project_id: str) -> tuple[int, int]: ...
 
@@ -139,6 +149,27 @@ class InMemoryOperationalMemoryRepository:
                 lifecycle=lifecycle,
             )
         )
+
+    def search_memory(
+        self,
+        project_id: str,
+        *,
+        keywords: list[str],
+        limit: int = 200,
+    ) -> list[tuple[OperationalMemoryEntry, float]]:
+        terms = set(_search_terms(" ".join(keywords)))
+        ranked: list[tuple[OperationalMemoryEntry, float]] = []
+        for memory in self._memories.get(project_id, {}).values():
+            document_terms = set(_search_terms(_search_document(memory)))
+            lexical_score = len(terms & document_terms) / len(terms) if terms else 0.0
+            if terms and lexical_score == 0.0:
+                continue
+            ranked.append((memory, lexical_score))
+        ranked.sort(
+            key=lambda item: (item[1], item[0].updated_at, item[0].memory_id),
+            reverse=True,
+        )
+        return ranked[:limit]
 
     def delete_project(self, project_id: str) -> tuple[int, int]:
         candidates = len(self._candidates.pop(project_id, {}))
@@ -322,6 +353,7 @@ class PostgreSQLOperationalMemoryRepository:
         memory_values["pattern_id"] = memory.pattern.pattern_id
         memory_values["pattern_type"] = memory.pattern.pattern_type.value
         memory_values["lifecycle"] = memory.lifecycle.value
+        memory_values["search_document"] = _search_document(memory)
         memory_values["payload"] = Jsonb(memory.model_dump(mode="json"))
         try:
             with self._connect() as connection, connection.cursor() as cursor:
@@ -344,12 +376,12 @@ class PostgreSQLOperationalMemoryRepository:
                     """INSERT INTO pedrocore_operational_memory (
                         memory_id, project_id, pattern_id, pattern_type,
                         lifecycle, confidence, sample_size, policy_version,
-                        created_at, updated_at, retention_until, payload
+                        created_at, updated_at, retention_until, search_document, payload
                     ) VALUES (
                         %(memory_id)s, %(project_id)s, %(pattern_id)s,
                         %(pattern_type)s, %(lifecycle)s, %(confidence)s,
                         %(sample_size)s, %(policy_version)s, %(created_at)s,
-                        %(updated_at)s, %(retention_until)s, %(payload)s
+                        %(updated_at)s, %(retention_until)s, %(search_document)s, %(payload)s
                     ) ON CONFLICT (project_id, pattern_id) DO UPDATE SET
                         lifecycle = EXCLUDED.lifecycle,
                         confidence = EXCLUDED.confidence,
@@ -357,6 +389,7 @@ class PostgreSQLOperationalMemoryRepository:
                         policy_version = EXCLUDED.policy_version,
                         updated_at = EXCLUDED.updated_at,
                         retention_until = EXCLUDED.retention_until,
+                        search_document = EXCLUDED.search_document,
                         payload = EXCLUDED.payload""",
                     memory_values,
                 )
@@ -423,6 +456,42 @@ class PostgreSQLOperationalMemoryRepository:
         except psycopg.Error as exc:
             raise ReportMemoryRepositoryError("Falha ao contar Operational Memory.") from exc
 
+    def search_memory(
+        self,
+        project_id: str,
+        *,
+        keywords: list[str],
+        limit: int = 200,
+    ) -> list[tuple[OperationalMemoryEntry, float]]:
+        query = " ".join(_search_terms(" ".join(keywords)))
+        try:
+            with self._connect() as connection, connection.cursor() as cursor:
+                if query:
+                    cursor.execute(
+                        """SELECT payload,
+                            ts_rank_cd(search_vector, websearch_to_tsquery('simple', %s)) AS rank
+                        FROM pedrocore_operational_memory
+                        WHERE project_id = %s
+                          AND search_vector @@ websearch_to_tsquery('simple', %s)
+                        ORDER BY rank DESC, updated_at DESC, memory_id ASC
+                        LIMIT %s""",
+                        (query, project_id, query, limit),
+                    )
+                else:
+                    cursor.execute(
+                        """SELECT payload, 0.0
+                        FROM pedrocore_operational_memory
+                        WHERE project_id = %s
+                        ORDER BY updated_at DESC, memory_id ASC
+                        LIMIT %s""",
+                        (project_id, limit),
+                    )
+                return [
+                    (OperationalMemoryEntry.model_validate(row[0]), float(row[1])) for row in cursor
+                ]
+        except psycopg.Error as exc:
+            raise ReportMemoryRepositoryError("Falha ao recuperar Operational Memory.") from exc
+
     def delete_project(self, project_id: str) -> tuple[int, int]:
         try:
             with self._connect() as connection, connection.cursor() as cursor:
@@ -473,3 +542,25 @@ class PostgreSQLOperationalMemoryRepository:
             raise ReportMemoryRepositoryError(
                 "Falha ao limpar Operational Memory de teste."
             ) from exc
+
+
+def _search_terms(value: str) -> list[str]:
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii").lower()
+    return re.findall(r"[a-z0-9][a-z0-9_.:-]{1,63}", ascii_value)
+
+
+def _search_document(memory: OperationalMemoryEntry) -> str:
+    pattern = memory.pattern
+    return " ".join(
+        _search_terms(
+            " ".join(
+                (
+                    pattern.pattern_type.value,
+                    pattern.pattern_key,
+                    pattern.task_type,
+                    pattern.summary,
+                )
+            )
+        )
+    )
