@@ -26,3 +26,4 @@ policy. Não há segunda memória, treinamento ou promoção automática.
 
 - [[CONTRATO_PRE_EXECUTION_RISK_V1]]
 - [[RISK_ENGINE_FOUNDATION]]
+- [[EXECUTION_CONTRACT_RISK_GATES]]
