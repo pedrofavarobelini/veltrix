@@ -1,7 +1,9 @@
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.modules.chat.router import router as chat_router
 from app.modules.interaction_outcomes.router import router as interaction_outcomes_router
@@ -34,6 +36,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def sanitized_validation_error(_request: Request, exc: RequestValidationError):
+    """Keep the 422 contract without echoing rejected payloads or validator context."""
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": [
+                {
+                    "loc": list(item.get("loc", ())),
+                    "msg": str(item.get("msg", "Invalid input.")),
+                    "type": str(item.get("type", "value_error")),
+                }
+                for item in exc.errors()
+            ]
+        },
+    )
 
 
 @app.get("/")

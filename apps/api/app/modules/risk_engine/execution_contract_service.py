@@ -174,7 +174,11 @@ class ExecutionContractService:
             "forbidden_files": sorted(
                 item for item in forbidden_scope if item.startswith("file:")
             ),
-            "allowed_commands": [],
+            "allowed_commands": (
+                sorted(set(request.requested_operation.commands))
+                if gate is not RiskGate.BLOCK
+                else []
+            ),
             "forbidden_operations": sorted(set(forbidden_operations)),
             "required_tests": sorted(set(request.context.required_tests)),
             "required_backup": required_backup,
@@ -240,6 +244,8 @@ class ExecutionContractService:
         *,
         now: datetime | None = None,
     ) -> HumanReviewRecord:
+        if not self.reviewer_authorized(caller):
+            raise PermissionError("reviewer não autorizado")
         validation = self.validate(payload, now=now)
         current = now or datetime.now(timezone.utc)
         original = payload.contract.gate

@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 RISK_SCHEMA_VERSION = "1.0"
 RISK_FOUNDATION_POLICY_VERSION = "risk-foundation-v1"
@@ -34,8 +34,17 @@ class RequestedOperation(BaseModel):
     kind: OperationKind
     targets: list[str] = Field(default_factory=list, max_length=100)
     expected_changes: list[str] = Field(default_factory=list, max_length=100)
+    commands: list[str] = Field(default_factory=list, max_length=50)
     destructive: bool = False
     external_effects: bool = False
+
+    @field_validator("commands")
+    @classmethod
+    def _commands_must_not_contain_inline_secrets(cls, values: list[str]) -> list[str]:
+        forbidden = ("api_key=", "apikey=", "token=", "password=", "secret=")
+        if any(any(marker in value.lower() for marker in forbidden) for value in values):
+            raise ValueError("commands não podem transportar secrets inline")
+        return values
 
 
 class RiskContextInput(BaseModel):

@@ -11,6 +11,8 @@ from app.modules.report_memory.repository import ReportMemoryRepositoryError
 from app.modules.risk_engine.schemas import RiskAssessment, RiskRequest
 from app.modules.risk_engine.pre_execution_schemas import PreExecutionRiskAnalysis
 from app.modules.risk_engine.pre_execution_service import pre_execution_risk_service
+from app.modules.risk_engine.post_execution_schemas import ExecutionEvidence, PostExecutionOutcome
+from app.modules.risk_engine.post_execution_service import post_execution_service
 from app.modules.risk_engine.execution_contract_schemas import (
     ContractIssueResponse,
     ContractValidation,
@@ -127,3 +129,37 @@ def override_execution_contract(payload: HumanOverrideRequest, request: Request)
         return execution_contract_service.override(payload, caller)
     except ContractConfigurationError:
         return _contract_configuration_error()
+
+
+@router.post("/risk/execution-outcomes", response_model=PostExecutionOutcome)
+def record_execution_outcome(payload: ExecutionEvidence, request: Request):
+    error, _warnings, caller = authorize_technical_request(request, payload.project_id)
+    if error is not None:
+        return error
+    assert caller is not None
+    producer_error = validate_producer(caller, payload.producer)
+    if producer_error is not None:
+        return producer_error
+    nested_producer_error = validate_producer(caller, payload.current_request.producer)
+    if nested_producer_error is not None:
+        return nested_producer_error
+    normalized_project = payload.project_id.strip().lower()
+    if (
+        payload.contract.project_id != normalized_project
+        or payload.current_request.project_id.strip().lower() != normalized_project
+    ):
+        return JSONResponse(
+            status_code=403,
+            content={
+                "status": "blocked",
+                "error_code": codes.EXECUTION_EVIDENCE_SCOPE_MISMATCH,
+                "blocked_reason": "Contrato, contexto e evidência devem pertencer ao mesmo projeto.",
+                "warning_codes": [codes.EXECUTION_EVIDENCE_SCOPE_MISMATCH],
+            },
+        )
+    try:
+        return post_execution_service.process(payload, caller)
+    except ContractConfigurationError:
+        return _contract_configuration_error()
+    except ReportMemoryRepositoryError:
+        return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)

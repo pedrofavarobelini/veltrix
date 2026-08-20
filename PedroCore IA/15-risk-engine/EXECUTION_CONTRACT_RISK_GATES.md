@@ -24,3 +24,4 @@ Nenhum endpoint executa a operação alvo, comando ou provider.
 
 - [[CONTRATO_EXECUTION_CONTRACT]]
 - [[PRE_EXECUTION_RISK_V1]]
+- [[POST_EXECUTION_QA]]

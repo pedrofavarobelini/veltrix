@@ -42,3 +42,4 @@ versão; aprovação de `REVIEW_REQUIRED` resulta no máximo em
 ## Navegação
 
 - [[EXECUTION_CONTRACT_RISK_GATES]]
+- [[CONTRATO_POST_EXECUTION_QA]]

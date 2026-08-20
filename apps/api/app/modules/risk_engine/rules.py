@@ -39,6 +39,7 @@ def evaluate_deterministic_rules(request: RiskRequest) -> list[DeterministicRule
             request.request_text,
             " ".join(request.requested_operation.targets),
             " ".join(request.requested_operation.expected_changes),
+            " ".join(request.requested_operation.commands),
             request.environment,
         )
     ).lower()
