@@ -40,3 +40,7 @@ do mesmo projeto. Não há segunda memória. Memória ausente, inativa ou de tip
 incompatível resulta em `NO_REUSE`.
 
 Na dúvida, o contrato falha de modo conservador com reason codes explícitos.
+
+## Navegação
+
+- [[SAFE_REUSE_FOUNDATION]]

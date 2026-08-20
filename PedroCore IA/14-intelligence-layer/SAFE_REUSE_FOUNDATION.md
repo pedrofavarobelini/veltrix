@@ -19,3 +19,8 @@ Um candidato `DIRECT_REUSE` continua a percorrer a execução normal porque
 `provider_bypass` é literal e invariavelmente `false`. Evoluções capazes de
 evitar provider exigem uma etapa futura, autorização própria e novos gates de
 segurança.
+
+## Navegação
+
+- [[CONTRATO_SAFE_REUSE]]
+- [[RETRIEVAL_V1]]

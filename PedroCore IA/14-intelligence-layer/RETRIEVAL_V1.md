@@ -34,3 +34,8 @@ de autenticação sem correspondência lexical.
 
 O consumidor decide se e como usa a projeção. Nesta etapa o PedroCore somente
 expõe a recuperação segura e auditável.
+
+## Navegação
+
+- [[CONTRATO_RETRIEVAL_V1]]
+- [[SAFE_REUSE_FOUNDATION]]

@@ -37,3 +37,7 @@ policy e timestamp. Evidências completas e memória integral não são retornad
 Quando a observabilidade local existente está habilitada, são registrados
 query ID, candidate IDs, scores, selected IDs, rejection reasons e policy.
 Keywords, resumo e conteúdo de memória não são registrados.
+
+## Navegação
+
+- [[RETRIEVAL_V1]]

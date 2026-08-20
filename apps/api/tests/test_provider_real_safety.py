@@ -250,10 +250,16 @@ def test_guard_fires_if_real_provider_is_invoked_directly(real_provider_guard):
 
 
 @pytest.mark.expected_guarded_call
-def test_even_authorized_flag_cannot_reach_network_in_tests(real_provider_guard):
+def test_even_authorized_flag_cannot_reach_network_in_tests(
+    monkeypatch, real_provider_guard
+):
     """allow_real_provider=true em teste bate no guard e cai em fallback mock."""
     if real_provider_guard is None:
         pytest.skip("guard desativado por PEDROCORE_RUN_REAL_PROVIDER_TESTS=true")
+
+    # A autorização só alcança o adapter se existir configuração. Uma chave
+    # sintética garante que este teste exercita o guard, nunca a rede.
+    monkeypatch.setattr(settings, "gemini_api_key", "test-fake-key-guard-proof")
 
     response = client.post(
         "/api/orchestrate",

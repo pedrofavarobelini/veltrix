@@ -4,7 +4,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.modules.report_intelligence.schemas import TechnicalReportInput
 from app.modules.report_memory.service import (
     FLAG_MEMORY_DIR,
     FLAG_PERSISTENCE,

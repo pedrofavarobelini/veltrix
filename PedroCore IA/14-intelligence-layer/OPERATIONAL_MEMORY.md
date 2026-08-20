@@ -80,3 +80,7 @@ deleção são isoladas por projeto.
 `test_operational_memory.py` cobre candidate, oito pattern types, promoção,
 evidência, contradição, confidence, lifecycle, resolução, reconnect, retenção,
 idempotência, isolamento, redaction e falha de banco.
+
+## 7. Continuidade
+
+- [[RETRIEVAL_V1]]
