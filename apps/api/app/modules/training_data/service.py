@@ -12,6 +12,7 @@ from app.modules.training_data.schemas import (
     SourceOutcome,
     TrainingExampleCandidate,
     TrainingExampleCandidateDraft,
+    TrainingPurpose,
     TrainingSourceDefinition,
     TrainingSourceType,
 )
@@ -105,10 +106,18 @@ class DatasetFoundationService:
     def evaluate(self, draft: TrainingExampleCandidateDraft) -> CandidateEvaluation:
         rejection_codes: set[str] = set()
         authorization = draft.data_use
-        if not authorization.authorized or not authorization.allows_neural_training:
+        evaluation_only = authorization.training_purpose is TrainingPurpose.EVALUATION_ONLY
+        if not authorization.authorized:
             rejection_codes.add("NEURAL_TRAINING_AUTHORIZATION_REQUIRED")
-        if authorization.basis == "evaluation_only":
-            rejection_codes.add("EVALUATION_ONLY_AUTHORIZATION")
+        if evaluation_only:
+            if authorization.basis != "evaluation_only" or authorization.allows_neural_training:
+                rejection_codes.add("EVALUATION_ONLY_SCOPE_INVALID")
+        elif authorization.basis == "evaluation_only" or not authorization.allows_neural_training:
+            rejection_codes.add("NEURAL_TRAINING_AUTHORIZATION_REQUIRED")
+        if authorization.authorized_project.strip().lower() != draft.project_id.strip().lower():
+            rejection_codes.add("AUTHORIZED_PROJECT_MISMATCH")
+        if authorization.policy_version != "training-acquisition-v1":
+            rejection_codes.add("AUTHORIZATION_POLICY_MISMATCH")
         if authorization.content_classification is ContentClassification.RESTRICTED:
             rejection_codes.add("RESTRICTED_CONTENT_EXCLUDED")
         if (

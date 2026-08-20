@@ -12,6 +12,7 @@ from app.modules.operational_memory.router import router as operational_memory_r
 from app.modules.retrieval.router import router as retrieval_router
 from app.modules.risk_engine.router import router as risk_engine_router
 from app.modules.safe_reuse.router import router as safe_reuse_router
+from app.modules.training_data.router import router as training_data_router
 from app.modules.orchestration.router import router as orchestration_router
 from app.modules.report_memory.router import router as report_memory_router
 
@@ -84,3 +85,4 @@ app.include_router(retrieval_router, prefix="/api")
 app.include_router(risk_engine_router, prefix="/api")
 app.include_router(safe_reuse_router, prefix="/api")
 app.include_router(observability_router, prefix="/api")
+app.include_router(training_data_router, prefix="/api")

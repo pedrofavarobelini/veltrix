@@ -406,6 +406,12 @@ class OperationalMemoryService:
             ),
         )
 
+    def get_memory(self, project_id: str, memory_id: str) -> OperationalMemoryEntry | None:
+        repository = self._repository()
+        if repository is None:
+            return None
+        return repository.get_memory(project_id.strip().lower(), memory_id.strip())
+
     def delete_project(self, project_id: str) -> tuple[int, int]:
         repository = self._repository()
         if repository is None:

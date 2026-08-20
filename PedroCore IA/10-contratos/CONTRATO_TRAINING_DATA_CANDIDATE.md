@@ -1,6 +1,6 @@
 # Contrato — Training Example Candidate
 
-Estado: **IMPLEMENTED** — Dataset Foundation V1.
+Estado: **IMPLEMENTED** — Dataset Foundation V1 + Candidate Acquisition V1.
 
 `TrainingExampleCandidate` é uma projeção derivada e autorizada de evidência
 real. Não é conversa bruta, não é dataset canônico e não inicia treinamento.
@@ -15,7 +15,9 @@ real. Não é conversa bruta, não é dataset canônico e não inicia treinament
 - Execution Outcome;
 - Human Feedback explícito.
 
-Cada fonte tem `automatic_collection=false`. O contrato exige projeto, schema,
+Cada fonte tem `automatic_collection=false`. Um selector explícito resolve a
+entidade no store operacional do próprio projeto e deriva somente features
+estruturadas. O contrato exige projeto, schema,
 policy, outcome observado, assinatura do conteúdo, instante e verificação da
 evidência. Provenance desconhecida, não verificada ou de outro projeto bloqueia
 o candidato.
@@ -29,9 +31,16 @@ conversa bruta são rejeitados. Findings registram somente código, categoria e
 campo; o valor detectado não volta na resposta.
 
 Conteúdo confidencial só pode prosseguir quando a autorização também aprova
-explicitamente essa classificação. Nenhuma decisão persiste o candidato.
+explicitamente essa classificação. A autorização verificável registra projeto,
+scope, purpose, policy, source, ator e instante; 👍/👎 não preenche nenhum desses
+campos.
+
+O Candidate Store persiste lifecycle e lineage no mesmo PostgreSQL operacional.
+Um `TrainingExampleCandidate` materializado existe somente em `AUTHORIZED` ou
+`CONSUMED`; propostas ainda não são candidatas elegíveis para treinamento.
 
 ## Navegação
 
 - [[DATASET_FOUNDATION]]
 - [[HISTORICAL_RISK_INTELLIGENCE]]
+- [[TRAINING_CANDIDATE_LIFECYCLE]]
