@@ -43,3 +43,15 @@ docs/.obsidian/
 /PedroCore IA/.obsidian/core-plugins.json
 /PedroCore IA/.obsidian/graph.json
 /PedroCore IA/.obsidian/workspace.json
+
+# Artefatos de dataset/treinamento neural — nunca versionar
+/.huggingface/
+/apps/api/.huggingface/
+/apps/api/training-runs/
+/apps/api/checkpoints/
+/apps/api/datasets/private/
+/apps/api/datasets/raw/
+*.safetensors
+*.ckpt
+pytorch_model*.bin
+adapter_model*.bin

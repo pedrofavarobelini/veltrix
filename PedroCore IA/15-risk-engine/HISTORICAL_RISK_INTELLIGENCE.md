@@ -37,3 +37,4 @@ operacional fecha os endpoints com erro sanitizado.
 - [[CONTRATO_HISTORICAL_RISK]]
 - [[POST_EXECUTION_QA]]
 - [[PRE_EXECUTION_RISK_V1]]
+- [[DATASET_FOUNDATION]]
