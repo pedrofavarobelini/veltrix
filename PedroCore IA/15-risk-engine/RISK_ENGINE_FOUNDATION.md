@@ -23,3 +23,4 @@ ou execução de comandos neste módulo.
 
 - [[CONTRATO_RISK_ENGINE_FOUNDATION]]
 - [[SAFE_REUSE_FOUNDATION]]
+- [[PRE_EXECUTION_RISK_V1]]

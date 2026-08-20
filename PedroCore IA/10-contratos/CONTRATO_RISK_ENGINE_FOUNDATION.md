@@ -33,3 +33,4 @@ Esta fundação não emite ainda o gate executivo final e não usa LLM isolada.
 ## Navegação
 
 - [[RISK_ENGINE_FOUNDATION]]
+- [[CONTRATO_PRE_EXECUTION_RISK_V1]]
