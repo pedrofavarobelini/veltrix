@@ -3,7 +3,7 @@
 Frente: `PEDROCORE-OPERATIONAL-PERSISTENCE` — IMPLEMENTED
 Atualizado em: 20/08/2026
 
-Links: [[REPORT_INTELLIGENCE_FOUNDATION]] | [[../10-contratos/CONTRATO_REPORT_MEMORY]] | [[EVALUATION_FOUNDATION]]
+Links: [[REPORT_INTELLIGENCE_FOUNDATION]] | [[INTERACTION_OUTCOMES]] | [[../10-contratos/CONTRATO_REPORT_MEMORY]] | [[EVALUATION_FOUNDATION]]
 
 ## 1. O que é
 
@@ -54,6 +54,9 @@ POST /api/orchestrate (context_from_memory=true)
 - Campos relacionais cobrem projeto, report ID, schema, producer, correlações,
   lifecycle e timestamps; conteúdo extensível e sanitizado fica em JSONB.
 - `PEDROCORE_REPORT_MEMORY_RETENTION_DAYS` define retenção (default 90 dias).
+- A mesma infraestrutura operacional também persiste Interaction Outcomes em
+  tabela separada pela migração aditiva `0002_interaction_outcomes.sql`; outcome
+  não vira memória ou regra automaticamente.
 - `GET /api/project-memory/{project_id}/reports` pagina dados autorizados;
   `DELETE /api/project-memory/{project_id}` faz deleção isolada e explícita.
 - Falha de configuração, conexão ou schema retorna 503

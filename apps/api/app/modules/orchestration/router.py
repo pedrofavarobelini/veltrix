@@ -4,6 +4,12 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.modules.caller_identity.service import caller_identity_service
+from app.modules.caller_identity.technical_api import (
+    API_KEY_HEADER,
+    AUTH_INVALID_REASON,
+    AUTH_MISSING_REASON,
+    AUTH_NOT_CONFIGURED_WARNING,
+)
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import make_warning
@@ -12,19 +18,7 @@ from app.modules.orchestration.service import orchestration_service
 
 router = APIRouter(tags=["Orchestration"])
 
-API_KEY_HEADER = "X-PedroCore-Api-Key"
 API_KEY_ENV_VAR = "PEDROCORE_INTERNAL_API_KEY"
-
-AUTH_MISSING_REASON = (
-    "Autenticação interna configurada e header X-PedroCore-Api-Key ausente."
-)
-AUTH_INVALID_REASON = (
-    "Autenticação interna configurada e header X-PedroCore-Api-Key inválido."
-)
-AUTH_NOT_CONFIGURED_WARNING = (
-    "PEDROCORE_INTERNAL_API_KEY não configurada; /api/orchestrate operando "
-    "em modo dev/local sem autenticação interna."
-)
 
 
 def _auth_error(error_code: str, reason: str) -> JSONResponse:

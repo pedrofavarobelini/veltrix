@@ -3,7 +3,7 @@
 Frente: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` (Fase B)
 Atualizado em: 20/08/2026
 
-Links: [[CONTRATO_ECOSYSTEM_ASSISTANT]] | [[../14-intelligence-layer/REPORT_MEMORY]] | [[../14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]]
+Links: [[CONTRATO_ECOSYSTEM_ASSISTANT]] | [[CONTRATO_INTERACTION_OUTCOMES]] | [[../14-intelligence-layer/REPORT_MEMORY]] | [[../14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]]
 
 ## 1. Princípio
 
