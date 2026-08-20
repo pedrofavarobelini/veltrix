@@ -3,7 +3,7 @@
 Frente: `PEDROCORE-INTERACTION-OUTCOMES` — IMPLEMENTED
 Atualizado em: 20/08/2026
 
-Links: [[REPORT_MEMORY]] | [[REPORT_INTELLIGENCE_FOUNDATION]] | [[../10-contratos/CONTRATO_INTERACTION_OUTCOMES]]
+Links: [[REPORT_MEMORY]] | [[OPERATIONAL_MEMORY]] | [[REPORT_INTELLIGENCE_FOUNDATION]] | [[../10-contratos/CONTRATO_INTERACTION_OUTCOMES]]
 
 ## 1. Objetivo
 
@@ -50,7 +50,7 @@ Valores: `positive`, `negative`, `neutral`, `unknown`.
 Um feedback ou outcome individual não altera prompt, provider, policy,
 autorização ou comportamento. Toda ingestão retorna
 `INTERACTION_FEEDBACK_OBSERVATIONAL`. Promoção para padrão exige o pipeline de
-Learning Candidate/Operational Memory da Etapa 4.
+Learning Candidate/Operational Memory da Etapa 4 e sua política versionada.
 
 ## 5. Persistência
 

@@ -375,6 +375,12 @@ class ReportMemoryService:
             repo.count(normalized_project),
         )
 
+    def get_report(self, project_id: str, report_id: str) -> ReportMemoryEntry | None:
+        repo = self._repository()
+        if repo is None:
+            return None
+        return repo.get_by_report_id(project_id.strip().lower(), report_id.strip())
+
     def delete_project(self, project_id: str) -> int:
         repo = self._repository()
         if repo is None:

@@ -207,6 +207,12 @@ class InteractionOutcomeService:
             return 0
         return repository.delete_project(project_id.strip().lower())
 
+    def get(self, project_id: str, outcome_id: str) -> InteractionOutcome | None:
+        repository = self._repository()
+        if repository is None:
+            return None
+        return repository.get(project_id.strip().lower(), outcome_id.strip())
+
     def apply_retention(self, now: datetime | None = None) -> int:
         repository = self._repository()
         if repository is None:
