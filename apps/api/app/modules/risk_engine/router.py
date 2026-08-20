@@ -13,6 +13,13 @@ from app.modules.risk_engine.pre_execution_schemas import PreExecutionRiskAnalys
 from app.modules.risk_engine.pre_execution_service import pre_execution_risk_service
 from app.modules.risk_engine.post_execution_schemas import ExecutionEvidence, PostExecutionOutcome
 from app.modules.risk_engine.post_execution_service import post_execution_service
+from app.modules.risk_engine.historical_schemas import (
+    HistoricalBenchmarkRequest,
+    HistoricalBenchmarkResult,
+    HistoricalRiskQuery,
+    HistoricalRiskSummary,
+)
+from app.modules.risk_engine.historical_service import historical_risk_service
 from app.modules.risk_engine.execution_contract_schemas import (
     ContractIssueResponse,
     ContractValidation,
@@ -161,5 +168,35 @@ def record_execution_outcome(payload: ExecutionEvidence, request: Request):
         return post_execution_service.process(payload, caller)
     except ContractConfigurationError:
         return _contract_configuration_error()
+    except ReportMemoryRepositoryError:
+        return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)
+
+
+@router.post("/risk/history/query", response_model=HistoricalRiskSummary)
+def query_historical_risk(payload: HistoricalRiskQuery, request: Request):
+    error, _warnings, caller = authorize_technical_request(request, payload.project_id)
+    if error is not None:
+        return error
+    assert caller is not None
+    producer_error = validate_producer(caller, payload.producer)
+    if producer_error is not None:
+        return producer_error
+    try:
+        return historical_risk_service.summarize(payload)
+    except ReportMemoryRepositoryError:
+        return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)
+
+
+@router.post("/risk/history/benchmark", response_model=HistoricalBenchmarkResult)
+def benchmark_historical_risk(payload: HistoricalBenchmarkRequest, request: Request):
+    error, _warnings, caller = authorize_technical_request(request, payload.project_id)
+    if error is not None:
+        return error
+    assert caller is not None
+    producer_error = validate_producer(caller, payload.producer)
+    if producer_error is not None:
+        return producer_error
+    try:
+        return historical_risk_service.benchmark(payload)
     except ReportMemoryRepositoryError:
         return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)

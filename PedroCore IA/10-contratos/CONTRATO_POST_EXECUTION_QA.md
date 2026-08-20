@@ -35,3 +35,4 @@ policy da Operational Memory; não há memória paralela.
 ## Navegação
 
 - [[POST_EXECUTION_QA]]
+- [[CONTRATO_HISTORICAL_RISK]]

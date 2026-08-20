@@ -22,3 +22,4 @@ criados, sem transportar evidência integral para a memória.
 
 - [[CONTRATO_POST_EXECUTION_QA]]
 - [[EXECUTION_CONTRACT_RISK_GATES]]
+- [[HISTORICAL_RISK_INTELLIGENCE]]

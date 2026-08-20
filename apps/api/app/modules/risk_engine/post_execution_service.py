@@ -217,6 +217,7 @@ class PostExecutionService:
                     ],
                     metadata={
                         "risk_analysis_id": evidence.contract.analysis_id,
+                        "risk_policy_version": evidence.contract.risk_policy_version,
                         "contract_gate": evidence.contract.gate.value,
                         "effective_gate": effective_gate.value,
                         "predicted_dimensions": predicted,
