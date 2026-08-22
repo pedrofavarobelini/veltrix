@@ -16,6 +16,9 @@ class ChatRequest(BaseModel):
     metadata: dict | None = None
     artifacts: list[ArtifactInput] | None = None
     allow_real_provider: bool = False
+    # Opt-out restritivo e retrocompativel: consumidores que precisam observar
+    # a falha real sem degradacao local podem proibir explicitamente o Mock.
+    allow_mock_fallback: bool = True
     # ECOSYSTEM-INTELLIGENCE-SUITE-01: opt-ins explícitos, sempre False por padrão.
     allow_local_model: bool = False
     context_from_memory: bool = False

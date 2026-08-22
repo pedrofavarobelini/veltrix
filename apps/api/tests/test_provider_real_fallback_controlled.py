@@ -23,6 +23,7 @@ from app.modules.caller_identity.service import (
     FLAG_INTERNAL_API_KEY,
 )
 from app.modules.chat.schemas import ChatRequest
+from app.modules.contracts import codes
 from app.modules.orchestration.schemas import OrchestrateResponse
 from app.modules.orchestration.service import (
     FLAG_REAL_FALLBACK_ENABLED,
@@ -206,6 +207,73 @@ def test_primary_success_stops_after_one_provider(stage7, monkeypatch):
     assert harness.calls == ["gemini"]
     assert len(data["audit"]["provider_attempts"]) == 1
     assert data["audit"]["real_fallback_attempted"] is False
+
+
+def test_allow_mock_fallback_is_retrocompatible_and_defaults_to_true():
+    request = ChatRequest(message="Contrato sintético retrocompatível.")
+
+    assert request.allow_mock_fallback is True
+
+
+def test_primary_success_ignores_disabled_mock_fallback(stage7, monkeypatch):
+    harness = AdapterHarness().install(monkeypatch)
+
+    data = _post(allow_mock_fallback=False).json()
+
+    assert data["status"] == "ok"
+    assert data["provider_used"] == "gemini"
+    assert data["model"] == settings.gemini_model
+    assert data["fallback_used"] is False
+    assert data["error_code"] is None
+    assert harness.calls == ["gemini"]
+    assert data["audit"]["real_provider_attempt_count"] == 1
+    assert data["audit"]["real_provider_attempt_record_count"] == 1
+
+
+def test_ambiguous_timeout_with_mock_disabled_fails_closed_without_retry(
+    stage7, monkeypatch
+):
+    harness = AdapterHarness({"gemini": "timeout"}).install(monkeypatch)
+
+    data = _post(allow_mock_fallback=False).json()
+    attempt = data["audit"]["provider_attempts"][0]
+
+    assert data["status"] == "blocked"
+    assert data["provider_requested"] == "auto"
+    assert data["provider_used"] == "none"
+    assert data["model"] == "none"
+    assert data["fallback_used"] is False
+    assert data["error_code"] == codes.PROVIDER_TIMEOUT
+    assert data["blocked_reason"]
+    assert codes.PROVIDER_COMPLETION_AMBIGUOUS in data["warning_codes"]
+    assert harness.calls == ["gemini"]
+    assert attempt["failure_classification"] == "completion_ambiguous"
+    assert attempt["completion_certainty"] == "ambiguous"
+    assert attempt["external_dispatch"] is True
+    assert attempt["fallback_eligible"] is False
+    assert data["audit"]["real_provider_attempt_count"] == 1
+    assert data["audit"]["real_provider_attempt_record_count"] == 1
+    assert data["audit"]["real_fallback_attempted"] is False
+
+
+def test_authorization_denial_with_mock_disabled_reaches_zero_providers(
+    stage7, monkeypatch
+):
+    monkeypatch.delenv(FLAG_CALLER_REGISTRY, raising=False)
+    monkeypatch.setenv(FLAG_INTERNAL_API_KEY, SHARED_KEY)
+    harness = AdapterHarness().install(monkeypatch)
+
+    data = _post(credential=SHARED_KEY, allow_mock_fallback=False).json()
+
+    assert data["status"] == "blocked"
+    assert data["provider_requested"] == "auto"
+    assert data["provider_used"] == "none"
+    assert data["model"] == "none"
+    assert data["fallback_used"] is False
+    assert data["error_code"] == codes.CALLER_IDENTITY_AMBIGUOUS
+    assert harness.calls == []
+    assert data["audit"]["provider_attempts"] == []
+    assert data["audit"]["real_provider_attempt_count"] == 0
 
 
 def test_safe_pre_dispatch_failure_uses_one_distinct_secondary_sequentially(

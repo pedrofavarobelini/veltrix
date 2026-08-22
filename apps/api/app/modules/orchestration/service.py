@@ -219,6 +219,10 @@ SAFE_FALLBACK_ANSWER = (
     "solicitado. Isso não executa nenhuma ação financeira nem altera seus "
     "dados. Tente novamente em instantes ou reformule sua pergunta."
 )
+NO_MOCK_FALLBACK_ANSWER = (
+    "A solicitação não foi concluída pelo provider solicitado e o fallback "
+    "local foi desabilitado explicitamente para esta requisição."
+)
 
 READER_FINGUARD_ORIGIN_WARNING = (
     "Artifact Reader não está disponível para origem FinGuard nesta frente; "
@@ -504,18 +508,26 @@ class OrchestrationService:
                     error_code = (
                         binding.error_code or codes.PROVIDER_MODEL_BINDING_INVALID
                     )
-                    answer, provider_used, model_used = await self._mock_fallback(
+                    (
+                        answer,
+                        provider_used,
+                        model_used,
+                        fallback_used,
+                    ) = await self._mock_fallback(
                         payload, requested_provider, error, prompt.enriched_system_prompt
                     )
-                    fallback_used = True
                 elif not payload.allow_real_provider:
                     safe_mode_blocked = True
                     error = AUTO_PROVIDER_REAL_BLOCKED_WARNING
                     error_code = codes.PROVIDER_REAL_BLOCKED
-                    answer, provider_used, model_used = await self._mock_fallback(
+                    (
+                        answer,
+                        provider_used,
+                        model_used,
+                        fallback_used,
+                    ) = await self._mock_fallback(
                         payload, requested_provider, error, prompt.enriched_system_prompt
                     )
-                    fallback_used = True
                 else:
                     if enforced_auto:
                         provider, denial = self._select_enforced_real_provider(
@@ -543,10 +555,14 @@ class OrchestrationService:
                             error = PROVIDER_REAL_UNAVAILABLE_WARNING
                             error_code = codes.PROVIDER_REAL_UNAVAILABLE
                         provider_items.append(make_warning(error_code, error))
-                        answer, provider_used, model_used = await self._mock_fallback(
+                        (
+                            answer,
+                            provider_used,
+                            model_used,
+                            fallback_used,
+                        ) = await self._mock_fallback(
                             payload, requested_provider, error, prompt.enriched_system_prompt
                         )
-                        fallback_used = True
                     else:
                         audit.provider_selected = provider.name
                         audit.authorization_result = "allowed"
@@ -610,8 +626,9 @@ class OrchestrationService:
                                 provider_used = secondary_result.provider
                                 model_used = secondary_result.model
                                 audit.provider_selected = secondary_result.provider
+                                fallback_used = True
                             else:
-                                answer, provider_used, model_used = (
+                                answer, provider_used, model_used, fallback_used = (
                                     await self._mock_fallback(
                                         payload,
                                         requested_provider,
@@ -619,13 +636,16 @@ class OrchestrationService:
                                         prompt.enriched_system_prompt,
                                     )
                                 )
-                            fallback_used = True
             elif provider is None:
                 error = f"Provider não suportado: {requested_provider}"
-                answer, provider_used, model_used = await self._mock_fallback(
+                (
+                    answer,
+                    provider_used,
+                    model_used,
+                    fallback_used,
+                ) = await self._mock_fallback(
                     payload, requested_provider, error, prompt.enriched_system_prompt
                 )
-                fallback_used = True
             elif requested_provider == LOCAL_MODEL_PROVIDER_NAME:
                 (
                     answer,
@@ -640,10 +660,14 @@ class OrchestrationService:
                 safe_mode_blocked = True
                 error = PROVIDER_REAL_BLOCKED_WARNING
                 error_code = codes.PROVIDER_REAL_BLOCKED
-                answer, provider_used, model_used = await self._mock_fallback(
+                (
+                    answer,
+                    provider_used,
+                    model_used,
+                    fallback_used,
+                ) = await self._mock_fallback(
                     payload, requested_provider, error, prompt.enriched_system_prompt
                 )
-                fallback_used = True
             else:
                 # Seleção explícita autorizada: consentimento da requisição
                 # (allow_real_provider) já passou, mas a matriz de projeto
@@ -668,10 +692,14 @@ class OrchestrationService:
                     error = self._denial_message(denial)
                     error_code = denial.error_code or codes.PROVIDER_NOT_AUTHORIZED_FOR_PROJECT
                     provider_items.append(make_warning(error_code, error))
-                    answer, provider_used, model_used = await self._mock_fallback(
+                    (
+                        answer,
+                        provider_used,
+                        model_used,
+                        fallback_used,
+                    ) = await self._mock_fallback(
                         payload, requested_provider, error, prompt.enriched_system_prompt
                     )
-                    fallback_used = True
                 else:
                     try:
                         if provider.real_provider:
@@ -713,10 +741,14 @@ class OrchestrationService:
                             if signal_code is not None:
                                 error_code = signal_code
                             provider_items.extend(signal_items)
-                        answer, provider_used, model_used = await self._mock_fallback(
+                        (
+                            answer,
+                            provider_used,
+                            model_used,
+                            fallback_used,
+                        ) = await self._mock_fallback(
                             payload, requested_provider, error, prompt.enriched_system_prompt
                         )
-                        fallback_used = True
 
             analysis = qa_text_analyzer.analyze(
                 task_type=strategy.task_type,
@@ -781,8 +813,17 @@ class OrchestrationService:
             provider_items=provider_items,
         )
 
+        no_mock_fallback_blocked = (
+            not payload.allow_mock_fallback
+            and error is not None
+            and provider_used == "none"
+            and model_used == "none"
+        )
+
         blocked_reason: str | None = None
-        if release_gate is not None and not release_gate.can_advance:
+        if no_mock_fallback_blocked:
+            blocked_reason = error
+        elif release_gate is not None and not release_gate.can_advance:
             blocked_reason = release_gate.blocked_reason
         elif artifacts_result.path_rejected:
             blocked_reason = "Artefato com caminho de arquivo rejeitado."
@@ -898,11 +939,23 @@ class OrchestrationService:
 
         async def blocked(code: str, message: str):
             items.append(make_warning(code, message))
-            answer, provider_used, model_used = await self._mock_fallback(
-                payload, LOCAL_MODEL_PROVIDER_NAME, message,
-                prompt.enriched_system_prompt,
+            answer, provider_used, model_used, fallback_used = (
+                await self._mock_fallback(
+                    payload,
+                    LOCAL_MODEL_PROVIDER_NAME,
+                    message,
+                    prompt.enriched_system_prompt,
+                )
             )
-            return answer, provider_used, model_used, True, message, code, items
+            return (
+                answer,
+                provider_used,
+                model_used,
+                fallback_used,
+                message,
+                code,
+                items,
+            )
 
         if not payload.allow_local_model:
             return await blocked(
@@ -942,11 +995,23 @@ class OrchestrationService:
             items.append(
                 make_warning(codes.LOCAL_MODEL_TRANSPORT_UNAVAILABLE, error)
             )
-            answer, provider_used, model_used = await self._mock_fallback(
-                payload, LOCAL_MODEL_PROVIDER_NAME, error,
-                prompt.enriched_system_prompt,
+            answer, provider_used, model_used, fallback_used = (
+                await self._mock_fallback(
+                    payload,
+                    LOCAL_MODEL_PROVIDER_NAME,
+                    error,
+                    prompt.enriched_system_prompt,
+                )
             )
-            return answer, provider_used, model_used, True, error, None, items
+            return (
+                answer,
+                provider_used,
+                model_used,
+                fallback_used,
+                error,
+                None,
+                items,
+            )
 
     def _select_auto_real_provider(self, caller, project_id: str):
         """Seleciona provider real disponivel para provider=auto.
@@ -1916,7 +1981,7 @@ class OrchestrationService:
         requested_provider: str,
         error: str,
         enriched_system_prompt: str,
-    ) -> tuple[str, str, str]:
+    ) -> tuple[str, str, str, bool]:
         """Fallback seguro e conservador quando o provider solicitado falha,
         não está configurado ou foi bloqueado.
 
@@ -1924,8 +1989,15 @@ class OrchestrationService:
         nome de classe de provider/exception, nem texto de debug — isso
         continua disponível só para quem consome `error`/`error_code`/
         `warning_codes`/`audit` (backend, logs, QA), nunca na conversa.
+
+        `allow_mock_fallback=false` é um opt-out restritivo: a falha original
+        segue estruturada em `error`/`error_code`/`audit`, nenhum adapter Mock é
+        representado como sucesso e o chamador recebe provider/model `none`.
         """
-        return SAFE_FALLBACK_ANSWER, "mock", "mock-v1"
+        del requested_provider, error, enriched_system_prompt
+        if not payload.allow_mock_fallback:
+            return NO_MOCK_FALLBACK_ANSWER, "none", "none", False
+        return SAFE_FALLBACK_ANSWER, "mock", "mock-v1", True
 
     def _collect_warnings(
         self,
