@@ -2,7 +2,50 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
-## Resultado atual — 2026-08-14
+## Resultado atual disponível — 2026-08-20
+
+Frente: [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
+
+```text
+backend integral   924 passed, 7 skipped, 2 warnings
+Ruff global        PASS
+Pyright Era 3      0 errors, 0 warnings
+```
+
+O briefing deste fechamento citava `911 passed`; o checkpoint `924 passed` é a
+evidência posterior no mesmo HEAD e, por isso, prevalece. Esta execução é
+documental e não repetiu a suíte. Strix permaneceu bloqueado por pré-requisitos
+locais, sem instalação ou chamada paga.
+
+## Resultado anterior — 2026-08-16
+
+Frente: [[MOC_UX_V1]] / [[20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01]].
+
+```text
+backend integral   751 passed, 7 skipped, 2 warnings
+frontend           117 passed (6 arquivos)
+typecheck (tsc -b) PASS
+build (vite build) PASS
+docs graph         138 documentos, zero orfaos, zero links quebrados
+```
+
+Inclui a microfrente `PEDROCORE-V1-FINAL-UI-FIX`, que acrescentou 31 testes de
+classificação de providers (visível × configurado × selecionável), catálogo das
+Configurações e estado do dropdown.
+
+Nenhum provider real e nenhuma chamada de rede externa nas duas suítes.
+
+### Suíte frontend — nova nesta frente
+
+```powershell
+cd C:\Projetos\pedrocore-ia\apps\web
+npm test
+```
+
+Detalhamento da stack, versões fixas e cobertura por arquivo:
+[[20-ux-v1/TESTES_FRONTEND]].
+
+## Resultado anterior — 2026-08-14
 
 - Frente: [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]].
 - Gate: [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]].
@@ -118,3 +161,14 @@ Auditoria local documentada:
 - Observabilidade/Gemini opt-in: `test_observability.py`, `test_gemini_smoke.py`.
 - Multi-provider seguro: `test_provider_catalog.py`, `test_caller_identity_authorization.py`, `test_shared_credential_privilege.py`, `test_provider_model_binding.py`, `test_shadow_routing.py`, `test_provider_routing_enforced.py`, `test_provider_health_circuit_breaker.py`, `test_provider_real_fallback_controlled.py`.
 - Consumer Structa: `test_structa_consumer_onboarding.py` — 15 casos offline de project context, identidade, provider/task policy, defaults e regressões FinGuard/PedroCore.
+
+## Testes frontend (`apps/web`)
+
+- Providers e modo DEV: `src/utils/publicProviders.test.ts`.
+- Anexos e limites: `src/utils/attachments.test.ts`.
+- Persistência da autorização: `src/utils/providerSettings.test.ts`.
+- Composer, voz e anexos na interface: `src/components/ChatComposer.test.tsx`.
+- Drawer e acessibilidade: `src/components/SettingsDrawer.test.tsx`.
+- Integração da página: `src/pages/ChatPage.test.tsx`.
+
+Ver [[20-ux-v1/TESTES_FRONTEND]].

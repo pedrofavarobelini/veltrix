@@ -1,9 +1,11 @@
 # MOC Estudo PedroCore
 
-Mapa das notas de estudo e auditoria em `docs/15-estudo-pedrocore/`.
+Mapa das notas de estudo e auditoria em `PedroCore IA/15-estudo-pedrocore/`.
 
 ## Entrada principal
 
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]] -
+  estado consolidado e didático das Eras 1–3.
 - [[MOC_PEDROCORE_IA]] - mapa principal do PedroCore IA.
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - mapa tecnico completo e estado canonico.
 - [[MOC_ARQUITETURA]] - arquitetura, endpoints e modulos.
@@ -27,6 +29,14 @@ Mapa das notas de estudo e auditoria em `docs/15-estudo-pedrocore/`.
 
 ## Fontes tecnicas relacionadas
 
+- [[14-intelligence-layer/OPERATIONAL_MEMORY]] - padrões, evidências, confidence e lifecycle.
+- [[14-intelligence-layer/RETRIEVAL_V1]] - retrieval bounded e FTS sem embeddings.
+- [[14-intelligence-layer/SAFE_REUSE_FOUNDATION]] - modos de reuse sem provider bypass.
+- [[15-risk-engine/RISK_ENGINE_FOUNDATION]] - fundação do Motor de Risco.
+- [[15-risk-engine/HISTORICAL_RISK_INTELLIGENCE]] - métricas e comparação de estratégias.
+- [[16-training-data/DATASET_FOUNDATION]] - dado operacional, candidato e exemplo canônico.
+- [[16-training-data/TRAINING_CANDIDATE_LIFECYCLE]] - aquisição, autorização, privacy e lifecycle.
+- [[16-training-data/DATASET_READINESS_AUDIT]] - `DATASET_NOT_READY` e zero candidatos reais autorizados.
 - [[14-intelligence-layer/INTELLIGENCE_LAYER_OVERVIEW]] - Intelligence Layer, `local_model`, Report Memory e limites.
 - [[14-intelligence-layer/EVAL_HARNESS]] - harness deterministico.
 - [[14-intelligence-layer/REPORT_MEMORY]] - memoria tecnica controlada; nao e treinamento.
@@ -38,7 +48,8 @@ Mapa das notas de estudo e auditoria em `docs/15-estudo-pedrocore/`.
 ## Limites de leitura
 
 - PedroCore IA e orquestrador central, nao modelo treinado.
-- Nao ha fine-tuning, autoaprendizado ou RAG real.
+- Operational Learning está implementado; não altera pesos neurais.
+- Nao ha fine-tuning, dataset canônico, splits ou RAG vetorial real.
 - Report Memory nao treina IA.
-- `local_model` nao e modelo real rodando; transport real segue fora de escopo.
+- O adapter/contrato `local_model` não é Local Provider treinado.
 - Provider real permanece bloqueado por padrao.

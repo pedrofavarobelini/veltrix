@@ -3,6 +3,11 @@
 Frente: `PEDROCORE-MODEL-FOUNDATION-01`
 Atualizado em: 08/07/2026
 
+> **Escopo histórico da Model Foundation.** Este documento explica a camada no
+> momento em que foi criada. Para o estado posterior de persistência,
+> Operational Memory, Risk Engine e Training Foundation, ver
+> [[PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
+
 Links: [[../00_MAPEAMENTO_GERAL_PEDROCORE]] | [[REPORT_INTELLIGENCE_FOUNDATION]] | [[LOCAL_MODEL_PROVIDER_CONTRACT]] | [[EVALUATION_FOUNDATION]] | [[../13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]]
 
 ## 1. O que é

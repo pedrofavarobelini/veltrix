@@ -1,5 +1,151 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-FECHAMENTO-DOCUMENTAL-FINAL — 20/08/2026
+
+Status: **documentação reconciliada; zero alteração de código ou Git**.
+
+- Consolidado o estado: Era 1 PASS, Era 2 PASS e Era 3 FOUNDATION PASS /
+  TRAINING DEFERRED.
+- Documentados Operational Intelligence, Risk Engine, Candidate Acquisition,
+  privacy, readiness e o roadmap futuro sem promover planejamento a entrega.
+- Estado real preservado: zero candidatos reais autorizados,
+  `DATASET_NOT_READY`, sem Canonical Dataset, splits, Hugging Face, fine-tuning,
+  modelo próprio ou Local Provider treinado.
+- Evidência mais recente disponível reconciliada para
+  `924 passed, 7 skipped, 2 warnings`, Ruff global PASS e Pyright Era 3 sem
+  erros. O `911 passed` do briefing era anterior ao checkpoint `924` no mesmo
+  HEAD; nenhuma suíte foi repetida nesta execução documental.
+- Dívida apenas registrada: warnings existentes, Strix bloqueado por
+  pré-requisitos locais, resíduos humanos do frontend e whitespace preexistente
+  em `global.css`.
+
+Documento:
+[[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
+
+> **Convenção de caminhos.** Entradas anteriores a 02/08/2026 citam `docs/…`.
+> Essa era a raiz canônica do vault na época; hoje ela é `PedroCore IA/…`, com
+> os documentos preservados um a um (ver [[MANIFESTO_REORGANIZACAO_20260802]]).
+> Esses caminhos **não foram reescritos**: o changelog é registro histórico e
+> deve continuar descrevendo fielmente o estado de cada frente. Para navegar,
+> troque o prefixo `docs/` por `PedroCore IA/`.
+
+## PEDROCORE-V1-FINAL-UI-FIX — 16/08/2026
+
+Status: **microcorreção de interface homologada automaticamente** (todos os
+critérios objetivos passaram). Sem mudança de versão: continua **V5.2.0**.
+
+Corrigiu uma confusão conceitual da frente anterior, que colapsou "IA pública"
+e "IA utilizável" numa lista só (`["gemini"]`) e, com isso, sumia com OpenAI,
+Claude, DeepSeek e Grok da interface, empurrando-os para a área de
+infraestrutura interna — onde não pertencem.
+
+- **Três estados separados**: VISÍVEL (`PUBLIC_AI_PROVIDER_IDS`, as cinco IAs
+  externas), CONFIGURADO (`configured` de `/api/providers`) e SELECIONÁVEL
+  (visível + homologado + configurado).
+- **Configurações** voltaram a listar Gemini, OpenAI, Claude, DeepSeek e
+  Grok/xAI, cada uma com estado factual e card desabilitado quando indisponível.
+- **Seletor do composer** lista todas as IAs públicas; as indisponíveis são
+  `<option disabled>` com o motivo no rótulo (`OpenAI — não configurado`), em
+  vez de sumirem ou de permitirem fallback silencioso.
+- **Motivos distintos**: `não configurado` (o operador resolve com uma chave no
+  `.env`) × `não homologado` (depende de frente de homologação).
+- **Habilitação sem tocar no frontend**: como a selecionabilidade lê
+  `configured` do backend, adicionar a chave no `.env` habilita a IA sozinha.
+- **Área interna** ficou só com infraestrutura: `mock`, `local_qa`,
+  `local_model`, `auto`. Nenhuma IA externa ali.
+- **Composer**: seletor de IA agrupado imediatamente antes do botão Enviar
+  (`[+] [🎙] … [IA ▼] [Enviar]`), eliminando o vão morto da barra.
+- Microfone, anexos, drawer, Safe Mode, persistência e backend **intocados**.
+
+Validação: frontend `117 passed` (era 86); typecheck, build e backend
+`751 passed, 7 skipped` PASS; nenhuma chamada externa.
+
+## PEDROCORE-V1-FINAL-CLOSURE — 16/08/2026
+
+Status: **frontend V1 fechado; backend intocado**.
+
+Versão de produto **V5.1.9 → V5.2.0**. Backend permanece `0.2.0`.
+
+### Interface
+
+- Composer único: textarea com autoajuste, Enter envia, Shift+Enter quebra
+  linha, seletor de IA na própria barra e motivo do bloqueio sempre visível.
+- Configurações em drawer acessível: `aria-modal`, Escape, overlay, foco
+  inicial no botão fechar e devolução do foco a quem abriu; fechado, não
+  existe no DOM.
+- Removidos os cards de provider do topo e o painel lateral direito permanente.
+
+### Modo DEV dos providers internos
+
+- Corrigida a incoerência em que o drawer oferecia provider interno e o
+  composer bloqueava o envio sem autorização possível de conceder.
+- Somente `mock` é destino de conversa em desenvolvimento, com selo `DEV` e
+  aviso explícito de ambiente técnico. `auto`, `local_qa` e `local_model`
+  passaram a aparecer como referência **não selecionável**, com o motivo
+  técnico de cada um documentado.
+- Build pública inalterada: só Gemini, e a área técnica é eliminada do bundle.
+
+### Voz
+
+- Ditado por voz no composer com `SpeechRecognition`/`webkitSpeechRecognition`,
+  detecção de suporte em tempo de execução, `pt-BR`, estados de escuta,
+  permissão negada, erro e indisponibilidade.
+- Áudio **não** é gravado, guardado, logado nem enviado ao PedroCore ou a
+  provider. Só trecho final entra no textarea, anexado ao texto existente, e
+  nada é enviado automaticamente.
+- A interface **não** afirma que a transcrição é offline.
+
+### Anexos textuais
+
+- `.txt`, `.md`, `.markdown`, `.csv`, `.json` e `.log` enviados como
+  `artifacts` no `/api/chat` **já existente** — nenhum endpoint novo, backend
+  intocado.
+- Allowlist por extensão, MIME como sinal secundário, recusa de arquivo vazio,
+  limites de 4 anexos / 20000 bytes por arquivo / 60000 bytes somados —
+  deliberadamente **abaixo** dos limites do backend para nada ser truncado em
+  silêncio.
+- Nome de arquivo saneado e tratado como metadado; nunca vira caminho.
+  `metadata` não é enviado, evitando `ARTIFACT_PATH_REJECTED`.
+- Anexos limpos apenas no sucesso; preservados na falha para reenvio.
+
+### Testes frontend — dívida paga
+
+- Primeira suíte do `apps/web`: Vitest 4.1.10, jsdom 29.1.1, Testing Library.
+  Todas as versões **exatas**; nenhuma dependência nova usa `"latest"`.
+- `86 passed` em 6 arquivos, cobrindo providers, composer, persistência,
+  drawer, microfone e anexos. Nenhum provider real é chamado.
+- As dependências existentes, antes em `"latest"`, foram fixadas nas versões
+  já instaladas — sem upgrade.
+
+### Multimodal
+
+- Imagem, PDF e DOCX **adiados formalmente para a V2**, com estado atual,
+  lacunas, arquitetura, contratos, segurança e testes necessários registrados
+  em [[20-ux-v1/V2_MULTIMODAL]].
+
+### Segurança e documentação
+
+- Auditoria dos quatro cenários em [[20-ux-v1/MODELO_DE_AMEACA]]: A, B e C
+  seguros; D exige autenticação, rate limiting, teto de payload e TLS.
+- Varredura de segredos no HEAD e em todo o histórico Git: nenhum segredo real.
+- `SECURITY.md` e `CONTRIBUTING.md` criados na raiz; `README.md` reescrito como
+  entrada pública.
+- `apps/web/tsconfig.tsbuildinfo` removido do rastreamento (o `.gitignore` já
+  o cobria).
+- `LICENSE` **não** foi criada: é decisão humana pendente.
+
+### Validação
+
+```text
+backend    751 passed, 7 skipped, 2 warnings
+frontend    86 passed (6 arquivos)
+typecheck   PASS
+build       PASS
+docs graph  138 documentos, 800 links, zero órfãos, zero links quebrados
+```
+
+Mapa da frente: [[MOC_UX_V1]].
+
 ## PEDROCORE-STRUCTA-CONSUMER-01 — 14/08/2026
 
 Status: **onboarding least-privilege validado offline**.

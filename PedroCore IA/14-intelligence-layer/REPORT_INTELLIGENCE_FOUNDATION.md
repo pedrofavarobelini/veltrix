@@ -19,8 +19,9 @@ Princípio central e inegociável:
 - `IntelligenceReportEnvelopeV2`: Common Envelope `schema_version=2.0`,
   `report_id`, tipo, producer autenticado, projeto e correlation IDs.
 - Payloads tipados iniciais: `interaction_quality`, `qa_evidence`,
-  `risk_analysis` e `execution_outcome`. Os dois últimos são somente contratos;
-  o Risk Engine ainda não existe nesta etapa.
+  `risk_analysis` e `execution_outcome`. Os dois últimos nasceram como contratos
+  nesta frente; o Risk Engine foi implementado depois e está documentado em
+  [[RISK_ENGINE_FOUNDATION]].
 - `TechnicalReportInput` permanece LEGACY e é convertido por adapter para V2
   antes da lógica de ingestão.
 - Serviço `ReportIntelligenceService` com três métodos determinísticos:
@@ -28,9 +29,10 @@ Princípio central e inegociável:
   - `extract_signals(report)` — sinais explicáveis por regex/status;
   - `summarize_memory(project_id, reports)` — agregação em memória volátil, **sem persistência**.
 
-## 3. O que NÃO existe nesta frente
+## 3. O que não fazia parte desta frente V2
 
-- PostgreSQL ou banco persistente novo.
+- PostgreSQL não foi criado pela frente V2; a persistência operacional foi
+  adicionada posteriormente e está documentada em [[REPORT_MEMORY]].
 - Embeddings / RAG real.
 - Leitura de repositórios externos ou do FinGuard real.
 - Persistência em arquivo.

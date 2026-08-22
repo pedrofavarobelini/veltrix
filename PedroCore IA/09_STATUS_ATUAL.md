@@ -1,8 +1,142 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 14/08/2026
+Atualizado em: 20/08/2026
 
-## PEDROCORE-STRUCTA-CONSUMER-01 — PASS
+## FECHAMENTO DOCUMENTAL FINAL — ERAS 1 A 3
+
+Documento canônico:
+[[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
+
+```text
+ERA 1 — PASS
+Operational Intelligence Foundation
+
+ERA 2 — PASS
+Motor de Risco de Execução por IA
+
+ERA 3 — FOUNDATION PASS / TRAINING DEFERRED
+```
+
+- Operational Learning está implementado com reports, outcomes, Operational
+  Memory, Retrieval V1 e Safe Reuse; ele não altera pesos neurais.
+- Risk Engine está implementado como subsistema analítico/governante, com blast
+  radius, analytical dry-run, contratos assinados, gates, pós-execução e
+  histórico; ele não executa a operação alvo e não substitui QA.
+- Candidate Acquisition Foundation está implementada com seleção explícita,
+  privacy, provenance, autorização purpose-bound, Candidate Store e readiness.
+- Candidatos reais autorizados: **0**; readiness: **`DATASET_NOT_READY`**.
+- Canonical Dataset, splits, Hugging Face, fine-tuning, modelo próprio e Local
+  Provider treinado: **não iniciados ou inexistentes**, conforme o caso.
+- Evidência backend mais recente disponível: `924 passed, 7 skipped, 2 warnings`;
+  Ruff global PASS; Pyright Era 3 sem erros. O número `911` do briefing foi
+  superado pelo checkpoint posterior no mesmo HEAD.
+
+Dívida preservada: warnings de depreciação, Strix bloqueado por pré-requisitos
+locais, resíduos humanos preexistentes no frontend e whitespace preexistente em
+`global.css`.
+
+## PEDROCORE-V1-FINAL-CLOSURE — PASS COM RESSALVAS
+
+Checkpoint de produto preservado. Mapa: [[MOC_UX_V1]]. Relatório:
+[[20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01]].
+
+### Produto
+
+O PedroCore IA é o **gateway/orquestrador central de IA** do ecossistema Pedro.
+Sistemas consumidores (FinGuard, Structa e futuros) e o próprio frontend enviam
+mensagem, contexto e tipo de tarefa; o PedroCore resolve identidade,
+autorização, provider, modelo e prompt, e devolve resposta padronizada.
+
+### Estado
+
+**Operacional e homologado para uso local e para o ecossistema local.** Sem
+dívida arquitetural bloqueante. Publicação no GitHub liberada tecnicamente;
+exposição da API na internet **não**.
+
+### Frontend
+
+Interface pública fechada na versão de produto **V5.2.0**:
+
+- composer único com textarea, seletor de IA, anexos e microfone;
+- Configurações em drawer acessível (Escape, foco, `aria-modal`);
+- sem cards de provider no topo, sem painel lateral direito permanente;
+- autorização de provider real persistida por **ID** e sobrevivendo ao F5;
+- modo DEV coerente: `mock` é destino real de conversa, com selo `DEV`;
+- ditado por voz sem gravar nem transmitir áudio;
+- anexos textuais reais pelo contrato `artifacts` já existente;
+- seletor de IA agrupado ao botão Enviar, listando as cinco IAs públicas com
+  estado real (indisponíveis visíveis e desabilitadas);
+- **117 testes** frontend, os primeiros do projeto.
+
+Ver [[20-ux-v1/UX_COMPOSER_V1]], [[20-ux-v1/VOZ_E_ANEXOS]] e
+[[20-ux-v1/PROVIDERS_MODO_DEV]].
+
+### Backend
+
+**Inalterado nesta frente.** Nenhum arquivo de `apps/api/` foi modificado.
+Versão técnica permanece `0.2.0`. Todos os contratos congelados foram
+preservados: `/api/chat`, `/api/orchestrate`, FinGuard, `ChatRequest`, registry,
+`provider=auto`, caller policies, binding, safe mode, fallback e circuit
+breaker.
+
+### Provider real
+
+**Gemini** (`gemini-3.5-flash`) é a única IA pública **habilitada/homologada**
+para uso real e autorizada para `auto`.
+
+OpenAI, Claude, DeepSeek e Grok/xAI continuam **catalogadas e visíveis** na
+interface — Configurações e seletor — porém indisponíveis até configuração e
+homologação. Aparecem com estado factual (`Não configurado` / `Não homologado`)
+e desabilitadas, nunca escondidas.
+
+Três estados distintos, que não devem ser confundidos: **visível** (IA conhecida),
+**configurado** (backend tem credencial) e **selecionável** (pode conversar
+agora). Ver [[20-ux-v1/PROVIDERS_MODO_DEV]].
+
+### Providers internos
+
+`mock` fallback seguro e único destino de conversa em desenvolvimento;
+`local_qa` análise determinística de artefatos; `local_model` opt-in default-off
+sem transport real; `auto` estratégia de roteamento. Nenhum deles é apresentado
+como IA pública.
+
+### Integrações
+
+FinGuard homologado 4/4 (evidência preservada). Structa registrado como consumer
+de menor privilégio. Ambos **intocados** por esta frente.
+
+### Segurança
+
+Seguro para uso local (A), ecossistema local (B) e código público no GitHub (C).
+**Não seguro** para API pública na internet (D) — faltam autenticação
+obrigatória no `/api/chat`, rate limiting, teto de payload e TLS. Ver
+[[20-ux-v1/MODELO_DE_AMEACA]].
+
+### Testes — números REAIS desta execução
+
+```text
+backend    751 passed, 7 skipped, 2 warnings
+frontend   117 passed (6 arquivos)
+typecheck   PASS
+build       PASS
+docs graph  138 documentos, zero órfãos, zero links quebrados
+```
+
+### Multimodal
+
+Imagem, PDF e DOCX **adiados formalmente para a V2**, por exigirem mudança na
+assinatura de `BaseAIProvider.generate_response`, que hoje só carrega texto.
+Ver [[20-ux-v1/V2_MULTIMODAL]].
+
+### Ressalva do veredito
+
+A única ressalva é a ausência de `LICENSE`, que é **decisão humana pendente**,
+não defeito técnico.
+
+## PEDROCORE-STRUCTA-CONSUMER-01 — PASS (HISTÓRICO)
+
+> Superada pela seção acima quanto a frontend, testes e status. A parte de
+> identidade, autorização e onboarding do Structa permanece vigente.
 
 O Structa foi registrado como consumer externo read-only de menor privilégio:
 `project_id=structa`, identidade `registered`, papel `technical_tool`, task
@@ -169,25 +303,28 @@ executados automaticamente. Sem binding válido, `provider=auto` faz zero
 chamadas reais e usa o Mock seguro; seleção técnica explícita é bloqueada com
 zero adapters.
 
-Frente anterior concluída: `PEDROCORE-OBSERVABILIDADE-LOCAL-01` — ring buffer sanitizado e default-off, painel `#/observability`, provider/fallback/timeline, relatórios, memória técnica, avaliação e release gate instrumentados no pipeline real. Integração local FinGuard → PedroCore → FinGuard e replay conjunto aprovados. Commits `b22338a`, `df6d72f`, `f995d5e`, `3b11b36`. Pytest: `368 passed, 7 skipped, 2 warnings`; frontend build verde. Gemini real não foi executado nesta frente porque os dois opt-ins permaneceram desligados. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01.md`.
+Frente anterior concluída: `PEDROCORE-OBSERVABILIDADE-LOCAL-01` — ring buffer sanitizado e default-off, painel `#/observability`, provider/fallback/timeline, relatórios, memória técnica, avaliação e release gate instrumentados no pipeline real. Integração local FinGuard → PedroCore → FinGuard e replay conjunto aprovados. Commits `b22338a`, `df6d72f`, `f995d5e`, `3b11b36`. Pytest: `368 passed, 7 skipped, 2 warnings`; frontend build verde. Gemini real não foi executado nesta frente porque os dois opt-ins permaneceram desligados. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_OBSERVABILIDADE_LOCAL_01.md`.
 
-Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
+Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
-Ultima frente de implementacao: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote (A) contrato de ecossistema, (B) memória técnica controlada, (C) `local_model` opt-in sem rede, (D) eval harness determinístico; implementada de forma retrocompatível e commitada em `e0ff8e3`. O PedroCore continua **não** sendo modelo treinado: sem fine-tuning, sem autoaprendizado, sem RAG, sem provider real. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+Ultima frente de implementacao: `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — pacote (A) contrato de ecossistema, (B) memória técnica controlada, (C) `local_model` opt-in sem rede, (D) eval harness determinístico; implementada de forma retrocompatível e commitada em `e0ff8e3`. O PedroCore continua **não** sendo modelo treinado: sem fine-tuning, sem autoaprendizado, sem RAG, sem provider real. Testes: `296 passed, 6 skipped, 2 warnings`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
 
-Ultima frente commitada: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de QA/safety sem reabrir o core funcional, commitada em `d6106b7`. Pytest: `341 passed, 6 skipped, 2 warnings`. Eval harness: `14/14 passed`, `risk_level="none"`. Provider real e rede real nao foram chamados em testes; Report Memory continua default-off e nao e treinamento; `local_model` real ficou fora de escopo; FinGuard e `qa:finalize:02` ficaram intocados. Ver `docs/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+Ultima frente commitada: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento de QA/safety sem reabrir o core funcional, commitada em `d6106b7`. Pytest: `341 passed, 6 skipped, 2 warnings`. Eval harness: `14/14 passed`, `risk_level="none"`. Provider real e rede real nao foram chamados em testes; Report Memory continua default-off e nao e treinamento; `local_model` real ficou fora de escopo; FinGuard e `qa:finalize:02` ficaram intocados. Ver `PedroCore IA/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
 
-Frente documental anterior concluída: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organização de links Markdown/Obsidian em `docs/`, sem alteração de código.
+Frente documental anterior concluída: `PEDROCORE-DOCS-GRAPH-LINKING-01` — organização de links Markdown/Obsidian na raiz `docs/` da época, hoje `PedroCore IA/`, sem alteração de código.
 
-Frente local **validada com sucesso**: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`. O PedroCore decide `provider=auto` para consumidores externos: mock default, `local_qa` preservado, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore. Corrigido bug de fallback que vazava texto tecnico/debug (`MockProvider`, `mock-v1`, erro bruto) na resposta conversacional — fallback agora sempre seguro/conservador (ver `docs/08_CHANGELOG.md`). Validacao manual confirmou Gemini real respondendo de forma conversacional via `provider=auto` (modelo `gemini-2.5-flash`; `gemini-3.5-flash`, o default de `.env`, estava com 503 transitorio do lado do Google no momento do teste). Teste real Gemini fica manual/opt-in e skipado por padrao. Pytest: `351 passed, 7 skipped, 2 warnings`.
+Frente local **validada com sucesso**: `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01`. O PedroCore decide `provider=auto` para consumidores externos: mock default, `local_qa` preservado, Gemini real somente com `allow_real_provider=true` e `GEMINI_API_KEY` no ambiente PedroCore. Corrigido bug de fallback que vazava texto tecnico/debug (`MockProvider`, `mock-v1`, erro bruto) na resposta conversacional — fallback agora sempre seguro/conservador (ver `PedroCore IA/08_CHANGELOG.md`). Validacao manual confirmou Gemini real respondendo de forma conversacional via `provider=auto` (modelo `gemini-2.5-flash`; `gemini-3.5-flash`, o default de `.env`, estava com 503 transitorio do lado do Google no momento do teste). Teste real Gemini fica manual/opt-in e skipado por padrao. Pytest: `351 passed, 7 skipped, 2 warnings`.
 
 ## Versão atual de produto
 
-V5.1.9
+**V5.2.0** (era V5.1.9 até 14/08/2026). Minor da linha 5.x: a frente
+`PEDROCORE-V1-FINAL-CLOSURE` acrescentou recursos de interface — composer,
+drawer, voz e anexos — sem quebrar contrato de API. A versão técnica do backend
+permanece `0.2.0`. Ver [[MOC_VERSOES_STATUS]].
 
-## Frente atual
+## Frente anterior
 
-Projeto **finalizado localmente** como core operacional seguro (`v7.0.0`). Últimas frentes: `PEDROCORE-IMPLEMENT-04` (Blocos 8–11, `18d1fc5`), `PEDROCORE-IMPLEMENT-05` (05A–05F: flags/guards opt-in, FinGuard controlado com policy forte, reader consolidado, OCR/multimodal/Playwright como opt-in seguro) e `PEDROCORE-FINALIZE-06` (06A enforcement final do release gate + 06B fechamento). A tag `v6.0.0` (MVP backend) permanece intocada em `ee2ac68`. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
+Projeto **finalizado localmente** como core operacional seguro (`v7.0.0`). Últimas frentes: `PEDROCORE-IMPLEMENT-04` (Blocos 8–11, `18d1fc5`), `PEDROCORE-IMPLEMENT-05` (05A–05F: flags/guards opt-in, FinGuard controlado com policy forte, reader consolidado, OCR/multimodal/Playwright como opt-in seguro) e `PEDROCORE-FINALIZE-06` (06A enforcement final do release gate + 06B fechamento). A tag `v6.0.0` (MVP backend) permanece intocada em `ee2ac68`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
 `PEDROCORE-REPLAN-01` (01A a 01E) está **concluída no escopo documental** e commitada:
 
@@ -217,10 +354,10 @@ C:\Projetos\pedrocore-ia
 - Frontend React/Vite/TypeScript com histórico local (`localStorage`), feedback gostei/não gostei, painel de configuração de providers e identidade visual aplicada (V5.1.9).
 - Testes de backend cobrindo chat mock, fallback por provider desconhecido, validação de payload e listagem de providers.
 - `PEDROCORE-REPLAN-01A` — visão oficial, objetivo, roadmap, status, decisões técnicas e changelog reformulados (commit `1e5a8cb`).
-- `PEDROCORE-REPLAN-01B` — contratos técnicos planejados (`docs/10-contratos/`): contrato de orquestração, tipos de tarefa, resposta estruturada, contrato de artefatos, provider preference, fallback e relação com QA Intelligence (commit `6e7badd`).
-- `PEDROCORE-REPLAN-01C` — arquitetura-alvo documentada (`docs/11-arquitetura-alvo/`): Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e com o FinGuard (commit `c1e7816`).
-- `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence documentado em `docs/12-qa-intelligence/` (definição, relação com o QA Automation do FinGuard, artefatos analisáveis, relatórios Markdown, casos de uso, resposta estruturada, severidade/risco, regra de avanço/bloqueio, fallback Mock, análise visual futura e limites/proibições) (commit `8c68b67`).
-- `PEDROCORE-REPLAN-01E` — fechamento documental da reformulação, consolidado em `docs/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md` (commit `cc808a7`).
+- `PEDROCORE-REPLAN-01B` — contratos técnicos planejados (`PedroCore IA/10-contratos/`): contrato de orquestração, tipos de tarefa, resposta estruturada, contrato de artefatos, provider preference, fallback e relação com QA Intelligence (commit `6e7badd`).
+- `PEDROCORE-REPLAN-01C` — arquitetura-alvo documentada (`PedroCore IA/11-arquitetura-alvo/`): Task Router, Prompt Builder, Project Context, Provider Orchestration, Structured Responses, Artifact Reader, Audit/logs, relação com `/api/chat` e com o FinGuard (commit `c1e7816`).
+- `PEDROCORE-REPLAN-01D` — planejamento de QA Intelligence documentado em `PedroCore IA/12-qa-intelligence/` (definição, relação com o QA Automation do FinGuard, artefatos analisáveis, relatórios Markdown, casos de uso, resposta estruturada, severidade/risco, regra de avanço/bloqueio, fallback Mock, análise visual futura e limites/proibições) (commit `8c68b67`).
+- `PEDROCORE-REPLAN-01E` — fechamento documental da reformulação, consolidado em `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_REPLAN_01.md` (commit `cc808a7`).
 - `PEDROCORE-IMPLEMENT-01A/01B` — Task Router mínimo implementado em código: `task_type`, `origin_system`, `context` e `metadata` opcionais no `ChatRequest`; Task Router mínimo em `apps/api/app/modules/task_router/` reconhecendo 7 task_types + `unknown`, sem bloqueio duro; metadados de tarefa (`task_type`, `origin_system`, `task_criticality`, `requires_structured_response`, `task_warnings`) no `ChatResponse`; warning forte quando fallback Mock ocorre em tarefa crítica. Commitada em `577bc88`.
 - `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` — Project Context mínimo (`apps/api/app/modules/project_context/`, resolve `pedrocore`/`finguard`/`unknown`, somente configuração interna); Prompt Builder mínimo (`apps/api/app/modules/prompt_builder/`, monta `enriched_system_prompt` sem chamar provider); metadados estruturais novos no `ChatResponse` (`project_id`, `project_read_only`, `project_can_execute_commands`, `project_can_write_files`, `response_style`, `audit_id`, `audit_timestamp`); audit metadata não persistente (`apps/api/app/modules/audit/`, `audit_id`/`timestamp` gerados em memória, sem banco/arquivo/log); testes backend: `37 passed, 2 warnings`. Commitada em `95cbfab`.
 - `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — QA textual foundation: policy de `allowed_tasks` (`ChatResponse.task_allowed_for_project`), artefatos textuais por payload (`apps/api/app/modules/artifacts/`, `ChatRequest.artifacts`, `ChatResponse.artifact_count`/`artifact_types`/`artifact_warnings`), Prompt Builder com seção `[Artefatos enviados]`, QA response skeleton seguro (`apps/api/app/modules/qa_response/`, `ChatResponse.qa_skeleton`, sempre `status="not_analyzed"`/`can_advance=False`/`confidence=0.0`, sem análise real), warnings específicos de QA textual e testes de contrato. Testes backend: `66 passed, 2 warnings`. Commitada em `e115672`.
@@ -234,7 +371,7 @@ C:\Projetos\pedrocore-ia
 
 - `PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01` — inteligência de ecossistema: contrato para consumidores + tasks de assistente (disclaimer obrigatório em `finance_advice`), memória técnica controlada (`report_memory/`, rotas `/api/reports/*` e `/api/project-memory/*`, default off, `context_from_memory` opt-in), provider `local_model` opt-in default-off (sem rede nesta frente; nunca aprova release gate) e eval harness determinístico (`eval_harness/`, 11 fixtures). Testes: `296 passed, 6 skipped, 2 warnings` (39 novos). Commitada em `e0ff8e3`.
 
-- `PEDROCORE-QA-SAFETY-HARDENING-01` — guard estrutural contra provider real em testes, suites de safety para provider real/Report Memory/policy/contrato `/api/orchestrate`, eval harness estendido para 14 casos e docs de release gate em `docs/16-qa-safety-hardening/`. Testes: `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Commitada em `d6106b7`.
+- `PEDROCORE-QA-SAFETY-HARDENING-01` — guard estrutural contra provider real em testes, suites de safety para provider real/Report Memory/policy/contrato `/api/orchestrate`, eval harness estendido para 14 casos e docs de release gate em `PedroCore IA/16-qa-safety-hardening/`. Testes: `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Commitada em `d6106b7`.
 
 ## Em andamento
 
@@ -252,19 +389,25 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 - Provider generativo local funcional — `local_model` está registrado como provider opt-in default-off, mas sem transport real; nenhum backend (Ollama/llama.cpp/LM Studio) foi instalado ou chamado.
 - Treinamento, fine-tuning ou autoaprendizado — fora do escopo do projeto; a fundação de inteligência é determinística e avaliada (`evaluation/`).
 - Persistência em banco de dados / log persistente (audit e observabilidade permanecem voláteis). Dashboard público/admin (Bloco 12): **cancelado por decisão de produto**, não é pendência; o painel técnico local/QA foi implementado em `#/observability`.
-- Qualquer mudança de frontend/design — preservados sem alteração.
+- Análise multimodal (imagem, PDF, DOCX) — adiada formalmente para a V2 em [[20-ux-v1/V2_MULTIMODAL]].
 
 ## Proibido nesta fase
 
-- Alterar `apps/web`, frontend, componentes, estilos, layout ou design.
-- Instalar dependências ou rodar servidor.
-- Chamar providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok) — inclusive em testes.
-- Alterar `.env`.
-- Ler, escrever ou executar comandos no repositório do FinGuard.
+> **Atualizado em 16/08/2026.** A proibição anterior de alterar `apps/web` valia
+> para as frentes de backend/QA e foi **levantada** por
+> `PEDROCORE-V1-FINAL-CLOSURE`, cujo escopo era exatamente fechar o frontend.
+> O backend é que permaneceu intocado nessa frente. A lista abaixo reflete as
+> restrições vigentes.
+
+- Chamar providers reais (Gemini, OpenAI, Claude, DeepSeek, Grok) sem
+  autorização humana explícita — inclusive em testes.
+- Alterar `.env` real ou versionar qualquer credencial.
+- Ler, escrever ou executar comandos no repositório do FinGuard ou do Structa.
 - Leitura de arquivo fora do Artifact Reader allowlisted (que permanece desabilitado por padrão e proibido para FinGuard).
 - Implementar execução de comandos recebidos por payload.
-- Remover documentação antiga/duplicada nesta etapa.
-- Criar, mover, deletar ou recriar tag; alterar versão de produto/backend.
+- Remover documentação histórica; ela é preservada e identificada como histórica.
+- Criar, mover, deletar ou recriar tag.
+- Expor a API à internet sem os requisitos de [[20-ux-v1/MODELO_DE_AMEACA]].
 
 ## Riscos atuais
 
