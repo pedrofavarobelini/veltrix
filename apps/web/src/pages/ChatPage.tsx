@@ -1,17 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
-import mockProviderLogo from "../assets/providers/mock.svg";
-import geminiProviderLogo from "../assets/providers/gemini.svg";
-import openaiProviderLogo from "../assets/providers/openai.svg";
-import claudeProviderLogo from "../assets/providers/claude.svg";
-import deepseekProviderLogo from "../assets/providers/deepseek.svg";
-import grokProviderLogo from "../assets/providers/grok.svg";
 import { ChatComposer } from "../components/ChatComposer";
 import { ChatSidebar } from "../components/ChatSidebar";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { LoadingBubble } from "../components/LoadingBubble";
 import { MessageBubble } from "../components/MessageBubble";
 import { ProviderSettingsPanel } from "../components/ProviderSettingsPanel";
+import { SettingsDrawer } from "../components/SettingsDrawer";
 import { getProviders, sendChatMessage } from "../services/api";
 import type { ProviderInfo } from "../services/api";
 import type { ChatMessage, FeedbackType } from "../types/chat";
@@ -23,6 +18,17 @@ import {
   updateMessageFeedback,
 } from "../utils/chatStorage";
 import { loadProviderSettings, saveProviderSettings } from "../utils/providerSettings";
+import type { ProviderSettings } from "../utils/providerSettings";
+import {
+  filterInternalProviders,
+  filterOfferedProviders,
+  filterPublicAiProviders,
+  isDevProviderId,
+  isPublicAiProviderId,
+  isSelectableProviderId,
+} from "../utils/publicProviders";
+import { readTextAttachments, toArtifactInputs } from "../utils/attachments";
+import type { TextAttachment } from "../utils/attachments";
 
 const UI = {
   welcome:
@@ -31,7 +37,9 @@ const UI = {
     "Você é o PedroCore IA, um assistente pessoal técnico, claro, direto e útil.",
   assistantName: "PedroCore IA",
   subtitle: "Assistente inteligente multi-provider",
-  versionLabel: "V5.1.9",
+  // Linha de produto 5.x; minor porque esta frente acrescenta recursos de UX
+  // (composer, drawer, voz, anexos) sem quebrar contrato de API.
+  versionLabel: "V5.2.0",
   normal: "Padrão",
   technical: "Técnico",
   summarized: "Resumido",
@@ -56,15 +64,16 @@ const UI = {
   historyCleared: "Histórico local limpo.",
   fallbackToast: "Fallback para MockProvider acionado.",
   providersError: "Não foi possível carregar providers. Usando lista local.",
-};
-
-const PROVIDER_LOGOS: Record<string, string> = {
-  mock: mockProviderLogo,
-  gemini: geminiProviderLogo,
-  openai: openaiProviderLogo,
-  claude: claudeProviderLogo,
-  deepseek: deepseekProviderLogo,
-  grok: grokProviderLogo,
+  settingsButton: "Configurações",
+  settingsTitle: "Configurações",
+  selectProviderNotice:
+    "Nenhuma IA selecionada. Escolha uma IA no seletor abaixo para enviar mensagens.",
+  authorizationNotice:
+    "O uso real desta IA precisa ser ativado em Configurações antes de enviar.",
+  devProviderNotice:
+    "Ambiente técnico de desenvolvimento: as respostas vêm do provider interno do pipeline, não de uma IA real.",
+  attachmentsRejected: "Alguns arquivos não foram anexados.",
+  attachmentsAdded: "Anexo pronto para envio.",
 };
 
 const DEFAULT_PROVIDERS: ProviderInfo[] = [
@@ -76,11 +85,15 @@ const DEFAULT_PROVIDERS: ProviderInfo[] = [
   { name: "grok", label: "Grok/xAI", default_model: "grok-4.3", configured: false, real_provider: true },
 ];
 
-const DEFAULT_PROVIDER_SETTINGS = {
+const DEFAULT_PROVIDER_SETTINGS: ProviderSettings = {
+  // Continua `mock` de propósito: o padrão seguro não é um provider real. A UI
+  // mostra "Selecionar IA" enquanto o provider ativo não for público, em vez de
+  // fingir que o Gemini está selecionado.
   provider: "mock",
   model: "mock-v1",
   mode: "tecnico",
   systemPrompt: UI.defaultPrompt,
+  authorizedRealProvider: null,
 };
 
 function createWelcomeMessage(): ChatMessage {
@@ -128,7 +141,16 @@ export function ChatPage() {
   const [model, setModel] = useState(initialProviderSettings.model);
   const [providers, setProviders] = useState<ProviderInfo[]>(DEFAULT_PROVIDERS);
   const [systemPrompt, setSystemPrompt] = useState(initialProviderSettings.systemPrompt);
-  const [allowRealProvider, setAllowRealProvider] = useState(false);
+  // Persistimos QUAL provider foi autorizado, não um booleano global. Assim a
+  // autorização sobrevive ao F5 sem nunca vazar de um provider para outro.
+  const [authorizedRealProvider, setAuthorizedRealProvider] = useState<string | null>(
+    initialProviderSettings.authorizedRealProvider,
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Anexos vivem apenas nesta mensagem: não são persistidos no histórico local
+  // nem restaurados no F5. O conteúdo de um arquivo do usuário não deve ficar
+  // guardado no navegador depois que a mensagem foi enviada.
+  const [attachments, setAttachments] = useState<TextAttachment[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
@@ -138,10 +160,73 @@ export function ChatPage() {
   const toastTimeoutRef = useRef<number | null>(null);
   const copiedTimeoutRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const providerDockRef = useRef<HTMLElement | null>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
+  // Espelho dos anexos atuais. Mantém `handleAttachmentsSelected` estável para
+  // o composer e, ainda assim, enxergando a lista mais recente ao aplicar as
+  // cotas de quantidade e de tamanho total.
+  const attachmentsRef = useRef<TextAttachment[]>(attachments);
+
+  attachmentsRef.current = attachments;
 
   const selectedProvider = providers.find((item) => item.name === provider);
   const selectedProviderIsReal = Boolean(selectedProvider?.real_provider);
+  // Catálogo interno permanece intacto em `providers`; `publicProviders` é a
+  // única lista que a interface oferece como IA escolhível.
+  // IAs externas conhecidas — configuradas ou não. É o catálogo das Configurações.
+  const publicAiProviders = useMemo(() => filterPublicAiProviders(providers), [providers]);
+  // Infraestrutura interna: mock, local_qa, local_model, auto.
+  const internalProviders = useMemo(() => filterInternalProviders(providers), [providers]);
+  // O que o composer OFERECE no seletor. Na build pública são as IAs públicas
+  // (as indisponíveis aparecem desabilitadas); em desenvolvimento soma os
+  // internos que de fato respondem uma conversa.
+  const offeredProviders = useMemo(() => filterOfferedProviders(providers), [providers]);
+  const providerIsPublicAi = isPublicAiProviderId(provider);
+  // SELECIONÁVEL é diferente de visível: exige homologação e `configured=true`
+  // vindo do backend. Uma IA catalogada sem chave é visível e não selecionável.
+  const providerIsSelectable = isSelectableProviderId(provider, providers);
+  // Provider interno liberado só em desenvolvimento. `isSelectableProviderId`
+  // já embutiu a checagem de ambiente, então um provider interno só chega aqui
+  // como `true` quando a build é de desenvolvimento.
+  const providerIsDev = providerIsSelectable && isDevProviderId(provider);
+
+  // Valor DERIVADO, não estado. A autorização só vale se o ID persistido
+  // corresponder ao provider atual, esse provider ainda for real e ainda for
+  // válido para a UI pública. Qualquer uma das três condições caindo, o
+  // consentimento deixa de valer sem precisar de sincronização manual.
+  const allowRealProvider =
+    authorizedRealProvider !== null &&
+    authorizedRealProvider === provider &&
+    selectedProviderIsReal &&
+    providerIsPublicAi;
+
+  // Um provider real sem autorização vigente resultaria em fallback Mock no
+  // backend enquanto a UI mostra Gemini. Bloqueamos antes de enviar.
+  //
+  // Provider interno de desenvolvimento não passa por aqui de propósito: ele
+  // não é real (`real_provider=false`), não usa chave e não faz chamada
+  // externa, então não há uso real a consentir. Era exatamente esta a
+  // incoerência anterior — o drawer oferecia o provider e o composer travava o
+  // envio sem que houvesse autorização possível de conceder.
+  const needsAuthorization = providerIsSelectable && selectedProviderIsReal && !allowRealProvider;
+  const canSend = !loading && providerIsSelectable && !needsAuthorization;
+  // Uma IA pública selecionada porém indisponível merece o motivo REAL, não o
+  // genérico "nenhuma IA selecionada" — o usuário escolheu algo, e precisa
+  // saber que falta configurar a chave no backend.
+  const unavailablePublicAi =
+    providerIsPublicAi && !providerIsSelectable ? selectedProvider : undefined;
+  const composerNotice = unavailablePublicAi
+    ? `${unavailablePublicAi.label} não está disponível: ${
+        unavailablePublicAi.configured
+          ? "provider ainda não homologado para uso real."
+          : "configure a credencial no .env do backend."
+      }`
+    : !providerIsSelectable
+      ? UI.selectProviderNotice
+      : needsAuthorization
+        ? UI.authorizationNotice
+        : providerIsDev
+          ? UI.devProviderNotice
+          : "";
   const lastUserMessage = useMemo(
     () => [...messages].reverse().find((item) => item.role === "user")?.content ?? "",
     [messages],
@@ -168,14 +253,8 @@ export function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    saveProviderSettings({ provider, model, mode, systemPrompt });
-  }, [provider, model, mode, systemPrompt]);
-
-  useEffect(() => {
-    if (!selectedProviderIsReal) {
-      setAllowRealProvider(false);
-    }
-  }, [selectedProviderIsReal]);
+    saveProviderSettings({ provider, model, mode, systemPrompt, authorizedRealProvider });
+  }, [provider, model, mode, systemPrompt, authorizedRealProvider]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -196,12 +275,43 @@ export function ChatPage() {
 
   function handleProviderChange(value: string) {
     setProvider(value);
-    setAllowRealProvider(false);
+    // Trocar de provider nunca herda a autorização do anterior.
+    setAuthorizedRealProvider(null);
     const next = providers.find((item) => item.name === value);
     if (next) {
       setModel(next.default_model);
     }
   }
+
+  function handleAllowRealProviderChange(allowed: boolean) {
+    setAuthorizedRealProvider(allowed ? provider : null);
+  }
+
+  const handleCloseSettings = useCallback(() => setSettingsOpen(false), []);
+
+  // A validação e a leitura ficam em `utils/attachments`; aqui só entram o
+  // estado e o retorno visível. O resultado carrega recusados junto com
+  // aceitos para que um arquivo grande demais não derrube os outros da mesma
+  // seleção — e para que o usuário saiba qual caiu e por quê.
+  const handleAttachmentsSelected = useCallback(async (files: File[]) => {
+    const result = await readTextAttachments(files, attachmentsRef.current);
+
+    if (result.accepted.length > 0) {
+      setAttachments((prev) => [...prev, ...result.accepted]);
+    }
+
+    if (result.rejected.length > 0) {
+      const [first] = result.rejected;
+      showToast(`${first.name}: ${first.reason}`, 4200);
+    } else if (result.accepted.length > 0) {
+      showToast(UI.attachmentsAdded);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleAttachmentRemove = useCallback((id: string) => {
+    setAttachments((prev) => prev.filter((item) => item.id !== id));
+  }, []);
 
   function handleResetModel() {
     const current = providers.find((item) => item.name === provider);
@@ -219,19 +329,41 @@ export function ChatPage() {
   }
 
   function handleSaveSettings() {
-    saveProviderSettings({ provider, model, mode, systemPrompt });
+    saveProviderSettings({ provider, model, mode, systemPrompt, authorizedRealProvider });
     showToast(UI.settingsSaved);
   }
 
   async function handleSend(customMessage?: string) {
     const text = (customMessage ?? message).trim();
+    // "Refazer" repete só a pergunta: os anexos daquela mensagem já foram
+    // consumidos e não estão mais no composer.
+    const outgoingAttachments = customMessage ? [] : attachments;
 
-    if (!text) {
+    if (!text && outgoingAttachments.length === 0) {
       showToast(UI.typeBeforeSend);
       return;
     }
 
-    const userMessage = createMessage("user", text);
+    // Guardas de verdade de estado: a UI nunca envia algo que possa voltar como
+    // Mock enquanto mostra outra IA no composer.
+    if (!providerIsSelectable) {
+      showToast(UI.selectProviderNotice);
+      return;
+    }
+
+    if (needsAuthorization) {
+      showToast(UI.authorizationNotice);
+      return;
+    }
+
+    // `ChatRequest.message` tem `min_length=1` no backend: uma mensagem só de
+    // anexos precisa de um texto real, senão a requisição volta 422. O texto
+    // sintetizado descreve o que o usuário de fato fez.
+    const outgoingText =
+      text ||
+      `Analise o conteúdo anexado: ${outgoingAttachments.map((item) => item.name).join(", ")}.`;
+
+    const userMessage = createMessage("user", outgoingText);
 
     setErrorMessage("");
     setMessages((prev) => limitChatHistory([...prev, userMessage]));
@@ -244,12 +376,15 @@ export function ChatPage() {
 
     try {
       const response = await sendChatMessage({
-        message: text,
+        message: outgoingText,
         mode,
         provider,
         model,
         system_prompt: systemPrompt,
         allow_real_provider: selectedProviderIsReal && allowRealProvider,
+        ...(outgoingAttachments.length > 0
+          ? { artifacts: toArtifactInputs(outgoingAttachments) }
+          : {}),
       });
 
       const assistantMessage: ChatMessage = {
@@ -263,9 +398,14 @@ export function ChatPage() {
       };
 
       setMessages((prev) => limitChatHistory([...prev, assistantMessage]));
+      // Anexos são limpos apenas no sucesso. Falhando, eles continuam no
+      // composer e o usuário pode reenviar sem escolher os arquivos de novo.
+      setAttachments([]);
 
       if (response.fallback_used) {
         showToast(UI.fallbackToast);
+      } else if (response.artifact_warnings && response.artifact_warnings.length > 0) {
+        showToast(response.artifact_warnings[0], 4200);
       }
     } catch {
       setErrorMessage(UI.apiError);
@@ -312,7 +452,7 @@ export function ChatPage() {
   }
 
   function handleRetry() {
-    if (!lastUserMessage || loading) {
+    if (!lastUserMessage || !canSend) {
       return;
     }
 
@@ -341,12 +481,7 @@ export function ChatPage() {
           <ChatSidebar
             messages={messages}
             storedMessagesCount={storedMessagesCount}
-            providerLabel={selectedProvider?.label ?? provider}
-            model={model}
             versionLabel={UI.versionLabel}
-            providerConfigured={Boolean(selectedProvider?.configured)}
-            realProvider={Boolean(selectedProvider?.real_provider)}
-            fallbackWarning={Boolean(selectedProvider && !selectedProvider.configured && selectedProvider.real_provider)}
             loading={loading}
             onClearHistory={handleClearHistory}
           />
@@ -358,37 +493,17 @@ export function ChatPage() {
                 <h1>Chat com PedroCore <span>IA</span></h1>
                 <p>{UI.subtitle}</p>
               </div>
-              <a className="observability-link" href="#/observability">
-                Observabilidade QA/local
-              </a>
+              <button
+                ref={settingsButtonRef}
+                className="settings-trigger"
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={settingsOpen}
+              >
+                <span aria-hidden="true">⚙</span> {UI.settingsButton}
+              </button>
             </header>
-
-            <div className="provider-strip" aria-label="Providers disponíveis">
-              {providers.slice(0, 6).map((item) => {
-                const active = item.name === provider;
-                const status = !item.real_provider ? "Mock local" : item.configured ? "Config." : "Sem chave";
-
-                return (
-                  <button
-                    key={item.name}
-                    type="button"
-                    className={`provider-tile ${active ? "active" : ""} ${!item.configured && item.real_provider ? "provider-warning" : ""}`}
-                    onClick={() => handleProviderChange(item.name)}
-                    disabled={loading}
-                  >
-                    <span>
-                      {PROVIDER_LOGOS[item.name] ? (
-                        <img src={PROVIDER_LOGOS[item.name]} alt={`${item.label} logo`} />
-                      ) : (
-                        item.label.slice(0, 2)
-                      )}
-                    </span>
-                    <strong>{item.label}</strong>
-                    <small>{status}</small>
-                  </button>
-                );
-              })}
-            </div>
 
             <section className="chat-panel" aria-label="Conversa atual">
               <div className="messages-list">
@@ -399,7 +514,7 @@ export function ChatPage() {
                     assistantName={UI.assistantName}
                     userName={UI.you}
                     copied={copiedMessageId === item.id}
-                    retryDisabled={!lastUserMessage || loading}
+                    retryDisabled={!lastUserMessage || !canSend}
                     onCopy={handleCopy}
                     onFeedback={handleFeedback}
                     onRetry={handleRetry}
@@ -411,7 +526,7 @@ export function ChatPage() {
                 {errorMessage && (
                   <ErrorBanner
                     message={errorMessage}
-                    retryDisabled={!lastUserMessage || loading}
+                    retryDisabled={!lastUserMessage || !canSend}
                     onRetry={handleRetry}
                     onDismiss={() => setErrorMessage("")}
                   />
@@ -425,33 +540,46 @@ export function ChatPage() {
               value={message}
               loading={loading}
               placeholder={UI.inputPlaceholder}
+              offeredProviders={offeredProviders}
+              provider={provider}
+              providerIsSelectable={providerIsSelectable}
+              providerIsDev={providerIsDev}
+              notice={composerNotice}
+              canSend={canSend}
+              attachments={attachments}
               onChange={setMessage}
+              onProviderChange={handleProviderChange}
               onSend={() => void handleSend()}
+              onAttachmentsSelected={(files) => void handleAttachmentsSelected(files)}
+              onAttachmentRemove={handleAttachmentRemove}
             />
           </section>
-
-          <ProviderSettingsPanel
-            panelRef={providerDockRef}
-            providers={providers}
-            provider={provider}
-            model={model}
-            mode={mode}
-            systemPrompt={systemPrompt}
-            defaultSystemPrompt={UI.defaultPrompt}
-            loading={loading}
-            allowRealProvider={allowRealProvider}
-            onProviderChange={handleProviderChange}
-            onModelChange={setModel}
-            onModeChange={setMode}
-            onSystemPromptChange={setSystemPrompt}
-            onAllowRealProviderChange={setAllowRealProvider}
-            onResetModel={handleResetModel}
-            onResetPrompt={handleResetPrompt}
-            onClose={handleSaveSettings}
-            onSave={handleSaveSettings}
-          />
         </div>
       </section>
+
+      <SettingsDrawer open={settingsOpen} title={UI.settingsTitle} onClose={handleCloseSettings}>
+        <ProviderSettingsPanel
+          providers={providers}
+          publicAiProviders={publicAiProviders}
+          internalProviders={internalProviders}
+          provider={provider}
+          model={model}
+          mode={mode}
+          systemPrompt={systemPrompt}
+          defaultSystemPrompt={UI.defaultPrompt}
+          loading={loading}
+          allowRealProvider={allowRealProvider}
+          onProviderChange={handleProviderChange}
+          onModelChange={setModel}
+          onModeChange={setMode}
+          onSystemPromptChange={setSystemPrompt}
+          onAllowRealProviderChange={handleAllowRealProviderChange}
+          onResetModel={handleResetModel}
+          onResetPrompt={handleResetPrompt}
+          onClose={handleCloseSettings}
+          onSave={handleSaveSettings}
+        />
+      </SettingsDrawer>
     </main>
   );
 }

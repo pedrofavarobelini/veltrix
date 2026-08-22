@@ -3,6 +3,16 @@ export type ProviderSettings = {
   model: string;
   mode: string;
   systemPrompt: string;
+  /**
+   * Identificador do provider real cujo uso o usuário autorizou NESTE navegador.
+   * `null` quando não há autorização vigente.
+   *
+   * É consentimento, não credencial: nunca guarda chave, token ou secret. As
+   * credenciais permanecem exclusivamente no backend. Guardamos o ID e não um
+   * booleano global justamente para que a autorização não vaze de um provider
+   * para outro (princípio de menor privilégio).
+   */
+  authorizedRealProvider: string | null;
 };
 
 export const PROVIDER_SETTINGS_STORAGE_KEY = "pedrocore:v5:provider-settings";
@@ -11,7 +21,12 @@ function canUseLocalStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
 }
 
-function isProviderSettings(value: unknown): value is ProviderSettings {
+/**
+ * Valida apenas os campos que sempre existiram. `authorizedRealProvider` é
+ * opcional de propósito: payloads gravados antes desta versão continuam
+ * válidos e são lidos como "sem autorização".
+ */
+function isProviderSettings(value: unknown): value is Partial<ProviderSettings> {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -24,6 +39,15 @@ function isProviderSettings(value: unknown): value is ProviderSettings {
     typeof item.mode === "string" &&
     typeof item.systemPrompt === "string"
   );
+}
+
+/** Normaliza o consentimento persistido; qualquer coisa fora do formato vira `null`. */
+function normalizeAuthorizedRealProvider(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  return value.trim() || null;
 }
 
 export function loadProviderSettings(defaultSettings: ProviderSettings): ProviderSettings {
@@ -45,10 +69,13 @@ export function loadProviderSettings(defaultSettings: ProviderSettings): Provide
     }
 
     return {
-      provider: parsedSettings.provider.trim() || defaultSettings.provider,
-      model: parsedSettings.model.trim() || defaultSettings.model,
-      mode: parsedSettings.mode.trim() || defaultSettings.mode,
-      systemPrompt: parsedSettings.systemPrompt.trim() || defaultSettings.systemPrompt,
+      provider: parsedSettings.provider?.trim() || defaultSettings.provider,
+      model: parsedSettings.model?.trim() || defaultSettings.model,
+      mode: parsedSettings.mode?.trim() || defaultSettings.mode,
+      systemPrompt: parsedSettings.systemPrompt?.trim() || defaultSettings.systemPrompt,
+      authorizedRealProvider: normalizeAuthorizedRealProvider(
+        parsedSettings.authorizedRealProvider,
+      ),
     };
   } catch {
     return defaultSettings;

@@ -4,12 +4,7 @@ import type { ChatMessage } from "../types/chat";
 type ChatSidebarProps = {
   messages: ChatMessage[];
   storedMessagesCount: number;
-  providerLabel: string;
-  model: string;
   versionLabel: string;
-  providerConfigured: boolean;
-  realProvider: boolean;
-  fallbackWarning: boolean;
   loading: boolean;
   onClearHistory: () => void;
 };
@@ -40,12 +35,7 @@ function createSnippet(content: string) {
 export function ChatSidebar({
   messages,
   storedMessagesCount,
-  providerLabel,
-  model,
   versionLabel,
-  providerConfigured,
-  realProvider,
-  fallbackWarning,
   loading,
   onClearHistory,
 }: ChatSidebarProps) {
@@ -53,8 +43,6 @@ export function ChatSidebar({
     .filter((item) => !item.isSystem && item.role === "user")
     .slice(-8)
     .reverse();
-
-  const providerStatus = !realProvider ? "Mock local" : providerConfigured ? "Configurado" : "Sem chave";
 
   return (
     <aside className="chat-sidebar" aria-label="Navegação e histórico local do PedroCore IA">
@@ -67,7 +55,7 @@ export function ChatSidebar({
       </div>
 
       <button className="new-chat-button" type="button" onClick={onClearHistory} disabled={loading}>
-        <span>+</span> Nova conversa
+        <span aria-hidden="true">+</span> Nova conversa
       </button>
 
       <div className="sidebar-divider" />
@@ -94,19 +82,7 @@ export function ChatSidebar({
         )}
       </section>
 
-      <div className="sidebar-card provider-card">
-        <span className="sidebar-label">Provider ativo</span>
-        <strong>{providerLabel}</strong>
-        <small>{model}</small>
-        <span className={`provider-mini-status ${!realProvider ? "status-mock" : providerConfigured ? "status-ok" : "status-warning"}`}>
-          {providerStatus}
-        </span>
-        {fallbackWarning && <em>Sem chave configurada — fallback possível</em>}
-      </div>
-
-      <div className="sidebar-card storage-card">
-        <span className="sidebar-label">Configurações salvas localmente</span>
-        <p>Histórico, feedbacks e providers ficam somente neste navegador.</p>
+      <div className="sidebar-footer">
         <button type="button" onClick={onClearHistory} disabled={storedMessagesCount === 0 || loading}>
           Limpar histórico
         </button>
