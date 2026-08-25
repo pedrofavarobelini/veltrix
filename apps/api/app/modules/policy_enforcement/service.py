@@ -3,7 +3,11 @@ import re
 from app.modules.contracts import codes
 from app.modules.policy_enforcement.schemas import PolicyEnforcementResult
 from app.modules.project_context.schemas import ProjectContext, TaskPolicyResult
-from app.modules.project_context.service import FINGUARD_ORIGIN_SYSTEMS, UNKNOWN_PROJECT_ID
+from app.modules.project_context.service import (
+    ELYRA_ORIGIN_SYSTEMS,
+    FINGUARD_ORIGIN_SYSTEMS,
+    UNKNOWN_PROJECT_ID,
+)
 from app.modules.task_router.schemas import TaskStrategy
 
 # Enforcement forte de policy (IMPLEMENT-05B + FINALIZE-06A).
@@ -102,6 +106,18 @@ class PolicyEnforcementService:
             return PolicyEnforcementResult()
 
         is_critical_flow = strategy.criticality in {"high", "critical"}
+
+        # Elyra opera fail-closed para QUALQUER task: allowed_tasks é o
+        # mecanismo nativo de capabilities. Multimodal/learning só existirão
+        # quando forem adicionados explicitamente em futuras frentes.
+        if project.project_id in ELYRA_ORIGIN_SYSTEMS and not policy.allowed:
+            return PolicyEnforcementResult(
+                blocked=True,
+                error_code=codes.PROJECT_POLICY_BLOCKED,
+                blocked_reason=CRITICAL_TASK_NOT_ALLOWED_REASON,
+                warnings=[CRITICAL_TASK_NOT_ALLOWED_REASON],
+                warning_codes=[codes.PROJECT_POLICY_BLOCKED],
+            )
 
         if is_critical_flow and not policy.allowed:
             code = (

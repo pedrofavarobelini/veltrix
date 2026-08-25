@@ -80,6 +80,7 @@ _TASK_OUTPUT_CAPS: dict[str, int] = {
     "local_model_chat": _STRUCTURED_CAP,
     # Estruturado: QA, relatório, exploração, planejamento.
     "qa_report_analysis": _STRUCTURED_CAP,
+    "wellbeing_report_interpretation": _STRUCTURED_CAP,
     "qa_failure_diagnosis": _STRUCTURED_CAP,
     "release_gate_review": _STRUCTURED_CAP,
     "artifact_summary": _STRUCTURED_CAP,

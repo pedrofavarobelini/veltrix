@@ -1,6 +1,26 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 14/08/2026
+Atualizado em: 25/08/2026
+
+## PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL — PASS
+
+O PedroCore reconhece `origin_system=elyra` por credencial registrada,
+`project_id=elyra` e papel `common_consumer`. A única capability habilitada é
+`wellbeing_report_interpretation`, com input `elyra-textual-input/v1`, output
+`elyra-textual-output/v1`, correlation e idempotência fail-closed.
+
+CI usa mock determinístico. O modo real exige `provider=auto`,
+`allow_real_provider=true`, `allow_mock_fallback=false`, seleciona somente
+Gemini homologado em ambiente não produtivo e rejeita provider/modelo
+respondente divergente. Multimodal, learning, prompt livre, mídia, memória e
+acesso a dados Elyra permanecem desabilitados.
+
+Validação offline: suíte focada `44 passed, 1 skipped`; backend integral `959
+passed, 21 skipped, 2 warnings`; Ruff integral PASS; eval `14/14`,
+`risk_level=none`; grafo 155 documentos/822 links/zero violações; zero chamadas
+externas. Gate:
+[[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+Contrato: [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]].
 
 ## PEDROCORE-STRUCTA-CONSUMER-01 — PASS
 

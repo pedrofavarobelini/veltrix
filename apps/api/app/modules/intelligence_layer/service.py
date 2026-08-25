@@ -48,6 +48,7 @@ _TASK_PROFILES: dict[str, str] = {
     "report_memory_query": "executive_summary",
     "local_model_chat": "general_assistant",
     "evaluation_run": "technical_direct",
+    "wellbeing_report_interpretation": "wellbeing_non_clinical",
     "unknown": "general_assistant",
 }
 
@@ -60,6 +61,7 @@ _REPORT_CONTEXT_TASKS = {
     "qa_report_analysis",
     "qa_failure_diagnosis",
     "release_gate_review",
+    "wellbeing_report_interpretation",
 }
 
 BASE_INSTRUCTIONS = [
@@ -118,6 +120,14 @@ class IntelligenceLayerService:
                 "Resposta financeira deve ser conservadora e informativa: "
                 "incluir disclaimer, nunca dar aconselhamento absoluto, "
                 "nunca executar ação financeira e nunca alterar dados."
+            )
+        if profile == "wellbeing_non_clinical":
+            instructions.extend(
+                [
+                    "Interpretar somente métricas já calculadas pela Elyra; não recalcular.",
+                    "Não diagnosticar, prescrever ou afirmar condição clínica.",
+                    "Não tratar emoção facial como fato nem associação como causalidade.",
+                ]
             )
 
         memory_hints: list[str] = []

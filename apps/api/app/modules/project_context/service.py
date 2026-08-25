@@ -47,11 +47,22 @@ _FINGUARD_NOTES = (
 
 _STRUCTA_ALLOWED_TASKS = ["qa_report_analysis"]
 
+_ELYRA_ALLOWED_TASKS = ["wellbeing_report_interpretation"]
+
 _STRUCTA_NOTES = (
     "Consumer externo read-only; recebe somente contratos sinteticos e "
     "sanitizados de Report Intelligence, sem filesystem, comandos, Executor "
     "ou Planner. Provider real permanece default-off e exige identidade "
     "registrada independente."
+)
+
+_ELYRA_NOTES = (
+    "Plataforma externa read-only de acompanhamento emocional, autoconhecimento, "
+    "hábitos, relatórios e acompanhamento profissional autorizado. O PedroCore "
+    "recebe somente snapshot determinístico explicitamente preparado; não acessa "
+    "banco/Storage Elyra, não diagnostica, não prescreve, não afirma condição "
+    "clínica, não trata emoção facial como fato e não converte associação em causa. "
+    "Multimodal e learning permanecem desabilitados nesta capability textual V1."
 )
 
 _PROJECTS: dict[str, dict[str, object]] = {
@@ -100,11 +111,17 @@ _PROJECTS: dict[str, dict[str, object]] = {
         "allowed_tasks": list(_STRUCTA_ALLOWED_TASKS),
         "notes": _STRUCTA_NOTES,
     },
+    "elyra": {
+        "display_name": "Elyra",
+        "allowed_tasks": list(_ELYRA_ALLOWED_TASKS),
+        "notes": _ELYRA_NOTES,
+    },
 }
 
 # Origens tratadas como FinGuard: sempre read-only, sem reader, sem execução.
 FINGUARD_ORIGIN_SYSTEMS = {"finguard", "finguard-local"}
 STRUCTA_ORIGIN_SYSTEMS = {"structa"}
+ELYRA_ORIGIN_SYSTEMS = {"elyra"}
 
 
 class ProjectContextResolver:

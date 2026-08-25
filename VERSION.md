@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 14/08/2026
+Atualizado em: 25/08/2026
 
 ## Versão atual de produto
 
@@ -10,7 +10,23 @@ V5.1.9
 
 0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Frente atual — onboarding seguro do Structa
+## Frente atual — Elyra Onboarding V1 Textual
+
+`PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL`.
+
+- Project Context `elyra`, somente `wellbeing_report_interpretation`.
+- Caller Identity `registered`, papel `common_consumer`, origem `elyra`.
+- Contratos `elyra-textual-input/v1` e `elyra-textual-output/v1`.
+- Mock determinístico no CI; real somente por `provider=auto`, Gemini em
+  ambiente não produtivo, sem modelo do caller e sem fallback.
+- Correlation e idempotência fail-closed, inclusive duplicata concorrente.
+- Multimodal e learning permanecem desabilitados.
+- Validação offline: `959 passed, 21 skipped, 2 warnings`; Ruff integral PASS;
+  eval `14/14`, `risk_level=none`; grafo 155 documentos/822 links; zero
+  chamadas externas.
+- Gate: [[PedroCore IA/17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+
+## Frente anterior — onboarding seguro do Structa
 
 `PEDROCORE-STRUCTA-CONSUMER-01`.
 

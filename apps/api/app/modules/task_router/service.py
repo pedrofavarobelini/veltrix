@@ -152,6 +152,15 @@ _STRATEGIES: dict[str, dict[str, object]] = {
         "criticality": "medium",
         "allow_mock": True,
     },
+    # ELYRA ONBOARDING V1 TEXTUAL: uma capability estreita, estruturada e
+    # sensível. Não entra em CRITICAL_TASK_TYPES para não acionar QA skeleton,
+    # mas criticality=high força enforcement da allowlist do projeto.
+    "wellbeing_report_interpretation": {
+        "response_style": "elyra_textual_v1",
+        "requires_structured_response": True,
+        "criticality": "high",
+        "allow_mock": True,
+    },
     UNKNOWN_TASK_TYPE: {
         "response_style": "free_text",
         "requires_structured_response": False,

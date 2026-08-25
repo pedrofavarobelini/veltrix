@@ -2,6 +2,18 @@
 
 Mapa de integracoes controladas do lado PedroCore.
 
+## Elyra
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]]
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]]
+- [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]]
+- Consumer externo read-only, identidade própria `registered`, papel
+  `common_consumer` e somente `wellbeing_report_interpretation`.
+- Mock determinístico no CI; real somente por auto/Gemini não produtivo, sem
+  modelo do caller e sem fallback.
+- PedroCore recebe somente snapshot explícito; não acessa banco/Storage Elyra.
+- Multimodal e learning permanecem desabilitados.
+
 ## Structa
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]]
@@ -28,6 +40,7 @@ Mapa de integracoes controladas do lado PedroCore.
 - [[10-contratos/CONTRATO_QA_INTELLIGENCE]]
 - [[10-contratos/CONTRATO_ECOSYSTEM_ASSISTANT]] - sistemas consumidores do ecossistema (ECOSYSTEM-SUITE-01).
 - [[10-contratos/CONTRATO_REPORT_MEMORY]] - memoria tecnica de relatorios (default off).
+- [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]] - capability textual versionada da Elyra Stage 09.
 - [[10-api/EXEMPLOS_API_MVP]]
 
 ## Regras essenciais

@@ -5,6 +5,12 @@ from pydantic import BaseModel, Field
 
 class AuditMetadata(BaseModel):
     audit_id: str
+    # ELYRA ONBOARDING V1 TEXTUAL: correlação fornecida pelo caller e
+    # fingerprint não reversível da chave de idempotência. Campos opcionais
+    # mantêm todos os contratos legados compatíveis.
+    correlation_id: str | None = None
+    idempotency_key_id: str | None = None
+    idempotency_replayed: bool = False
     timestamp: str
     origin_system: str
     task_type: str

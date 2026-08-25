@@ -21,15 +21,22 @@ router = APIRouter(tags=["Orchestration"])
 API_KEY_ENV_VAR = "PEDROCORE_INTERNAL_API_KEY"
 
 
-def _auth_error(error_code: str, reason: str) -> JSONResponse:
+def _auth_error(
+    error_code: str,
+    reason: str,
+    correlation_id: str | None = None,
+) -> JSONResponse:
+    content = {
+        "status": "blocked",
+        "error_code": error_code,
+        "blocked_reason": reason,
+        "warning_codes": [error_code],
+    }
+    if correlation_id is not None:
+        content["correlation_id"] = correlation_id
     return JSONResponse(
         status_code=401,
-        content={
-            "status": "blocked",
-            "error_code": error_code,
-            "blocked_reason": reason,
-            "warning_codes": [error_code],
-        },
+        content=content,
     )
 
 
@@ -41,9 +48,17 @@ async def orchestrate(payload: ChatRequest, request: Request):
 
     if configured_key:
         if provided_key is None:
-            return _auth_error(codes.INTERNAL_AUTH_MISSING, AUTH_MISSING_REASON)
+            return _auth_error(
+                codes.INTERNAL_AUTH_MISSING,
+                AUTH_MISSING_REASON,
+                payload.correlation_id,
+            )
         if provided_key != configured_key:
-            return _auth_error(codes.INTERNAL_AUTH_INVALID, AUTH_INVALID_REASON)
+            return _auth_error(
+                codes.INTERNAL_AUTH_INVALID,
+                AUTH_INVALID_REASON,
+                payload.correlation_id,
+            )
     elif not caller_identity_service.registry_configured():
         auth_warnings.append(
             make_warning(codes.INTERNAL_AUTH_NOT_CONFIGURED, AUTH_NOT_CONFIGURED_WARNING)
@@ -55,6 +70,7 @@ async def orchestrate(payload: ChatRequest, request: Request):
         return _auth_error(
             resolution.error_code or codes.CALLER_CREDENTIAL_UNKNOWN,
             resolution.reason or "Credencial não reconhecida pelo PedroCore.",
+            payload.correlation_id,
         )
 
     outcome = await orchestration_service.execute(payload, caller=resolution.context)
@@ -78,6 +94,9 @@ async def orchestrate(payload: ChatRequest, request: Request):
         task_warnings=[item.message for item in warning_items],
         error_code=outcome.error_code,
         blocked_reason=outcome.blocked_reason,
+        correlation_id=outcome.correlation_id,
+        idempotency_replayed=outcome.idempotency_replayed,
+        elyra=outcome.elyra,
         project_id=outcome.project_id,
         task_allowed_for_project=outcome.task_allowed_for_project,
         artifact_count=outcome.artifact_count,

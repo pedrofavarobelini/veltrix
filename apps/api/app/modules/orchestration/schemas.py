@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.audit.schemas import AuditMetadata
 from app.modules.contracts.codes import WarningItem
+from app.modules.elyra_textual.schemas import ElyraTextualOutputV1
 from app.modules.exploration.schemas import ExplorationPlan
 from app.modules.intelligence_layer.schemas import IntelligencePlan
 from app.modules.qa_response.schemas import QAResponseSkeleton, ReleaseGateResult
@@ -42,6 +43,9 @@ class OrchestrationOutcome(BaseModel):
     status: str = "ok"
     blocked_reason: str | None = None
     error_code: str | None = None
+    correlation_id: str | None = None
+    idempotency_replayed: bool = False
+    elyra: ElyraTextualOutputV1 | None = None
     # PEDROCORE-MODEL-FOUNDATION-01: plano interno da Intelligence Layer.
     # Não é exposto em ChatResponse/OrchestrateResponse nesta frente.
     intelligence_plan: IntelligencePlan | None = None
@@ -80,6 +84,9 @@ class OrchestrateResponse(BaseModel):
     task_warnings: list[str] = Field(default_factory=list)
     error_code: str | None = None
     blocked_reason: str | None = None
+    correlation_id: str | None = None
+    idempotency_replayed: bool = False
+    elyra: ElyraTextualOutputV1 | None = None
     project_id: str = "pedrocore"
     task_allowed_for_project: bool = True
     artifact_count: int = 0

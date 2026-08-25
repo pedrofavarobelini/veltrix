@@ -58,7 +58,7 @@ def real_provider_guard(monkeypatch, request):
     """
     if flag_is_true(real_features.FLAG_RUN_REAL_PROVIDER_TESTS) or flag_is_true(
         real_features.FLAG_RUN_REAL_GEMINI_TESTS
-    ):
+    ) or flag_is_true(real_features.FLAG_RUN_REAL_ELYRA_TESTS):
         yield None
         return
 

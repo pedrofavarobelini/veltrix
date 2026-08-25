@@ -2,6 +2,19 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
+## Resultado atual — 2026-08-25
+
+- Frente: [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+- Gate: [[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+- Elyra focado: `44 passed, 1 skipped, 2 warnings`.
+- Backend integral: `959 passed, 21 skipped, 2 warnings`.
+- Ruff integral: PASS.
+- Eval harness: `14/14`, `risk_level=none`.
+- Pyright: não aplicável, sem binário/configuração.
+- Guard autouse: zero adapters reais e zero rede externa.
+- Smoke real Elyra: opt-in exclusivo, skipped por padrão.
+- Grafo documental: 155 documentos, 822 links resolvidos, zero violações.
+
 ## Resultado atual — 2026-08-14
 
 - Frente: [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]].
@@ -79,7 +92,7 @@ cd C:\Projetos\pedrocore-ia\apps\api
 .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider
 ```
 
-Resultado mais recente: `570 passed, 7 skipped, 2 warnings`.
+Resultado mais recente: `959 passed, 21 skipped, 2 warnings`.
 
 Eval harness deterministico (sem provider real, sem rede):
 
@@ -101,6 +114,8 @@ Auditoria local documentada:
 - `apps/api/tests/test_real_optin.py`
 - Flags `PEDROCORE_RUN_REAL_*_TESTS=true`.
 - Gemini real usa `PEDROCORE_RUN_REAL_GEMINI_TESTS=true`.
+- Elyra real usa `PEDROCORE_RUN_REAL_ELYRA_TESTS=true` e
+  `PEDROCORE_ELYRA_QA_CREDENTIAL`, com autorização humana explícita.
 - Nao fazem parte do teste padrao.
 - Podem exigir chave real, dependencia local ou efeito externo; precisam de aprovacao humana.
 
@@ -118,3 +133,6 @@ Auditoria local documentada:
 - Observabilidade/Gemini opt-in: `test_observability.py`, `test_gemini_smoke.py`.
 - Multi-provider seguro: `test_provider_catalog.py`, `test_caller_identity_authorization.py`, `test_shared_credential_privilege.py`, `test_provider_model_binding.py`, `test_shadow_routing.py`, `test_provider_routing_enforced.py`, `test_provider_health_circuit_breaker.py`, `test_provider_real_fallback_controlled.py`.
 - Consumer Structa: `test_structa_consumer_onboarding.py` — 15 casos offline de project context, identidade, provider/task policy, defaults e regressões FinGuard/PedroCore.
+- Consumer Elyra: `test_elyra_consumer_onboarding.py` — schemas, identidade,
+  capability, provider/model, output, timeout, correlation, idempotência,
+  compatibilidade e smoke real opt-in.

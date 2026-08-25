@@ -18,6 +18,14 @@ from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
 from app.modules.evaluation.service import evaluation_service
+from app.modules.elyra_textual.idempotency import elyra_idempotency_service
+from app.modules.elyra_textual.schemas import ELYRA_TASK_TYPE, ElyraTextualInputV1
+from app.modules.elyra_textual.service import (
+    IDEMPOTENCY_CONFLICT_REASON,
+    INTERNAL_FAILURE_REASON,
+    PROVIDER_MISMATCH_REASON,
+    elyra_textual_service,
+)
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
 from app.modules.observability.service import observability_service
@@ -252,21 +260,70 @@ class OrchestrationService:
         fail-closed quando existe registro de callers configurado).
         """
         started = time.perf_counter()
-        if observability_service.force_total_provider_failure(payload):
-            error = RuntimeError(
-                "QA_TOTAL_PROVIDER_FAILURE: providers e fallback indisponíveis no cenário controlado."
+        caller = caller or caller_identity_service.default_context()
+
+        async def execute_once() -> OrchestrationOutcome:
+            try:
+                if observability_service.force_total_provider_failure(payload):
+                    raise RuntimeError(
+                        "QA_TOTAL_PROVIDER_FAILURE: providers e fallback indisponíveis "
+                        "no cenário controlado."
+                    )
+                return await self._execute_pipeline(payload, caller)
+            except Exception as exc:
+                observability_service.record_exception(
+                    payload, exc, (time.perf_counter() - started) * 1_000
+                )
+                if (payload.task_type or "").strip().lower() == ELYRA_TASK_TYPE:
+                    return self._elyra_contract_blocked_outcome(
+                        payload=payload,
+                        caller=caller,
+                        error_code=codes.ELYRA_INTERNAL_FAILURE,
+                        reason=INTERNAL_FAILURE_REASON,
+                        started=started,
+                        provider_used="unknown",
+                    )
+                raise
+
+        is_elyra = (payload.task_type or "").strip().lower() == ELYRA_TASK_TYPE
+        can_deduplicate = bool(
+            is_elyra
+            and payload.idempotency_key
+            and payload.correlation_id
+            and caller.project_id == "elyra"
+        )
+        if can_deduplicate:
+            execution = await elyra_idempotency_service.execute(
+                scope=f"elyra:{caller.project_id}:{ELYRA_TASK_TYPE}",
+                idempotency_key=payload.idempotency_key or "",
+                fingerprint=elyra_idempotency_service.request_fingerprint(payload),
+                operation=execute_once,
             )
-            observability_service.record_exception(
-                payload, error, (time.perf_counter() - started) * 1_000
-            )
-            raise error
-        try:
-            outcome = await self._execute_pipeline(payload, caller)
-        except Exception as exc:
-            observability_service.record_exception(
-                payload, exc, (time.perf_counter() - started) * 1_000
-            )
-            raise
+            if execution.conflict:
+                outcome = self._elyra_contract_blocked_outcome(
+                    payload=payload,
+                    caller=caller,
+                    error_code=codes.ELYRA_IDEMPOTENCY_CONFLICT,
+                    reason=IDEMPOTENCY_CONFLICT_REASON,
+                    started=started,
+                )
+            else:
+                if execution.value is None:
+                    outcome = self._elyra_contract_blocked_outcome(
+                        payload=payload,
+                        caller=caller,
+                        error_code=codes.ELYRA_INTERNAL_FAILURE,
+                        reason=INTERNAL_FAILURE_REASON,
+                        started=started,
+                        provider_used="unknown",
+                    )
+                else:
+                    outcome = execution.value
+                if execution.replayed and execution.value is not None:
+                    outcome.idempotency_replayed = True
+                    outcome.audit.idempotency_replayed = True
+        else:
+            outcome = await execute_once()
 
         observability_service.record_orchestration(
             payload, outcome, (time.perf_counter() - started) * 1_000
@@ -346,6 +403,22 @@ class OrchestrationService:
                 origin_claim=origin_claim,
                 started=started,
             )
+
+        elyra_request: ElyraTextualInputV1 | None = None
+        if strategy.task_type == ELYRA_TASK_TYPE:
+            elyra_validation = elyra_textual_service.validate_input(payload, caller)
+            if not elyra_validation.valid:
+                return self._elyra_contract_blocked_outcome(
+                    payload=payload,
+                    caller=caller,
+                    error_code=(
+                        elyra_validation.error_code
+                        or codes.ELYRA_INPUT_SCHEMA_INVALID
+                    ),
+                    reason=elyra_validation.reason or "Contrato Elyra inválido.",
+                    started=started,
+                )
+            elyra_request = elyra_validation.value
 
         # PEDROCORE-MODEL-FOUNDATION-01: plano determinístico da Intelligence
         # Layer, calculado após policy e antes do Prompt Builder. Nesta frente
@@ -446,6 +519,8 @@ class OrchestrationService:
             origin_claim=origin_claim,
             provider_selection_mode=selection_mode,
             binding=binding,
+            correlation_id=payload.correlation_id,
+            idempotency_key=payload.idempotency_key,
         )
         audit.real_fallback_enabled = self._real_fallback_enabled()
 
@@ -453,7 +528,11 @@ class OrchestrationService:
             PromptBuildInput(
                 message=payload.message,
                 mode=payload.mode,
-                system_prompt=payload.system_prompt,
+                system_prompt=(
+                    elyra_textual_service.system_prompt()
+                    if elyra_request is not None
+                    else payload.system_prompt
+                ),
                 strategy=strategy,
                 project=project,
                 origin_system=payload.origin_system,
@@ -483,7 +562,16 @@ class OrchestrationService:
                 )
             )
 
-        if requested_provider in LOCAL_PROVIDERS:
+        if elyra_request is not None and requested_provider == "mock":
+            mock_output = elyra_textual_service.deterministic_mock(
+                elyra_request,
+                payload.correlation_id or "",
+            )
+            answer = elyra_textual_service.serialize_output(mock_output)
+            provider_used = "mock"
+            model_used = "mock-v1"
+            analysis = None
+        elif requested_provider in LOCAL_PROVIDERS:
             analysis = qa_text_analyzer.analyze(
                 task_type=strategy.task_type,
                 artifacts_result=artifacts_result,
@@ -757,6 +845,46 @@ class OrchestrationService:
                 safe_mode_blocked=safe_mode_blocked,
             )
 
+        elyra_output = None
+        elyra_blocked_reason: str | None = None
+        if elyra_request is not None:
+            expected_provider = binding.provider_id or requested_provider
+            expected_model = binding.model_id
+            provider_mismatch = bool(
+                error is None
+                and (
+                    provider_used != expected_provider
+                    or (expected_model is not None and model_used != expected_model)
+                )
+            )
+            if provider_mismatch:
+                error_code = codes.ELYRA_PROVIDER_MISMATCH
+                error = PROVIDER_MISMATCH_REASON
+                elyra_blocked_reason = error
+                provider_items.append(make_warning(error_code, error))
+                answer = "Resposta Elyra recusada por divergência de provider/modelo."
+            elif error is None and provider_used != "none" and not fallback_used:
+                output_validation = elyra_textual_service.validate_output(
+                    answer,
+                    elyra_request,
+                    payload.correlation_id or "",
+                )
+                if output_validation.valid:
+                    elyra_output = output_validation.value
+                    answer = elyra_output.summary
+                else:
+                    error_code = (
+                        output_validation.error_code or codes.ELYRA_OUTPUT_INVALID
+                    )
+                    error = output_validation.reason or "Output Elyra inválido."
+                    elyra_blocked_reason = error
+                    provider_items.append(make_warning(error_code, error))
+                    answer = "Resposta Elyra recusada por incompatibilidade de schema."
+            else:
+                elyra_blocked_reason = error or (
+                    "Fallback não é resultado válido para o contrato textual Elyra."
+                )
+
         # finance_advice é conservador: disclaimer obrigatório na resposta.
         if strategy.task_type == FINANCE_ADVICE_TASK_TYPE:
             answer = f"{answer}\n\n{FINANCIAL_DISCLAIMER_TEXT}"
@@ -821,7 +949,9 @@ class OrchestrationService:
         )
 
         blocked_reason: str | None = None
-        if no_mock_fallback_blocked:
+        if elyra_blocked_reason:
+            blocked_reason = elyra_blocked_reason
+        elif no_mock_fallback_blocked:
             blocked_reason = error
         elif release_gate is not None and not release_gate.can_advance:
             blocked_reason = release_gate.blocked_reason
@@ -895,6 +1025,9 @@ class OrchestrationService:
             safe_mode_blocked=safe_mode_blocked,
             error=error,
             error_code=error_code,
+            correlation_id=payload.correlation_id,
+            idempotency_replayed=False,
+            elyra=elyra_output,
             task_type=strategy.task_type,
             origin_system=payload.origin_system,
             task_criticality=strategy.criticality,
@@ -1827,6 +1960,76 @@ class OrchestrationService:
 
         return effective, items
 
+    def _elyra_contract_blocked_outcome(
+        self,
+        *,
+        payload: ChatRequest,
+        caller: AuthenticatedCallerContext,
+        error_code: str,
+        reason: str,
+        started: float,
+        provider_used: str = "none",
+    ) -> OrchestrationOutcome:
+        """Bloqueio do boundary Elyra sem provider/fallback ou conteúdo parcial."""
+        strategy = task_router.resolve(payload.task_type)
+        project = project_context_resolver.resolve(payload.origin_system)
+        origin_claim = caller_identity_service.validate_origin_claim(
+            caller,
+            payload.origin_system,
+            project.project_id,
+        )
+        policy = project_context_resolver.evaluate_task_policy(project, strategy.task_type)
+        audit = audit_service.create(
+            origin_system=payload.origin_system,
+            task_type=strategy.task_type,
+            provider_requested=(payload.provider or settings.default_provider).lower(),
+            criticality=strategy.criticality,
+            caller=caller,
+            origin_claim=origin_claim,
+            provider_selection_mode=self._selection_mode(payload.provider),
+            correlation_id=payload.correlation_id,
+            idempotency_key=payload.idempotency_key,
+        )
+        audit.fallback_used = False
+        audit.provider_used = provider_used
+        audit.status = "blocked"
+        audit.latency_ms = round((time.perf_counter() - started) * 1000, 2)
+        audit.can_advance = False
+        audit.authorization_result = "denied"
+        audit.authorization_reason_code = error_code
+
+        return OrchestrationOutcome(
+            answer="Solicitação Elyra bloqueada pelo contrato textual V1.",
+            provider_requested=(payload.provider or settings.default_provider).lower(),
+            provider_used=provider_used,
+            model="none",
+            mode=payload.mode,
+            fallback_used=False,
+            safe_mode_blocked=False,
+            error=reason,
+            error_code=error_code,
+            task_type=strategy.task_type,
+            origin_system=payload.origin_system,
+            task_criticality=strategy.criticality,
+            requires_structured_response=strategy.requires_structured_response,
+            response_style=strategy.response_style,
+            project_id=project.project_id,
+            project_read_only=project.read_only,
+            project_can_execute_commands=project.can_execute_commands,
+            project_can_write_files=project.can_write_files,
+            task_allowed_for_project=policy.allowed,
+            artifact_count=0,
+            artifact_types=[],
+            artifact_warnings=[],
+            warning_items=[make_warning(error_code, reason)],
+            audit=audit,
+            status="blocked",
+            blocked_reason=reason,
+            correlation_id=payload.correlation_id,
+            idempotency_replayed=False,
+            elyra=None,
+        )
+
     def _identity_blocked_outcome(
         self,
         payload: ChatRequest,
@@ -1857,6 +2060,8 @@ class OrchestrationService:
             origin_claim=origin_claim,
             provider_selection_mode=self._selection_mode(requested_provider),
             binding=binding,
+            correlation_id=payload.correlation_id,
+            idempotency_key=payload.idempotency_key,
         )
         audit.fallback_used = False
         audit.provider_used = "none"
@@ -1898,6 +2103,9 @@ class OrchestrationService:
             audit=audit,
             status="blocked",
             blocked_reason=reason,
+            correlation_id=payload.correlation_id,
+            idempotency_replayed=False,
+            elyra=None,
         )
 
     def _policy_blocked_outcome(
@@ -1921,6 +2129,8 @@ class OrchestrationService:
             caller=caller,
             origin_claim=origin_claim,
             provider_selection_mode=self._selection_mode(requested_provider),
+            correlation_id=payload.correlation_id,
+            idempotency_key=payload.idempotency_key,
         )
         audit.fallback_used = False
         audit.provider_used = "none"
@@ -1973,6 +2183,9 @@ class OrchestrationService:
             audit=audit,
             status="blocked",
             blocked_reason=enforcement.blocked_reason,
+            correlation_id=payload.correlation_id,
+            idempotency_replayed=False,
+            elyra=None,
         )
 
     async def _mock_fallback(

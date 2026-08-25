@@ -121,6 +121,17 @@ _RULES: tuple[AuthorizationRule, ...] = (
     ),
     AuthorizationRule(
         identity_strengths=frozenset({IdentityStrength.REGISTERED}),
+        project_ids=frozenset({"elyra"}),
+        caller_roles=frozenset({CallerRole.COMMON_CONSUMER}),
+        environments=NON_PRODUCTION_ENVIRONMENTS,
+        providers=frozenset({"gemini"}),
+        notes=(
+            "Elyra textual V1 fora de produção, somente como consumer comum "
+            "registrado. O caller pede provider=auto e nunca escolhe modelo."
+        ),
+    ),
+    AuthorizationRule(
+        identity_strengths=frozenset({IdentityStrength.REGISTERED}),
         project_ids=frozenset({"finguard", "finguard-local"}),
         caller_roles=frozenset({CallerRole.COMMON_CONSUMER, CallerRole.TECHNICAL_TOOL}),
         environments=PRODUCTION_ENVIRONMENTS,

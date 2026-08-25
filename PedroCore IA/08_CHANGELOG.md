@@ -1,5 +1,31 @@
 # PedroCore IA — Changelog
 
+## PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL — 25/08/2026
+
+Status: **onboarding oficial implementado e validado offline**.
+
+- Project Context `elyra` e Caller Identity registrada `common_consumer`, sem
+  reutilizar identidades PedroCore/FinGuard/Structa.
+- Task única `wellbeing_report_interpretation`; multimodal, learning e tasks
+  genéricas permanecem negados.
+- Schemas strict/versionados de input/output para snapshot determinístico
+  Elyra, com safety não clínica obrigatória.
+- Policy: mock determinístico ou auto/Gemini não produtivo, sem modelo do
+  caller, fallback ou retry após dispatch.
+- Correlation preservada e idempotência volátil/bounded com replay, conflito e
+  coalescência concorrente; key nunca auditada em claro.
+- Novos erros Elyra para caller, consent, schema, policy, mismatch,
+  idempotência, output e falha interna; provider indisponível/timeout reutilizam
+  os códigos nativos.
+- Compatibilidade preservada para todos os contratos legados, inclusive 401
+  mínimo sem `correlation_id=null`.
+- QA: `44 passed, 1 skipped` focados; `959 passed, 21 skipped, 2 warnings`
+  integral; Ruff integral PASS; eval `14/14`, risco `none`.
+- Grafo documental: 155 documentos, 822 links resolvidos, zero violações.
+- Teste real exclusivo opt-in adicionado e mantido skipped; zero provider real,
+  rede, segredo, alteração Elyra, multimodal ou learning nesta execução.
+- Gate: [[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+
 ## PEDROCORE-STRUCTA-CONSUMER-01 — 14/08/2026
 
 Status: **onboarding least-privilege validado offline**.

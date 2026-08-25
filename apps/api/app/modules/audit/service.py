@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 from datetime import datetime, timezone
 
@@ -20,6 +21,8 @@ class AuditService:
         origin_claim: OriginClaimResult | None = None,
         provider_selection_mode: str | None = None,
         binding: SelectedProviderModel | None = None,
+        correlation_id: str | None = None,
+        idempotency_key: str | None = None,
     ) -> AuditMetadata:
         """Cria a auditoria da requisição.
 
@@ -28,6 +31,12 @@ class AuditService:
         """
         return AuditMetadata(
             audit_id=str(uuid.uuid4()),
+            correlation_id=correlation_id,
+            idempotency_key_id=(
+                "idem_" + hashlib.sha256(idempotency_key.encode("utf-8")).hexdigest()[:12]
+                if idempotency_key
+                else None
+            ),
             timestamp=datetime.now(timezone.utc).isoformat(),
             origin_system=origin_system,
             task_type=task_type,

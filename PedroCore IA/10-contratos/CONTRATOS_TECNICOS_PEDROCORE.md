@@ -18,11 +18,14 @@ Documentar, antes de qualquer implementação, os contratos técnicos que vão g
 | Artifact Reader (leitura automática de pastas/arquivos externos) | **Implementado como opt-in controlado**, default-off e bloqueado para FinGuard. |
 | QA Intelligence | **Implementada como heurística textual local**; IA real/visual real permanece fora do padrão. |
 | Integração real com o FinGuard | **Pronta no lado PedroCore por contrato HTTP**; cliente no repositório FinGuard ainda não implementado aqui. |
+| Elyra textual Stage 09 | **Implementada** por contrato versionado, identidade própria, task única e output strict. |
 
 ## Documentos desta frente
 
 - [`CONTRATO_ORQUESTRACAO.md`](./CONTRATO_ORQUESTRACAO.md) — contrato geral de entrada/saída, campos obrigatórios/opcionais, tipos de tarefa (`task_type`), contrato de artefatos, `provider_preference` e regras de fallback.
 - [`CONTRATO_QA_INTELLIGENCE.md`](./CONTRATO_QA_INTELLIGENCE.md) — formato de resposta estruturada para tarefas de QA, relação com o FinGuard e limites de atuação.
+- [[CONTRATO_ELYRA_TEXTUAL_V1]] — contrato executável, versionado e fail-closed
+  da capability textual Elyra Stage 09.
 
 ## Princípios gerais que todos os contratos seguem
 

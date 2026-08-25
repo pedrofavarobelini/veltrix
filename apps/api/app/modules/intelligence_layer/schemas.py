@@ -10,6 +10,7 @@ RESPONSE_PROFILES = {
     "executive_summary",
     "implementation_plan",
     "general_assistant",
+    "wellbeing_non_clinical",
 }
 
 SENSITIVE_DATA_POLICIES = {"sanitize", "block"}

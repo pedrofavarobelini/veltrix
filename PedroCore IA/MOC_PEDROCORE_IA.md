@@ -1,5 +1,15 @@
 # MOC PedroCore IA
 
+## Consumer Elyra textual V1 — ATUAL
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]] —
+  identidade própria, capability mínima, schemas strict, provider policy,
+  correlation e idempotência.
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]] —
+  Gate PASS, `959 passed`, zero chamadas externas.
+- [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]] — contrato executável para a Stage
+  09 consumir em execução separada.
+
 ## Consumer Structa — ATUAL
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]] —
@@ -11,8 +21,9 @@
 ## Encerramento final — CANÔNICO ATUAL
 
 - [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] - **PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO**. Assistente IA homologado **4/4**; nenhuma implementação obrigatória restante.
-- Suíte integral: `736 passed, 7 skipped`; eval `14/14`, `risk_level="none"`.
-- Grafo documental íntegro: zero órfãos, zero links quebrados, validado por `app.modules.docs_graph`.
+- Suíte integral atual: `959 passed, 21 skipped`; eval `14/14`, `risk_level="none"`.
+- Grafo documental atual: 155 documentos, 822 links resolvidos, zero órfãos e
+  zero links quebrados, validado por `app.modules.docs_graph`.
 
 ## Fechamento anterior — 2026-07-27 (HISTÓRICO)
 

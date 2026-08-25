@@ -3,6 +3,16 @@
 Mapa oficial da evolução segura de providers, modelos, identidade, routing,
 health e fallback do PedroCore.
 
+## Consumer Elyra textual V1
+
+- [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]] —
+  Project Context, Caller Identity `common_consumer`, task tipada, schemas,
+  correlation e idempotência.
+- [[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]] —
+  prova offline allowed/denied, output strict, timeout, mismatch e replay;
+  `959 passed`, zero chamadas externas.
+- [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]] — envelope executável da Stage 09.
+
 ## Consumer Structa
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]] —
@@ -84,6 +94,7 @@ health e fallback do PedroCore.
 - `apps/api/tests/test_provider_health_circuit_breaker.py`
 - `apps/api/tests/test_provider_real_fallback_controlled.py`
 - `apps/api/tests/test_structa_consumer_onboarding.py`
+- `apps/api/tests/test_elyra_consumer_onboarding.py`
 
 ## Status e histórico
 

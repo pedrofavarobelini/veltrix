@@ -22,6 +22,10 @@ class ChatRequest(BaseModel):
     # ECOSYSTEM-INTELLIGENCE-SUITE-01: opt-ins explícitos, sempre False por padrão.
     allow_local_model: bool = False
     context_from_memory: bool = False
+    # ELYRA ONBOARDING V1 TEXTUAL: campos aditivos. Consumers legados seguem
+    # válidos com None; a task Elyra os torna obrigatórios no boundary próprio.
+    correlation_id: str | None = None
+    idempotency_key: str | None = None
 
 
 class ChatResponse(BaseModel):

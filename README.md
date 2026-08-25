@@ -1,6 +1,17 @@
 # PedroCore IA
 
-## MICROFRENTE ATUAL — STRUCTA CONSUMER
+## FRENTE ATUAL — ELYRA ONBOARDING V1 TEXTUAL
+
+`PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL` registrou Elyra como consumer oficial:
+`project_id=elyra`, identidade `registered`, papel `common_consumer`, uma única
+task `wellbeing_report_interpretation` e schemas strict/versionados. CI usa
+mock determinístico; execução real é `provider=auto`, Gemini não produtivo,
+sem modelo do caller e sem fallback. Resultado: **PASS**, `959 passed, 21
+skipped`, Ruff integral, eval `14/14` e grafo `155/822`; zero chamadas
+externas. Contrato:
+`PedroCore IA/10-contratos/CONTRATO_ELYRA_TEXTUAL_V1.md`.
+
+## MICROFRENTE ANTERIOR — STRUCTA CONSUMER
 
 `PEDROCORE-STRUCTA-CONSUMER-01` registrou o Structa como consumer oficial de
 menor privilégio: `project_id=structa`, identidade `registered`, papel
@@ -72,6 +83,11 @@ de validação estão em `PedroCore IA/MANIFESTO_REORGANIZACAO_20260802.md`.
 - **Observabilidade local/QA**: store volátil sanitizado, limitado e default-off; endpoints `/api/observability/*`; painel `#/observability`; provider solicitado/efetivo, tentativas, fallback, timeline, QA, memória, avaliação, release gate e audit ID visíveis apenas no PedroCore. Memória técnica não altera pesos e treinamento de modelo não foi implementado.
 - **Evolução multi-provider segura (Etapas 1–7)**: catálogo explícito, identidade/autorização por projeto, binding total de provider/modelo, shadow routing, roteamento `enforced` determinístico, circuit breaker local/default-off e fallback real estritamente pre-dispatch/default-off. O motor está concluído; diversificação real continua bloqueada até a homologação de um segundo provider/modelo.
 - **Consumer Structa**: `origin_system=Structa` resolve para `structa`; somente credencial registrada `technical_tool`, task `qa_report_analysis`, Gemini e ambiente não produtivo podem ser autorizados. Sem credencial, com role indevido, provider diferente ou origem desconhecida, o fluxo falha fechado antes de chamada real.
+- **Consumer Elyra textual V1**: `origin_system=elyra`, credencial registrada
+  `common_consumer`, task única `wellbeing_report_interpretation`, input/output
+  strict e versionados, correlation e idempotência. Multimodal e learning
+  permanecem negados; PedroCore não acessa banco/Storage Elyra nem recalcula
+  métricas oficiais.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
 - Cliente HTTP do Assistente no FinGuard e replay local integrado estão implementados. OCR real, QA visual real com provider multimodal, Playwright real, persistência da observabilidade e deploy/push ainda são opcionais e exigem aprovação própria. Bloco 12 (dashboard público/admin) permanece cancelado por decisão de produto.
@@ -112,6 +128,14 @@ reutiliza identidade ou permissões FinGuard/PedroCore, não acessa o repositór
 Structa e não executa filesystem, Executor ou Planner. Uma chamada real
 continua proibida até Gate próprio do Structa com autorização humana nova.
 
+## Relação com a Elyra
+
+A Elyra é consumer externo independente e read-only. Envia somente o snapshot
+determinístico preparado por ela para interpretação não clínica. O PedroCore
+não acessa banco, Storage, diário integral ou mídia da Elyra. A Stage 09 usa
+somente a capability textual V1; multimodal Stage 12 e dataset/learning Stage
+13 continuam fora do contrato e falham fechados.
+
 ## Providers
 
 | Provider | Situação |
@@ -135,6 +159,9 @@ Qualquer provider real sem autorização explícita cai para bloqueio de safe mo
 - `PedroCore IA/MOC_PEDROCORE_IA.md`
 - `PedroCore IA/MOC_MULTI_PROVIDER_SAFE_EVOLUTION.md`
 - `PedroCore IA/17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7.md`
+- `PedroCore IA/10-contratos/CONTRATO_ELYRA_TEXTUAL_V1.md`
+- `PedroCore IA/17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL.md`
+- `PedroCore IA/17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL.md`
 - `PedroCore IA/MOC_QA_SAFETY_HARDENING.md`
 - `PedroCore IA/MOC_ESTUDO_PEDROCORE.md`
 - `PedroCore IA/00-visao-geral/README.md`

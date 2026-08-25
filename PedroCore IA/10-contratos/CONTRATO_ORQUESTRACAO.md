@@ -2,6 +2,9 @@
 
 > Nota DOCFIX: este documento nasceu como planejamento da frente `PEDROCORE-REPLAN-01B`. Em `v7.0.0`, o lado PedroCore já implementa `/api/orchestrate`, `ChatRequest`, `OrchestrationService`, Task Router, Project Context, Prompt Builder, Artifact Service, QA textual, release gate, warnings estruturados e audit. O estado atual completo está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]].
 
+> A task Elyra Stage 09 não usa o `context` livre histórico descrito abaixo.
+> Seu envelope strict/versionado está em [[CONTRATO_ELYRA_TEXTUAL_V1]].
+
 ## Contrato legado (referência — já implementado)
 
 Hoje, `POST /api/chat` aceita:
