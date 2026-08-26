@@ -890,3 +890,36 @@ def test_key_order_never_changes_the_fingerprint():
     shuffled = dict(sorted(payload.items(), reverse=True))
 
     assert canonical_fingerprint(shuffled) == canonical_fingerprint(payload)
+
+
+# Vetor compartilhado com `src/lib/learning-pipeline.test.ts` da Elyra.
+# Se este digest divergir, as duas pontas deixam de concordar e toda submissao
+# com media de valor inteiro passa a ser recusada por FINGERPRINT_MISMATCH.
+SHARED_VECTOR_JSON = (
+    '{"daysInWindow":28,'
+    '"mood":{"mean":7,"delta":1,"trend":"up","samples":28},'
+    '"anxiety":{"mean":3,"delta":-1,"trend":"down","samples":28},'
+    '"energy":{"mean":6.5,"delta":0,"trend":"stable","samples":28},'
+    '"sleepDurationMinutes":{"mean":450,"delta":20,"trend":"up","samples":27},'
+    '"daysWithMood":28,"daysWithAnxiety":28,"daysWithEnergy":28,'
+    '"daysWithSleep":27,"cycleEnabled":false}'
+)
+SHARED_VECTOR_DIGEST = (
+    "df6620d4930b82f6173b59df083f2e581ba82b0ecde90992768f817a04dbfa06"
+)
+
+
+def test_shared_vector_produces_the_agreed_digest():
+    """O digest acordado com a Elyra, calculado sobre o JSON que atravessa o fio."""
+    assert canonical_fingerprint(json.loads(SHARED_VECTOR_JSON)) == SHARED_VECTOR_DIGEST
+
+
+def test_shared_vector_is_accepted_end_to_end(elyra_registry):
+    payload = json.loads(SHARED_VECTOR_JSON)
+    context = _submission(payload=payload)
+    context["fingerprint"] = SHARED_VECTOR_DIGEST
+
+    body = _post(context=context).json()
+
+    assert body["status"] == "ok", body.get("error_code")
+    assert body["elyra_learning"]["lifecycle"] == CandidateLifecycle.PROPOSED.value
