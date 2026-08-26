@@ -98,6 +98,7 @@ async def orchestrate(payload: ChatRequest, request: Request):
         idempotency_replayed=outcome.idempotency_replayed,
         elyra=outcome.elyra,
         elyra_multimodal=outcome.elyra_multimodal,
+        elyra_learning=outcome.elyra_learning,
         project_id=outcome.project_id,
         task_allowed_for_project=outcome.task_allowed_for_project,
         artifact_count=outcome.artifact_count,

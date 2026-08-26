@@ -28,6 +28,7 @@ from app.modules.caller_identity.service import (
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.elyra_textual.idempotency import elyra_idempotency_service
+from app.modules.elyra_learning.schemas import ELYRA_LEARNING_TASK_TYPE
 from app.modules.elyra_multimodal.schemas import ELYRA_MULTIMODAL_TASK_TYPE
 from app.modules.elyra_textual.schemas import (
     ELYRA_CANONICAL_MESSAGE,
@@ -230,16 +231,29 @@ def test_project_context_and_task_registry_expose_only_narrow_elyra_capabilities
     assert project.allowed_tasks == [
         ELYRA_TASK_TYPE,
         ELYRA_MULTIMODAL_TASK_TYPE,
+        ELYRA_LEARNING_TASK_TYPE,
     ]
     assert project.read_only is True
     assert project.can_execute_commands is False
     assert project.can_write_files is False
     assert "diagnostica" in (project.notes or "")
-    assert "Learning " in (project.notes or "")
-    assert "permanece desabilitado" in (project.notes or "")
+    assert "learning " in (project.notes or "").lower()
+    assert "nunca inicia treinamento" in (project.notes or "")
     assert strategy.response_style == "elyra_textual_v1"
     assert strategy.requires_structured_response is True
     assert strategy.criticality == "high"
+
+
+def test_elyra_learning_task_is_registered_without_provider_participation():
+    """Learning e governanca: nenhum provider participa, nem real nem mock."""
+    strategy = task_router.resolve(ELYRA_LEARNING_TASK_TYPE)
+
+    assert strategy.task_type == ELYRA_LEARNING_TASK_TYPE
+    assert strategy.response_style == "elyra_learning_v1"
+    assert strategy.requires_structured_response is True
+    assert strategy.criticality == "high"
+    assert strategy.allow_mock is False
+    assert strategy.warnings == []
 
 
 def test_elyra_multimodal_task_is_registered_with_its_own_strategy():

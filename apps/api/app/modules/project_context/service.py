@@ -52,6 +52,9 @@ _ELYRA_ALLOWED_TASKS = [
     # Stage 12: capability multimodal PROPRIA. Nao amplia a task textual e nao
     # concede acesso a midia bruta, Storage ou banco da Elyra.
     "multimodal_session_signal_interpretation",
+    # Stage 13: governanca de learning. Submete e revoga candidato; nao
+    # treina, nao ajusta pesos e nao escreve em dataset generico.
+    "governed_learning_candidate_submission",
 ]
 
 _STRUCTA_NOTES = (
@@ -68,8 +71,9 @@ _ELYRA_NOTES = (
     "banco/Storage Elyra, não diagnostica, não prescreve, não afirma condição "
     "clínica, não trata emoção facial como fato e não converte associação em causa. "
     "A capability multimodal V1 recebe somente transcricao consentida e sinais "
-    "observaveis ja calculados: nunca audio, video, tela ou imagem. Learning "
-    "permanece desabilitado nestas capabilities."
+    "observaveis ja calculados: nunca audio, video, tela ou imagem. O learning "
+    "governado recebe apenas agregado numerico sanitizado sob consentimento "
+    "explicito de treino, e nunca inicia treinamento."
 )
 
 _PROJECTS: dict[str, dict[str, object]] = {

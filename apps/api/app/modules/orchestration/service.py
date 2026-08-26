@@ -40,6 +40,26 @@ from app.modules.elyra_multimodal.service import (
     PROVIDER_MISMATCH_REASON as MULTIMODAL_PROVIDER_MISMATCH_REASON,
 )
 from app.modules.elyra_multimodal.service import elyra_multimodal_service
+from app.modules.elyra_learning.schemas import (
+    ELYRA_LEARNING_TASK_TYPE,
+    REVOKE_OPERATION,
+    SUBMIT_OPERATION,
+)
+from app.modules.elyra_learning.service import (
+    IDEMPOTENCY_CONFLICT_REASON as LEARNING_IDEMPOTENCY_CONFLICT_REASON,
+)
+from app.modules.elyra_learning.service import (
+    INTERNAL_FAILURE_REASON as LEARNING_INTERNAL_FAILURE_REASON,
+)
+from app.modules.elyra_learning.service import (
+    NOT_FOUND_REASON as LEARNING_NOT_FOUND_REASON,
+)
+from app.modules.elyra_learning.service import elyra_learning_service
+from app.modules.training_data.acquisition import (
+    TrainingCandidateTransitionError,
+    training_candidate_service,
+)
+from app.modules.training_data.schemas import TrainingPurpose, TrainingSourceType
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
 from app.modules.observability.service import observability_service
@@ -257,6 +277,35 @@ VISUAL_ONLY_RELEASE_GATE_WARNING = (
 )
 
 
+# Cada capability Elyra tem escopo de idempotencia proprio e, por consequencia,
+# codigo e razao proprios. Um mapa nomeado evita que uma capability nova herde
+# silenciosamente a mensagem de outra — foi assim que o learning quase reportou
+# um conflito como se fosse do contrato textual.
+_ELYRA_CONFLICT_BY_TASK = {
+    ELYRA_TASK_TYPE: (codes.ELYRA_IDEMPOTENCY_CONFLICT, IDEMPOTENCY_CONFLICT_REASON),
+    ELYRA_MULTIMODAL_TASK_TYPE: (
+        codes.ELYRA_MULTIMODAL_IDEMPOTENCY_CONFLICT,
+        MULTIMODAL_IDEMPOTENCY_CONFLICT_REASON,
+    ),
+    ELYRA_LEARNING_TASK_TYPE: (
+        codes.ELYRA_LEARNING_IDEMPOTENCY_CONFLICT,
+        LEARNING_IDEMPOTENCY_CONFLICT_REASON,
+    ),
+}
+
+_ELYRA_FAILURE_BY_TASK = {
+    ELYRA_TASK_TYPE: (codes.ELYRA_INTERNAL_FAILURE, INTERNAL_FAILURE_REASON),
+    ELYRA_MULTIMODAL_TASK_TYPE: (
+        codes.ELYRA_MULTIMODAL_INTERNAL_FAILURE,
+        MULTIMODAL_INTERNAL_FAILURE_REASON,
+    ),
+    ELYRA_LEARNING_TASK_TYPE: (
+        codes.ELYRA_LEARNING_INTERNAL_FAILURE,
+        LEARNING_INTERNAL_FAILURE_REASON,
+    ),
+}
+
+
 class OrchestrationService:
     """Pipeline central: Task Router → Project Context → Policy → Artifacts →
     Provider (com safe mode) → QA Text Analyzer local → QA Response/Release Gate → Audit."""
@@ -307,11 +356,23 @@ class OrchestrationService:
                         started=started,
                         provider_used="unknown",
                     )
+                if normalized_task == ELYRA_LEARNING_TASK_TYPE:
+                    return self._elyra_contract_blocked_outcome(
+                        payload=payload,
+                        caller=caller,
+                        error_code=codes.ELYRA_LEARNING_INTERNAL_FAILURE,
+                        reason=LEARNING_INTERNAL_FAILURE_REASON,
+                        started=started,
+                        provider_used="none",
+                    )
                 raise
 
         normalized_task = (payload.task_type or "").strip().lower()
-        is_elyra = normalized_task in {ELYRA_TASK_TYPE, ELYRA_MULTIMODAL_TASK_TYPE}
-        is_elyra_multimodal = normalized_task == ELYRA_MULTIMODAL_TASK_TYPE
+        is_elyra = normalized_task in {
+            ELYRA_TASK_TYPE,
+            ELYRA_MULTIMODAL_TASK_TYPE,
+            ELYRA_LEARNING_TASK_TYPE,
+        }
         can_deduplicate = bool(
             is_elyra
             and payload.idempotency_key
@@ -326,36 +387,26 @@ class OrchestrationService:
                 operation=execute_once,
             )
             if execution.conflict:
+                conflict_code, conflict_reason = _ELYRA_CONFLICT_BY_TASK[
+                    normalized_task
+                ]
                 outcome = self._elyra_contract_blocked_outcome(
                     payload=payload,
                     caller=caller,
-                    error_code=(
-                        codes.ELYRA_MULTIMODAL_IDEMPOTENCY_CONFLICT
-                        if is_elyra_multimodal
-                        else codes.ELYRA_IDEMPOTENCY_CONFLICT
-                    ),
-                    reason=(
-                        MULTIMODAL_IDEMPOTENCY_CONFLICT_REASON
-                        if is_elyra_multimodal
-                        else IDEMPOTENCY_CONFLICT_REASON
-                    ),
+                    error_code=conflict_code,
+                    reason=conflict_reason,
                     started=started,
                 )
             else:
                 if execution.value is None:
+                    failure_code, failure_reason = _ELYRA_FAILURE_BY_TASK[
+                        normalized_task
+                    ]
                     outcome = self._elyra_contract_blocked_outcome(
                         payload=payload,
                         caller=caller,
-                        error_code=(
-                            codes.ELYRA_MULTIMODAL_INTERNAL_FAILURE
-                            if is_elyra_multimodal
-                            else codes.ELYRA_INTERNAL_FAILURE
-                        ),
-                        reason=(
-                            MULTIMODAL_INTERNAL_FAILURE_REASON
-                            if is_elyra_multimodal
-                            else INTERNAL_FAILURE_REASON
-                        ),
+                        error_code=failure_code,
+                        reason=failure_reason,
                         started=started,
                         provider_used="unknown",
                     )
@@ -484,6 +535,21 @@ class OrchestrationService:
                     started=started,
                 )
             multimodal_request = multimodal_validation.value
+
+        # Stage 13: learning governado. E uma operacao de GOVERNANCA, nao de
+        # geracao: nenhum provider e consultado, nenhum prompt e construido e
+        # nenhum modelo e treinado. Por isso o caminho termina aqui, antes do
+        # dispatch, em vez de atravessar o pipeline de provider com um no-op.
+        if strategy.task_type == ELYRA_LEARNING_TASK_TYPE:
+            return self._elyra_learning_outcome(
+                payload=payload,
+                caller=caller,
+                strategy=strategy,
+                project=project,
+                policy=policy,
+                origin_claim=origin_claim,
+                started=started,
+            )
 
         # PEDROCORE-MODEL-FOUNDATION-01: plano determinístico da Intelligence
         # Layer, calculado após policy e antes do Prompt Builder. Nesta frente
@@ -1154,6 +1220,7 @@ class OrchestrationService:
             idempotency_replayed=False,
             elyra=elyra_output,
             elyra_multimodal=multimodal_output,
+            elyra_learning=None,
             task_type=strategy.task_type,
             origin_system=payload.origin_system,
             task_criticality=strategy.criticality,
@@ -2086,6 +2153,138 @@ class OrchestrationService:
 
         return effective, items
 
+    def _elyra_learning_outcome(
+        self,
+        *,
+        payload: ChatRequest,
+        caller: AuthenticatedCallerContext,
+        strategy,
+        project,
+        policy,
+        origin_claim: OriginClaimResult,
+        started: float,
+    ) -> OrchestrationOutcome:
+        """Executa submissao ou revogacao governada, sem tocar em provider."""
+        validation = elyra_learning_service.validate_input(payload, caller)
+        if not validation.valid:
+            return self._elyra_contract_blocked_outcome(
+                payload=payload,
+                caller=caller,
+                error_code=(
+                    validation.error_code or codes.ELYRA_LEARNING_INPUT_SCHEMA_INVALID
+                ),
+                reason=validation.reason or "Contrato de learning Elyra inválido.",
+                started=started,
+            )
+
+        try:
+            if validation.submission is not None:
+                proposal = elyra_learning_service.build_proposal(
+                    validation.submission, caller.credential_id
+                )
+                record, duplicate = training_candidate_service.submit_external(
+                    proposal,
+                    fingerprint=validation.submission.fingerprint,
+                    training_purpose=TrainingPurpose.EVALUATION_ONLY,
+                )
+                operation = SUBMIT_OPERATION
+            else:
+                revocation = validation.revocation
+                assert revocation is not None
+                record, changed = training_candidate_service.revoke_external(
+                    project_id="elyra",
+                    source_type=TrainingSourceType.ELYRA_REPORT_SNAPSHOT,
+                    training_purpose=TrainingPurpose.EVALUATION_ONLY,
+                    fingerprint=revocation.fingerprint,
+                    reason_code=revocation.reason_code,
+                    revoked_by=caller.credential_id,
+                )
+                # Revogar de novo nao e novidade nem erro: e replay governado.
+                duplicate = not changed
+                operation = REVOKE_OPERATION
+        except TrainingCandidateTransitionError as error:
+            code = (
+                codes.ELYRA_LEARNING_CANDIDATE_NOT_FOUND
+                if str(error) == "CANDIDATE_NOT_FOUND"
+                else codes.ELYRA_LEARNING_INTERNAL_FAILURE
+            )
+            reason = (
+                LEARNING_NOT_FOUND_REASON
+                if code == codes.ELYRA_LEARNING_CANDIDATE_NOT_FOUND
+                else LEARNING_INTERNAL_FAILURE_REASON
+            )
+            return self._elyra_contract_blocked_outcome(
+                payload=payload,
+                caller=caller,
+                error_code=code,
+                reason=reason,
+                started=started,
+            )
+
+        receipt = elyra_learning_service.receipt(
+            operation=operation,
+            correlation_id=payload.correlation_id or "",
+            candidate_id=record.candidate_id,
+            lifecycle=record.lifecycle.value,
+            duplicate=duplicate,
+        )
+
+        audit = audit_service.create(
+            origin_system=payload.origin_system,
+            task_type=strategy.task_type,
+            provider_requested="none",
+            criticality=strategy.criticality,
+            caller=caller,
+            origin_claim=origin_claim,
+            provider_selection_mode=self._selection_mode(payload.provider),
+            correlation_id=payload.correlation_id,
+            idempotency_key=payload.idempotency_key,
+        )
+        audit.fallback_used = False
+        audit.provider_used = "none"
+        audit.status = "ok"
+        audit.latency_ms = round((time.perf_counter() - started) * 1000, 2)
+        audit.can_advance = True
+        audit.authorization_result = "allowed"
+
+        return OrchestrationOutcome(
+            # O recibo nao devolve o payload submetido: so o estado governado.
+            answer=(
+                f"Candidato {record.candidate_id} registrado em "
+                f"{record.lifecycle.value}."
+            ),
+            provider_requested="none",
+            provider_used="none",
+            model="none",
+            mode=payload.mode,
+            fallback_used=False,
+            safe_mode_blocked=False,
+            error=None,
+            error_code=None,
+            task_type=strategy.task_type,
+            origin_system=payload.origin_system,
+            task_criticality=strategy.criticality,
+            requires_structured_response=strategy.requires_structured_response,
+            response_style=strategy.response_style,
+            project_id=project.project_id,
+            project_read_only=project.read_only,
+            project_can_execute_commands=project.can_execute_commands,
+            project_can_write_files=project.can_write_files,
+            task_allowed_for_project=policy.allowed,
+            artifact_count=0,
+            artifact_types=[],
+            artifact_warnings=[],
+            warning_items=[],
+            audit=audit,
+            status="ok",
+            blocked_reason=None,
+            correlation_id=payload.correlation_id,
+            idempotency_replayed=False,
+            elyra=None,
+            elyra_multimodal=None,
+            elyra_learning=receipt,
+        )
+
     def _elyra_contract_blocked_outcome(
         self,
         *,
@@ -2155,6 +2354,7 @@ class OrchestrationService:
             idempotency_replayed=False,
             elyra=None,
             elyra_multimodal=None,
+            elyra_learning=None,
         )
 
     def _identity_blocked_outcome(

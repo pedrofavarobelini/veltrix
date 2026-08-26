@@ -83,6 +83,29 @@ def _candidate_id(
     return "training-candidate-" + _hash(stable).split(":", 1)[1][:24]
 
 
+def external_candidate_id(
+    project_id: str,
+    source_type: TrainingSourceType,
+    training_purpose: TrainingPurpose,
+    fingerprint: str,
+) -> str:
+    """Id deterministico de candidato submetido por consumer externo.
+
+    Nao ha `source_id` interno para compor a chave — o consumer nao expoe um.
+    A identidade e, entao, o proprio fingerprint do payload governado: mesmo
+    conteudo consentido produz o mesmo candidato, e por isso reenviar nao cria
+    um segundo. Isso tambem permite localizar o candidato para revogar sem
+    varrer o store.
+    """
+    stable = {
+        "project_id": project_id.strip().lower(),
+        "source_type": source_type.value,
+        "training_purpose": training_purpose.value,
+        "fingerprint": fingerprint,
+    }
+    return "training-candidate-" + _hash(stable).split(":", 1)[1][:24]
+
+
 def _ratio(numerator: int, denominator: int) -> float:
     return round(numerator / denominator, 6) if denominator else 0.0
 
@@ -214,6 +237,151 @@ class TrainingCandidateAcquisitionService:
                 "Candidate Store recusou idempotência sem registro existente."
             )
         return existing, True
+
+    def submit_external(
+        self,
+        proposal: TrainingCandidateProposal,
+        *,
+        fingerprint: str,
+        training_purpose: TrainingPurpose,
+    ) -> tuple[TrainingCandidateRecord, bool]:
+        """Registra candidato submetido por consumer externo autorizado.
+
+        Espelha `select()` em tudo o que importa — pre-screen de elegibilidade,
+        scanner de privacidade, mesmo Candidate Store, mesmo lifecycle — e difere
+        apenas na origem do material: aqui a proposta chega na request, ja
+        minimizada, porque o PedroCore nao alcanca a base do consumer.
+
+        **Nao autoriza nada.** O candidato nasce `PROPOSED` e continua exigindo o
+        ato administrativo de autorizacao, exatamente como qualquer outro.
+        """
+        repository = self._required_repository()
+        project_id = proposal.project_id.strip().lower()
+
+        # Segunda barreira: mesmo com payload tipado sem campo de texto, o
+        # scanner de privacidade roda. Tipo protege contra o previsto; o
+        # scanner, contra o resto.
+        pre_screen = training_eligibility_policy.pre_screen(proposal)
+
+        if pre_screen.decision is EligibilityDecision.ELIGIBLE:
+            lifecycle = CandidateLifecycle.PROPOSED
+            eligibility = EligibilityDecision.NOT_ELIGIBLE
+            reason_codes = ["TRAINING_AUTHORIZATION_REQUIRED"]
+        elif pre_screen.decision is EligibilityDecision.REQUIRES_REVIEW:
+            lifecycle = CandidateLifecycle.REVIEW_REQUIRED
+            eligibility = EligibilityDecision.REQUIRES_REVIEW
+            reason_codes = pre_screen.reason_codes
+        else:
+            lifecycle = CandidateLifecycle.EXCLUDED
+            eligibility = EligibilityDecision.NOT_ELIGIBLE
+            reason_codes = pre_screen.reason_codes
+
+        privacy_rejected = (
+            pre_screen.privacy_classification is PrivacyClassification.REJECTED_SENSITIVE
+        )
+        candidate_id = external_candidate_id(
+            project_id, proposal.source_type, training_purpose, fingerprint
+        )
+        now = datetime.now(timezone.utc)
+        record = TrainingCandidateRecord(
+            candidate_id=candidate_id,
+            project_id=project_id,
+            source_type=proposal.source_type,
+            # Consumer externo nao expoe id interno; o fingerprint e a referencia.
+            source_id=None,
+            source_reference_hash=_hash(
+                {
+                    "project_id": project_id,
+                    "source_type": proposal.source_type.value,
+                    "fingerprint": fingerprint,
+                }
+            ),
+            fingerprint="sha256:" + fingerprint,
+            task_type="privacy-rejected" if privacy_rejected else proposal.task_type,
+            training_purpose=training_purpose,
+            lifecycle=lifecycle,
+            eligibility=eligibility,
+            privacy_classification=pre_screen.privacy_classification,
+            reason_codes=reason_codes,
+            privacy_findings=pre_screen.privacy_findings,
+            proposal=None if privacy_rejected else proposal,
+            created_at=now,
+            updated_at=now,
+        )
+        if repository.add(record):
+            return record, False
+
+        existing = repository.get(project_id, candidate_id)
+        if existing is None:
+            raise ReportMemoryRepositoryConfigurationError(
+                "Candidate Store recusou idempotência sem registro existente."
+            )
+        return existing, True
+
+    def revoke_external(
+        self,
+        *,
+        project_id: str,
+        source_type: TrainingSourceType,
+        training_purpose: TrainingPurpose,
+        fingerprint: str,
+        reason_code: str,
+        revoked_by: str,
+    ) -> tuple[TrainingCandidateRecord, bool]:
+        """Revoga candidato de consumer externo pelo fingerprint governado.
+
+        Usa somente lifecycle que ja existe no Dataset Foundation:
+
+          - `PROPOSED` / `REVIEW_REQUIRED` nunca foram autorizados, entao o
+            estado terminal correto e `EXCLUDED`;
+          - `AUTHORIZED` / `CONSUMED` viram `REVOKED`.
+
+        Idempotente: revogar de novo devolve o registro terminal sem erro, com
+        `changed=False`. Retry de rede nao pode virar falha de governanca.
+        """
+        repository = self._required_repository()
+        normalized = project_id.strip().lower()
+        candidate_id = external_candidate_id(
+            normalized, source_type, training_purpose, fingerprint
+        )
+        record = repository.get(normalized, candidate_id)
+        if record is None:
+            raise TrainingCandidateTransitionError("CANDIDATE_NOT_FOUND")
+
+        terminal = {CandidateLifecycle.EXCLUDED, CandidateLifecycle.REVOKED}
+        if record.lifecycle in terminal:
+            return record, False
+
+        revocable = {CandidateLifecycle.PROPOSED, CandidateLifecycle.REVIEW_REQUIRED}
+        now = datetime.now(timezone.utc)
+        if record.lifecycle in revocable:
+            update = {
+                "lifecycle": CandidateLifecycle.EXCLUDED,
+                "eligibility": EligibilityDecision.NOT_ELIGIBLE,
+                "excluded_reason": reason_code,
+                "reason_codes": [reason_code],
+                # Proposta descartada: o material deixa de existir no store.
+                "proposal": None,
+                "updated_at": now,
+            }
+            expected = revocable
+        else:
+            update = {
+                "lifecycle": CandidateLifecycle.REVOKED,
+                "eligibility": EligibilityDecision.NOT_ELIGIBLE,
+                "revoked_reason": reason_code,
+                "revoked_by": revoked_by,
+                "revoked_at": now,
+                "reason_codes": [reason_code],
+                "proposal": None,
+                "candidate": None,
+                "updated_at": now,
+            }
+            expected = {CandidateLifecycle.AUTHORIZED, CandidateLifecycle.CONSUMED}
+
+        updated = record.model_copy(update=update)
+        self._replace(repository, updated, expected)
+        return updated, True
 
     def authorize(
         self,

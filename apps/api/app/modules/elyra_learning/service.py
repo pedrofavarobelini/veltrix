@@ -76,6 +76,14 @@ FINGERPRINT_MISMATCH_REASON = (
 NOT_FOUND_REASON = (
     "Nenhum candidato Elyra corresponde ao fingerprint informado."
 )
+IDEMPOTENCY_CONFLICT_REASON = (
+    "Idempotency key de learning já usada com payload diferente; requisição "
+    "negada sem criar, autorizar ou revogar candidato."
+)
+INTERNAL_FAILURE_REASON = (
+    "Falha interna controlada no contrato de learning Elyra; nenhum candidato "
+    "foi criado, autorizado ou revogado."
+)
 TRAINING_NOT_SUPPORTED_REASON = (
     "Esta capability submete e revoga candidatos. Treino, fine-tuning e escrita "
     "em dataset genérico não existem neste contrato."

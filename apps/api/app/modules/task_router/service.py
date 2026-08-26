@@ -170,6 +170,16 @@ _STRATEGIES: dict[str, dict[str, object]] = {
         "criticality": "high",
         "allow_mock": True,
     },
+    # ELYRA LEARNING GOVERNADO V1 (Stage 13): operacao de governanca, nao de
+    # geracao. `allow_mock=False` porque nenhum provider participa — nem real,
+    # nem mock: um mock aqui simularia uma decisao de governanca que precisa ser
+    # deterministica.
+    "governed_learning_candidate_submission": {
+        "response_style": "elyra_learning_v1",
+        "requires_structured_response": True,
+        "criticality": "high",
+        "allow_mock": False,
+    },
     UNKNOWN_TASK_TYPE: {
         "response_style": "free_text",
         "requires_structured_response": False,

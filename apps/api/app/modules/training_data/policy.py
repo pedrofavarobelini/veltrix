@@ -37,6 +37,15 @@ _PURPOSES_BY_SOURCE: dict[TrainingSourceType, frozenset[TrainingPurpose]] = {
     TrainingSourceType.RISK_ANALYSIS: frozenset(
         {TrainingPurpose.RISK, TrainingPurpose.EVALUATION_ONLY}
     ),
+    # Stage 13 da Elyra: agregado numerico sanitizado de bem-estar.
+    #
+    # **Somente `EVALUATION_ONLY`.** A V1 nao treina pesos, e o proposito e o
+    # lugar onde essa decisao vira mecanismo: pedir `GENERATIVE_SFT` a partir
+    # desta origem produz `SOURCE_PURPOSE_MISMATCH` e o candidato e recusado.
+    # Ampliar isto exige mudar a policy, com ADR — nao basta mudar a request.
+    TrainingSourceType.ELYRA_REPORT_SNAPSHOT: frozenset(
+        {TrainingPurpose.EVALUATION_ONLY}
+    ),
     TrainingSourceType.EXECUTION_OUTCOME: frozenset(
         {TrainingPurpose.RISK, TrainingPurpose.EVALUATION_ONLY}
     ),
@@ -99,7 +108,10 @@ class TrainingEligibilityPolicy:
         if privacy_findings:
             hard_codes.add("PRIVACY_GATE_REJECTED")
 
-        allowed_purposes = _PURPOSES_BY_SOURCE[proposal.source_type]
+        # Origem sem propositos declarados nao e ambiguidade a favor: e recusa.
+        allowed_purposes = _PURPOSES_BY_SOURCE.get(
+            proposal.source_type, frozenset()
+        )
         if proposal.training_purpose not in allowed_purposes:
             hard_codes.add("SOURCE_PURPOSE_MISMATCH")
         if not proposal.derived_content_only:
