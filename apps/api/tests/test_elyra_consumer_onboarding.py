@@ -28,6 +28,7 @@ from app.modules.caller_identity.service import (
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.elyra_textual.idempotency import elyra_idempotency_service
+from app.modules.elyra_multimodal.schemas import ELYRA_MULTIMODAL_TASK_TYPE
 from app.modules.elyra_textual.schemas import (
     ELYRA_CANONICAL_MESSAGE,
     ELYRA_CONTRACT_VERSION,
@@ -215,20 +216,41 @@ def _valid_output(correlation_id: str) -> str:
     return elyra_textual_service.serialize_output(output)
 
 
-def test_project_context_and_task_registry_expose_only_textual_v1():
+def test_project_context_and_task_registry_expose_only_narrow_elyra_capabilities():
+    """A allowlist Elyra continua estreita e explicita.
+
+    A Stage 12 acrescentou UMA capability multimodal propria. O teste protege o
+    que importa: a lista e fechada, nominal e nao concede escrita, execucao,
+    leitura de repositorio nem qualquer task generica.
+    """
     project = project_context_resolver.resolve("Elyra")
     strategy = task_router.resolve(ELYRA_TASK_TYPE)
 
     assert project.project_id == "elyra"
-    assert project.allowed_tasks == [ELYRA_TASK_TYPE]
+    assert project.allowed_tasks == [
+        ELYRA_TASK_TYPE,
+        ELYRA_MULTIMODAL_TASK_TYPE,
+    ]
     assert project.read_only is True
     assert project.can_execute_commands is False
     assert project.can_write_files is False
     assert "diagnostica" in (project.notes or "")
-    assert "Multimodal e learning permanecem desabilitados" in (project.notes or "")
+    assert "Learning " in (project.notes or "")
+    assert "permanece desabilitado" in (project.notes or "")
     assert strategy.response_style == "elyra_textual_v1"
     assert strategy.requires_structured_response is True
     assert strategy.criticality == "high"
+
+
+def test_elyra_multimodal_task_is_registered_with_its_own_strategy():
+    """A capability multimodal nao reaproveita o response_style textual."""
+    strategy = task_router.resolve(ELYRA_MULTIMODAL_TASK_TYPE)
+
+    assert strategy.task_type == ELYRA_MULTIMODAL_TASK_TYPE
+    assert strategy.response_style == "elyra_multimodal_v1"
+    assert strategy.requires_structured_response is True
+    assert strategy.criticality == "high"
+    assert strategy.warnings == []
 
 
 def test_registered_elyra_common_consumer_and_provider_matrix(elyra_registry):

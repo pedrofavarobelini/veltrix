@@ -26,6 +26,20 @@ from app.modules.elyra_textual.service import (
     PROVIDER_MISMATCH_REASON,
     elyra_textual_service,
 )
+from app.modules.elyra_multimodal.schemas import (
+    ELYRA_MULTIMODAL_TASK_TYPE,
+    ElyraMultimodalInputV1,
+)
+from app.modules.elyra_multimodal.service import (
+    IDEMPOTENCY_CONFLICT_REASON as MULTIMODAL_IDEMPOTENCY_CONFLICT_REASON,
+)
+from app.modules.elyra_multimodal.service import (
+    INTERNAL_FAILURE_REASON as MULTIMODAL_INTERNAL_FAILURE_REASON,
+)
+from app.modules.elyra_multimodal.service import (
+    PROVIDER_MISMATCH_REASON as MULTIMODAL_PROVIDER_MISMATCH_REASON,
+)
+from app.modules.elyra_multimodal.service import elyra_multimodal_service
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
 from app.modules.observability.service import observability_service
@@ -274,7 +288,8 @@ class OrchestrationService:
                 observability_service.record_exception(
                     payload, exc, (time.perf_counter() - started) * 1_000
                 )
-                if (payload.task_type or "").strip().lower() == ELYRA_TASK_TYPE:
+                normalized_task = (payload.task_type or "").strip().lower()
+                if normalized_task == ELYRA_TASK_TYPE:
                     return self._elyra_contract_blocked_outcome(
                         payload=payload,
                         caller=caller,
@@ -283,9 +298,20 @@ class OrchestrationService:
                         started=started,
                         provider_used="unknown",
                     )
+                if normalized_task == ELYRA_MULTIMODAL_TASK_TYPE:
+                    return self._elyra_contract_blocked_outcome(
+                        payload=payload,
+                        caller=caller,
+                        error_code=codes.ELYRA_MULTIMODAL_INTERNAL_FAILURE,
+                        reason=MULTIMODAL_INTERNAL_FAILURE_REASON,
+                        started=started,
+                        provider_used="unknown",
+                    )
                 raise
 
-        is_elyra = (payload.task_type or "").strip().lower() == ELYRA_TASK_TYPE
+        normalized_task = (payload.task_type or "").strip().lower()
+        is_elyra = normalized_task in {ELYRA_TASK_TYPE, ELYRA_MULTIMODAL_TASK_TYPE}
+        is_elyra_multimodal = normalized_task == ELYRA_MULTIMODAL_TASK_TYPE
         can_deduplicate = bool(
             is_elyra
             and payload.idempotency_key
@@ -294,7 +320,7 @@ class OrchestrationService:
         )
         if can_deduplicate:
             execution = await elyra_idempotency_service.execute(
-                scope=f"elyra:{caller.project_id}:{ELYRA_TASK_TYPE}",
+                scope=f"elyra:{caller.project_id}:{normalized_task}",
                 idempotency_key=payload.idempotency_key or "",
                 fingerprint=elyra_idempotency_service.request_fingerprint(payload),
                 operation=execute_once,
@@ -303,8 +329,16 @@ class OrchestrationService:
                 outcome = self._elyra_contract_blocked_outcome(
                     payload=payload,
                     caller=caller,
-                    error_code=codes.ELYRA_IDEMPOTENCY_CONFLICT,
-                    reason=IDEMPOTENCY_CONFLICT_REASON,
+                    error_code=(
+                        codes.ELYRA_MULTIMODAL_IDEMPOTENCY_CONFLICT
+                        if is_elyra_multimodal
+                        else codes.ELYRA_IDEMPOTENCY_CONFLICT
+                    ),
+                    reason=(
+                        MULTIMODAL_IDEMPOTENCY_CONFLICT_REASON
+                        if is_elyra_multimodal
+                        else IDEMPOTENCY_CONFLICT_REASON
+                    ),
                     started=started,
                 )
             else:
@@ -312,8 +346,16 @@ class OrchestrationService:
                     outcome = self._elyra_contract_blocked_outcome(
                         payload=payload,
                         caller=caller,
-                        error_code=codes.ELYRA_INTERNAL_FAILURE,
-                        reason=INTERNAL_FAILURE_REASON,
+                        error_code=(
+                            codes.ELYRA_MULTIMODAL_INTERNAL_FAILURE
+                            if is_elyra_multimodal
+                            else codes.ELYRA_INTERNAL_FAILURE
+                        ),
+                        reason=(
+                            MULTIMODAL_INTERNAL_FAILURE_REASON
+                            if is_elyra_multimodal
+                            else INTERNAL_FAILURE_REASON
+                        ),
                         started=started,
                         provider_used="unknown",
                     )
@@ -419,6 +461,29 @@ class OrchestrationService:
                     started=started,
                 )
             elyra_request = elyra_validation.value
+
+        # Stage 12: capability multimodal propria. Um payload textual jamais
+        # satisfaz este contrato e vice-versa; as duas validacoes sao exclusivas.
+        multimodal_request: ElyraMultimodalInputV1 | None = None
+        if strategy.task_type == ELYRA_MULTIMODAL_TASK_TYPE:
+            multimodal_validation = elyra_multimodal_service.validate_input(
+                payload, caller
+            )
+            if not multimodal_validation.valid:
+                return self._elyra_contract_blocked_outcome(
+                    payload=payload,
+                    caller=caller,
+                    error_code=(
+                        multimodal_validation.error_code
+                        or codes.ELYRA_MULTIMODAL_INPUT_SCHEMA_INVALID
+                    ),
+                    reason=(
+                        multimodal_validation.reason
+                        or "Contrato multimodal Elyra inválido."
+                    ),
+                    started=started,
+                )
+            multimodal_request = multimodal_validation.value
 
         # PEDROCORE-MODEL-FOUNDATION-01: plano determinístico da Intelligence
         # Layer, calculado após policy e antes do Prompt Builder. Nesta frente
@@ -531,6 +596,8 @@ class OrchestrationService:
                 system_prompt=(
                     elyra_textual_service.system_prompt()
                     if elyra_request is not None
+                    else elyra_multimodal_service.system_prompt()
+                    if multimodal_request is not None
                     else payload.system_prompt
                 ),
                 strategy=strategy,
@@ -568,6 +635,15 @@ class OrchestrationService:
                 payload.correlation_id or "",
             )
             answer = elyra_textual_service.serialize_output(mock_output)
+            provider_used = "mock"
+            model_used = "mock-v1"
+            analysis = None
+        elif multimodal_request is not None and requested_provider == "mock":
+            multimodal_mock = elyra_multimodal_service.deterministic_mock(
+                multimodal_request,
+                payload.correlation_id or "",
+            )
+            answer = elyra_multimodal_service.serialize_output(multimodal_mock)
             provider_used = "mock"
             model_used = "mock-v1"
             analysis = None
@@ -885,6 +961,55 @@ class OrchestrationService:
                     "Fallback não é resultado válido para o contrato textual Elyra."
                 )
 
+        multimodal_output = None
+        if multimodal_request is not None:
+            expected_provider = binding.provider_id or requested_provider
+            expected_model = binding.model_id
+            provider_mismatch = bool(
+                error is None
+                and (
+                    provider_used != expected_provider
+                    or (expected_model is not None and model_used != expected_model)
+                )
+            )
+            if provider_mismatch:
+                error_code = codes.ELYRA_MULTIMODAL_PROVIDER_MISMATCH
+                error = MULTIMODAL_PROVIDER_MISMATCH_REASON
+                elyra_blocked_reason = error
+                provider_items.append(make_warning(error_code, error))
+                answer = (
+                    "Resposta multimodal Elyra recusada por divergência de "
+                    "provider/modelo."
+                )
+            elif error is None and provider_used != "none" and not fallback_used:
+                multimodal_validation = elyra_multimodal_service.validate_output(
+                    answer,
+                    multimodal_request,
+                    payload.correlation_id or "",
+                )
+                if multimodal_validation.valid:
+                    multimodal_output = multimodal_validation.value
+                    answer = multimodal_output.summary
+                else:
+                    error_code = (
+                        multimodal_validation.error_code
+                        or codes.ELYRA_MULTIMODAL_OUTPUT_INVALID
+                    )
+                    error = (
+                        multimodal_validation.reason
+                        or "Output multimodal Elyra inválido."
+                    )
+                    elyra_blocked_reason = error
+                    provider_items.append(make_warning(error_code, error))
+                    answer = (
+                        "Resposta multimodal Elyra recusada por incompatibilidade "
+                        "de schema."
+                    )
+            else:
+                elyra_blocked_reason = error or (
+                    "Fallback não é resultado válido para o contrato multimodal Elyra."
+                )
+
         # finance_advice é conservador: disclaimer obrigatório na resposta.
         if strategy.task_type == FINANCE_ADVICE_TASK_TYPE:
             answer = f"{answer}\n\n{FINANCIAL_DISCLAIMER_TEXT}"
@@ -1028,6 +1153,7 @@ class OrchestrationService:
             correlation_id=payload.correlation_id,
             idempotency_replayed=False,
             elyra=elyra_output,
+            elyra_multimodal=multimodal_output,
             task_type=strategy.task_type,
             origin_system=payload.origin_system,
             task_criticality=strategy.criticality,
@@ -1999,7 +2125,7 @@ class OrchestrationService:
         audit.authorization_reason_code = error_code
 
         return OrchestrationOutcome(
-            answer="Solicitação Elyra bloqueada pelo contrato textual V1.",
+            answer="Solicitação Elyra bloqueada pelo contrato V1 da capability.",
             provider_requested=(payload.provider or settings.default_provider).lower(),
             provider_used=provider_used,
             model="none",
@@ -2028,6 +2154,7 @@ class OrchestrationService:
             correlation_id=payload.correlation_id,
             idempotency_replayed=False,
             elyra=None,
+            elyra_multimodal=None,
         )
 
     def _identity_blocked_outcome(

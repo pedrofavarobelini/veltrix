@@ -47,7 +47,12 @@ _FINGUARD_NOTES = (
 
 _STRUCTA_ALLOWED_TASKS = ["qa_report_analysis"]
 
-_ELYRA_ALLOWED_TASKS = ["wellbeing_report_interpretation"]
+_ELYRA_ALLOWED_TASKS = [
+    "wellbeing_report_interpretation",
+    # Stage 12: capability multimodal PROPRIA. Nao amplia a task textual e nao
+    # concede acesso a midia bruta, Storage ou banco da Elyra.
+    "multimodal_session_signal_interpretation",
+]
 
 _STRUCTA_NOTES = (
     "Consumer externo read-only; recebe somente contratos sinteticos e "
@@ -62,7 +67,9 @@ _ELYRA_NOTES = (
     "recebe somente snapshot determinístico explicitamente preparado; não acessa "
     "banco/Storage Elyra, não diagnostica, não prescreve, não afirma condição "
     "clínica, não trata emoção facial como fato e não converte associação em causa. "
-    "Multimodal e learning permanecem desabilitados nesta capability textual V1."
+    "A capability multimodal V1 recebe somente transcricao consentida e sinais "
+    "observaveis ja calculados: nunca audio, video, tela ou imagem. Learning "
+    "permanece desabilitado nestas capabilities."
 )
 
 _PROJECTS: dict[str, dict[str, object]] = {

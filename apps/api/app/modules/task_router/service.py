@@ -161,6 +161,15 @@ _STRATEGIES: dict[str, dict[str, object]] = {
         "criticality": "high",
         "allow_mock": True,
     },
+    # ELYRA MULTIMODAL V1 (Stage 12): capability estruturada e sensivel, com
+    # contrato proprio. Mesma disciplina da textual: criticality=high para
+    # forcar enforcement da allowlist, fora de CRITICAL_TASK_TYPES.
+    "multimodal_session_signal_interpretation": {
+        "response_style": "elyra_multimodal_v1",
+        "requires_structured_response": True,
+        "criticality": "high",
+        "allow_mock": True,
+    },
     UNKNOWN_TASK_TYPE: {
         "response_style": "free_text",
         "requires_structured_response": False,
