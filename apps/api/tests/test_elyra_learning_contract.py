@@ -845,3 +845,48 @@ def test_submission_does_not_authorize_any_candidate(elyra_registry):
 
     assert repository.count("elyra", lifecycle=CandidateLifecycle.AUTHORIZED) == 0
     assert repository.count("elyra", lifecycle=CandidateLifecycle.CONSUMED) == 0
+
+
+# --------------------------------------------------------------------------
+# Contrato de fingerprint entre linguagens
+# --------------------------------------------------------------------------
+
+
+def test_fingerprint_accepts_the_shape_javascript_actually_sends(elyra_registry):
+    """`JSON.stringify(7)` produz `7`, nao `7.0`.
+
+    O Pydantic coage `mean: float`, entao calcular o digest sobre o modelo
+    validado escreveria `7.0` onde o cliente escreveu `7`. Este teste envia
+    medias com valor inteiro — a forma que o JavaScript realmente produz — e
+    exige que a submissao seja aceita.
+    """
+    payload = _payload(
+        mood=_aggregate(7, 1, "up", 28),
+        anxiety=_aggregate(3, -1, "down", 28),
+        energy=_aggregate(6, 0, "stable", 28),
+        sleepDurationMinutes=_aggregate(450, 20, "up", 27),
+    )
+    # Digest calculado exatamente sobre o JSON que atravessa o fio.
+    wire = json.loads(json.dumps(payload))
+    context = _submission(payload=payload)
+    context["fingerprint"] = canonical_fingerprint(wire)
+
+    body = _post(context=context).json()
+
+    assert body["status"] == "ok", body.get("error_code")
+    assert body["elyra_learning"]["duplicate"] is False
+
+
+def test_integer_and_float_means_are_different_governed_contents():
+    """`7` e `7.0` chegam distintos do fio e nao devem colidir por acidente."""
+    integral = canonical_fingerprint({"mean": 7})
+    fractional = canonical_fingerprint({"mean": 7.0})
+
+    assert integral != fractional
+
+
+def test_key_order_never_changes_the_fingerprint():
+    payload = _payload()
+    shuffled = dict(sorted(payload.items(), reverse=True))
+
+    assert canonical_fingerprint(shuffled) == canonical_fingerprint(payload)

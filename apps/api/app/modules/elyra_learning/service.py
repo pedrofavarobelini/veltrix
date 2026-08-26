@@ -103,11 +103,19 @@ class ElyraLearningValidation:
 
 
 def canonical_fingerprint(payload: dict) -> str:
-    """SHA-256 do payload canonico.
+    """SHA-256 do payload canonico sanitizado.
 
     Chaves ordenadas e separadores fixos para que Elyra e PedroCore cheguem ao
     mesmo digest a partir do mesmo conteudo — sem isso a idempotencia seria
     sensivel a ordem de serializacao.
+
+    **Recebe o dicionario COMO CHEGOU DO FIO, nao o modelo validado.** O Pydantic
+    coage `mean: float`, entao um `7` enviado pelo JavaScript viraria `7.0` e
+    `json.dumps` escreveria `7.0` onde o `JSON.stringify` escreveu `7`: digests
+    diferentes para conteudo identico, e toda submissao com media inteira seria
+    recusada por `FINGERPRINT_MISMATCH`. O round-trip JSON do Python preserva a
+    distincao int/float que veio do fio, e e por isso que o hash e calculado
+    antes da validacao.
     """
     encoded = json.dumps(
         payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
@@ -225,9 +233,13 @@ class ElyraLearningService:
             )
 
         declared = submission.fingerprint
-        recomputed = canonical_fingerprint(
-            submission.payload.model_dump(mode="json", by_alias=True)
-        )
+        raw_payload = context.get("payload")
+        if not isinstance(raw_payload, dict):
+            return ElyraLearningValidation(
+                error_code=codes.ELYRA_LEARNING_INPUT_SCHEMA_INVALID,
+                reason=INVALID_INPUT_REASON,
+            )
+        recomputed = canonical_fingerprint(raw_payload)
         if declared != recomputed:
             return ElyraLearningValidation(
                 error_code=codes.ELYRA_LEARNING_FINGERPRINT_MISMATCH,
