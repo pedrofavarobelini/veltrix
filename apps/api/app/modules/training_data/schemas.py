@@ -22,6 +22,8 @@ class TrainingSourceType(str, Enum):
     RISK_ANALYSIS = "risk_analysis"
     EXECUTION_OUTCOME = "execution_outcome"
     HUMAN_FEEDBACK = "human_feedback"
+    # Stage 13 da Elyra: agregado numerico sanitizado de report_snapshot.
+    ELYRA_REPORT_SNAPSHOT = "elyra_report_snapshot"
 
 
 class SourceOutcome(str, Enum):

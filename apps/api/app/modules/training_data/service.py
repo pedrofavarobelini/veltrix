@@ -69,6 +69,38 @@ _SOURCE_DEFINITIONS = (
         required_provenance=["feedback_id", "explicitly_provided", "policy_version", "outcome"],
         target_basis="explicit human preference or acceptance decision",
     ),
+    # Stage 13 da Elyra: submetida DE FORA. O PedroCore nao acessa o banco nem o
+    # Storage da Elyra, entao nao existe — e nao deve existir — adapter interno
+    # capaz de coletar esta origem sozinho. O conteudo chega ja minimizado,
+    # sanitizado, com proveniencia e fingerprint, pela capability
+    # `governed_learning_candidate_submission`.
+    TrainingSourceDefinition(
+        source_type=TrainingSourceType.ELYRA_REPORT_SNAPSHOT,
+        entity="ElyraLearningExport",
+        module="elyra_learning",
+        required_provenance=[
+            "export_schema_version",
+            "analytics_version",
+            "policy_version",
+            "fingerprint",
+        ],
+        target_basis=(
+            "sanitized numeric wellbeing aggregate submitted under explicit "
+            "training consent; never raw journal, transcript or media"
+        ),
+    ),
+)
+
+# Origens que NUNCA sao coletadas por adapter interno: elas so existem quando um
+# consumer externo autorizado as submete explicitamente. A distincao e de
+# seguranca — um adapter interno para estas origens exigiria que o PedroCore
+# alcancasse a base do consumer, que e exatamente o que a fronteira proibe.
+EXTERNALLY_SUBMITTED_SOURCE_TYPES = frozenset(
+    {TrainingSourceType.ELYRA_REPORT_SNAPSHOT}
+)
+
+INTERNAL_ADAPTER_SOURCE_TYPES = frozenset(
+    set(TrainingSourceType) - EXTERNALLY_SUBMITTED_SOURCE_TYPES
 )
 
 

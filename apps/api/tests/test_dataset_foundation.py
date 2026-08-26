@@ -5,12 +5,22 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
+from app.modules.training_data.adapters import (
+    TrainingSourceSelectionError,
+    training_source_adapters,
+)
 from app.modules.training_data.schemas import (
     ContentClassification,
     TrainingExampleCandidateDraft,
+    TrainingPurpose,
+    TrainingSourceSelection,
     TrainingSourceType,
 )
-from app.modules.training_data.service import dataset_foundation_service
+from app.modules.training_data.service import (
+    EXTERNALLY_SUBMITTED_SOURCE_TYPES,
+    INTERNAL_ADAPTER_SOURCE_TYPES,
+    dataset_foundation_service,
+)
 
 
 def _signature(character: str = "a") -> str:
@@ -72,9 +82,35 @@ def _draft(**overrides) -> TrainingExampleCandidateDraft:
 def test_all_real_sources_are_mapped_without_automatic_collection():
     definitions = dataset_foundation_service.source_map()
     assert {item.source_type for item in definitions} == set(TrainingSourceType)
-    assert len(definitions) == 7
+    assert len(definitions) == len(TrainingSourceType)
     assert all(item.automatic_collection is False for item in definitions)
     assert all(item.required_provenance for item in definitions)
+
+
+def test_externally_submitted_sources_have_no_internal_adapter():
+    """Origem de consumer externo nao pode ser coletada pelo proprio PedroCore.
+
+    Um adapter interno para essas origens exigiria alcancar a base do consumer,
+    que e exatamente o que a fronteira proibe. Elas so existem por submissao
+    explicita e autorizada.
+    """
+    assert EXTERNALLY_SUBMITTED_SOURCE_TYPES
+    assert EXTERNALLY_SUBMITTED_SOURCE_TYPES.isdisjoint(INTERNAL_ADAPTER_SOURCE_TYPES)
+    assert (
+        EXTERNALLY_SUBMITTED_SOURCE_TYPES | INTERNAL_ADAPTER_SOURCE_TYPES
+        == set(TrainingSourceType)
+    )
+    for source_type in EXTERNALLY_SUBMITTED_SOURCE_TYPES:
+        with pytest.raises(TrainingSourceSelectionError):
+            training_source_adapters.select(
+                TrainingSourceSelection(
+                    producer="elyra-learning-v1",
+                    project_id="elyra",
+                    source_type=source_type,
+                    source_id="qualquer-id-interno",
+                    training_purpose=TrainingPurpose.EVALUATION_ONLY,
+                )
+            )
 
 
 def test_eligible_candidate_is_deterministic_and_does_not_persist_or_train():

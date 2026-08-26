@@ -49,6 +49,7 @@ from app.modules.training_data.policy import training_eligibility_policy
 from app.modules.training_data.repository import (
     PostgreSQLTrainingCandidateRepository,
 )
+from app.modules.training_data.service import INTERNAL_ADAPTER_SOURCE_TYPES
 from app.modules.training_data.schemas import (
     CandidateLifecycle,
     ContentClassification,
@@ -315,7 +316,12 @@ def _report(report_id: str, report_type: str) -> ReportMemoryEntry:
     )
 
 
-def test_all_seven_source_adapters_use_existing_domain_records(monkeypatch):
+def test_internal_source_adapters_use_existing_domain_records(monkeypatch):
+    """Cobre todas as origens com adapter interno.
+
+    Origens submetidas por consumer externo (Stage 13 da Elyra) ficam fora por
+    construcao: o PedroCore nao alcanca a base delas.
+    """
     outcome = _stored_outcome()
     memory = _operational_memory()
     reports = {
@@ -354,7 +360,7 @@ def test_all_seven_source_adapters_use_existing_domain_records(monkeypatch):
         for source_type, source_id, purpose in selections
     ]
 
-    assert {item.source_type for item in proposals} == set(TrainingSourceType)
+    assert {item.source_type for item in proposals} == INTERNAL_ADAPTER_SOURCE_TYPES
     assert all(all(ref.verified for ref in item.evidence_refs) for item in proposals)
     assert all(not hasattr(item, "data_use") for item in proposals)
     assert training_source_adapters.automatic_collection is False
