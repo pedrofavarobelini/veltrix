@@ -154,6 +154,14 @@ _SHARED_KERNEL_MODULES = frozenset(
         "project_context",
         "real_features",
         "docs_graph",
+        # Universal Contracts V1 (ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01).
+        #
+        # Kernel por construcao, e nao por conveniencia: o modulo e formado por
+        # schemas Pydantic puros e NAO importa nenhum plano. E essa ausencia de
+        # dependencia que permite ao Runtime Plane e ao Learning Plane falarem a
+        # mesma lingua sem que um precise conhecer o outro. Traduzir um contrato
+        # para objeto de dominio e responsabilidade do plano que o consome.
+        "universal_contracts",
     }
 )
 
