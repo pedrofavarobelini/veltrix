@@ -4,6 +4,7 @@ from pathlib import Path
 
 from app.modules.artifact_reader.schemas import ArtifactReadResult
 from app.modules.contracts import codes
+from app.modules.project_context.manifests import protected_resource_markers
 
 # Artifact Reader real controlado por allowlist (Bloco 9).
 #
@@ -13,7 +14,7 @@ from app.modules.contracts import codes
 #   - caminho resolvido dentro de PEDROCORE_ARTIFACT_ALLOWED_DIRS;
 #   - extensão em PEDROCORE_ARTIFACT_ALLOWED_EXTENSIONS;
 #   - sem path traversal, sem .env, sem binário, sem segredo identificável;
-#   - nunca para caminhos do FinGuard (bloqueio explícito nesta frente).
+#   - nunca para caminhos marcados como recurso protegido de consumidor.
 # O reader nunca escreve, nunca deleta e nunca executa nada.
 
 ENV_ENABLED = "PEDROCORE_ARTIFACT_READER_ENABLED"
@@ -36,8 +37,11 @@ READER_USED_WARNING = (
 READER_PATH_NOT_ALLOWED_WARNING = (
     "Caminho fora da allowlist do Artifact Reader; leitura bloqueada."
 )
-READER_FINGUARD_BLOCKED_WARNING = (
-    "Leitura de caminhos do FinGuard não é permitida nesta frente; leitura bloqueada."
+# Nome de projeto sai tambem da MENSAGEM: um aviso que nomeia um consumidor
+# especifico revela a terceiros quais sistemas o PedroCore conhece.
+READER_PROTECTED_BLOCKED_WARNING = (
+    "Leitura de caminhos de recurso protegido de consumidor não é permitida; "
+    "leitura bloqueada."
 )
 READER_TRAVERSAL_WARNING = (
     "Path traversal detectado; leitura bloqueada."
@@ -134,9 +138,14 @@ class ArtifactReaderService:
                 codes.ARTIFACT_READER_PATH_NOT_ALLOWED, READER_PATH_NOT_ALLOWED_WARNING
             )
 
-        if "finguard" in str(resolved).lower():
+        # ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01: o bloqueio deixou de ser por
+        # nome de projeto e passou a consultar os marcadores de recurso
+        # protegido declarados nos Capability Manifests. Adicionar um consumidor
+        # com recurso proprio nao exige mais editar este leitor.
+        lowered_path = str(resolved).lower()
+        if any(marker in lowered_path for marker in protected_resource_markers()):
             return _blocked(
-                codes.ARTIFACT_READER_PATH_NOT_ALLOWED, READER_FINGUARD_BLOCKED_WARNING
+                codes.ARTIFACT_READER_PATH_NOT_ALLOWED, READER_PROTECTED_BLOCKED_WARNING
             )
 
         if resolved.name.lower().startswith(".env") or resolved.name.lower() == ".env":

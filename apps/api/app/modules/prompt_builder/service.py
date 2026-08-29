@@ -1,13 +1,19 @@
 import json
 
+from app.modules.project_context.manifests import has_trait
 from app.modules.prompt_builder.schemas import PromptBuildInput, PromptBuildResult
+from app.modules.universal_contracts.capability_manifest import ProducerTrait
 
 DEFAULT_SYSTEM_PROMPT = (
     "Você é o PedroCore IA, um assistente pessoal técnico, claro, direto e útil."
 )
 
-FINGUARD_SECURITY_RULE = (
-    "O FinGuard é um projeto externo e somente leitura; não altere nada nele."
+# ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01: a regra e derivada do trait
+# `EXTERNALLY_OWNED` do Capability Manifest, e nao do nome do projeto. O texto e
+# gerado a partir de `display_name`, entao o FinGuard continua recebendo a frase
+# identica a anterior — o mecanismo mudou, a instrucao entregue ao modelo nao.
+EXTERNALLY_OWNED_SECURITY_RULE_TEMPLATE = (
+    "O {display_name} é um projeto externo e somente leitura; não altere nada nele."
 )
 
 BASE_SECURITY_RULES = [
@@ -22,8 +28,12 @@ class PromptBuilder:
         base_prompt = data.system_prompt or DEFAULT_SYSTEM_PROMPT
 
         security_rules = list(BASE_SECURITY_RULES)
-        if data.project.project_id == "finguard":
-            security_rules.append(FINGUARD_SECURITY_RULE)
+        if has_trait(data.project.project_id, ProducerTrait.EXTERNALLY_OWNED):
+            security_rules.append(
+                EXTERNALLY_OWNED_SECURITY_RULE_TEMPLATE.format(
+                    display_name=data.project.display_name
+                )
+            )
 
         context_text = (
             json.dumps(data.context, ensure_ascii=False)
