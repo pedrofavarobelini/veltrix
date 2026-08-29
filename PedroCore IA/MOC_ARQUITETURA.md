@@ -13,6 +13,14 @@ cobrada por `tests/test_control_plane_boundaries.py`:
 - [[PEDROCORE_CURRENT_ARCHITECTURE_BASELINE]] - fotografia factual anterior a reorganizacao, com os 37 endpoints reais.
 - [[PEDROCORE_CONTROL_PLANE_MIGRATION_MAP]] - classificacao dos 40 modulos e registro do que mudou.
 
+### Universal Contracts V1 (Era 3)
+
+Contratos universais de integracao, em `apps/api/app/modules/universal_contracts/`
+e cobrados por `tests/test_universal_contracts.py`:
+
+- [[ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]] - decisao, fronteira de autoridade, dataset ownership e alternativas rejeitadas.
+- [[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]] - referencia de integracao dos cinco contratos, codigos de recusa e migracao dos acoplamentos.
+
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 5 a 8 documentam arquitetura, endpoints, modulos e fluxo `/api/orchestrate`.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - fechamento final do core operacional seguro.
 - [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros de `/api/chat` e `/api/orchestrate`.

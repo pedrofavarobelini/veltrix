@@ -2,6 +2,36 @@
 
 Atualizado em: 29/08/2026
 
+## PEDROCORE-UNIVERSAL-CONTRACTS-01 — ERA 3 PASS
+
+Cinco contratos universais V1 criados e versionados, sem dependencia semantica
+de nenhum consumidor: Project Capability Manifest, Quality Evidence (QEC),
+Execution Outcome, Learning Source e o envelope PedroCore Integration.
+
+Fronteira de autoridade explicita: o consumidor relata fato observado
+(`observed_*`, `producer_asserted_*`) e nunca emite julgamento. Tentar enviar
+`eligibility`, `authorized`, `training_candidate`, `quality_score` ou
+`automatic_collection` — em qualquer profundidade e em qualquer grafia — recusa
+a requisicao inteira com `CONTRACT_AUTHORITY_VIOLATION`.
+
+Learning Source NAO e Training Candidate: submeter uma fonte nao concede
+elegibilidade, autorizacao, status de candidato, pertinencia a dataset nem
+readiness. Toda promocao continua no Learning Plane. `automatic_collection`
+permanece `Literal[False]` e a readiness permanece `DATASET_NOT_READY`.
+
+Os quatro acoplamentos por nome de projeto no core generico foram migrados para
+capability/trait declarativos — dois deles (`artifact_reader` e o adaptador
+Playwright) nao constavam do relatorio da Era 1. A migracao corrigiu um bug
+latente: `finguard-local` nunca recebia a regra de seguranca porque a
+comparacao `== "finguard"` nao o alcancava.
+
+Validacao: `1152 passed, 21 skipped, 0 failed` (+55 = exatamente os contract
+tests novos); Ruff integral PASS; OpenAPI identico byte a byte a Era 2 (37
+paths, 156 schemas, zero breaking change); grafo documental integro.
+
+Documentos: [[ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]],
+[[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]].
+
 ## PEDROCORE-CONTROL-PLANE-01 — ERA 1 PASS / ERA 2 PASS
 
 O PedroCore passou a ter duas fronteiras internas declaradas e verificadas:

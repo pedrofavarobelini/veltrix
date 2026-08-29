@@ -10,7 +10,20 @@ V5.1.9
 
 0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Frente atual — Control Plane (Eras 1 e 2)
+## Frente atual — Universal Contracts V1 (Era 3)
+
+`PEDROCORE-UNIVERSAL-CONTRACTS-01`. Versão técnica do backend permanece `0.2.0`:
+não houve mudança de contrato público.
+
+- Cinco contratos universais V1 em `apps/api/app/modules/universal_contracts/`.
+- Fronteira de autoridade recursiva: consumidor relata fato, nunca emite julgamento.
+- Learning Source ≠ Training Candidate; `automatic_collection` permanece `Literal[False]`.
+- Quatro acoplamentos por nome de projeto migrados para capability/trait declarativos.
+- `1152 passed, 21 skipped, 0 failed` (+55 contract tests); Ruff PASS.
+- OpenAPI idêntico byte a byte (37 paths, 156 schemas); grafo 160 documentos/850 links.
+- Documento: [[PedroCore IA/20-control-plane/ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]].
+
+## Frente anterior — Control Plane (Eras 1 e 2)
 
 `PEDROCORE-CONTROL-PLANE-01`. Versão técnica do backend permanece `0.2.0`:
 não houve mudança de contrato público.

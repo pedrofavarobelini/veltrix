@@ -133,14 +133,21 @@ não apenas em tempo de execução.
 
 Zero mudança de comportamento: mesma função, mesmos objetos, mesmas exceções.
 
-### CREATED — 4 arquivos
+### CREATED — 6 arquivos
+
+> **Correção de drift (29/08/2026):** a primeira versão desta seção declarava
+> "4 arquivos" contando a pasta de documentação como uma linha só, enquanto ela
+> continha 3 documentos. A contagem correta é 6, e os documentos passam a ser
+> listados individualmente para que a linha e o arquivo tenham a mesma unidade.
 
 | Arquivo | Papel |
 |---|---|
 | `app/architecture/__init__.py` | pacote novo |
 | `app/architecture/planes.py` | declaração das fronteiras (dado, não prosa) |
 | `tests/test_control_plane_boundaries.py` | 12 testes que cobram a fronteira |
-| `PedroCore IA/20-control-plane/` (3 docs) | baseline, ADR, este mapa |
+| `PedroCore IA/20-control-plane/PEDROCORE_CURRENT_ARCHITECTURE_BASELINE.md` | fotografia factual da Era 1 |
+| `PedroCore IA/20-control-plane/ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE.md` | decisão arquitetural |
+| `PedroCore IA/20-control-plane/PEDROCORE_CONTROL_PLANE_MIGRATION_MAP.md` | este mapa |
 
 ### PRESERVED — tudo o mais
 
