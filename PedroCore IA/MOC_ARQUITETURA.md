@@ -4,6 +4,15 @@ Mapa de arquitetura atual e historico de planejamento.
 
 ## Estado atual
 
+### Control Plane — Runtime Plane x Learning Plane (Eras 1 e 2)
+
+Fronteira interna vigente, declarada em `apps/api/app/architecture/planes.py` e
+cobrada por `tests/test_control_plane_boundaries.py`:
+
+- [[ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]] - decisao, dataset ownership, riscos e alternativas rejeitadas.
+- [[PEDROCORE_CURRENT_ARCHITECTURE_BASELINE]] - fotografia factual anterior a reorganizacao, com os 37 endpoints reais.
+- [[PEDROCORE_CONTROL_PLANE_MIGRATION_MAP]] - classificacao dos 40 modulos e registro do que mudou.
+
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 5 a 8 documentam arquitetura, endpoints, modulos e fluxo `/api/orchestrate`.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - fechamento final do core operacional seguro.
 - [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros de `/api/chat` e `/api/orchestrate`.

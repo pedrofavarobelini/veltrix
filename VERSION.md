@@ -1,6 +1,6 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 25/08/2026
+Atualizado em: 29/08/2026
 
 ## Versão atual de produto
 
@@ -10,7 +10,21 @@ V5.1.9
 
 0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Frente atual — Elyra Onboarding V1 Textual
+## Frente atual — Control Plane (Eras 1 e 2)
+
+`PEDROCORE-CONTROL-PLANE-01`. Versão técnica do backend permanece `0.2.0`:
+não houve mudança de contrato público.
+
+- Runtime Plane e Learning Plane declarados em `apps/api/app/architecture/planes.py`.
+- Fronteira cobrada por 12 testes em `tests/test_control_plane_boundaries.py`.
+- `orchestration` passou a importar a maquinaria do Learning Plane de forma tardia.
+- Dataset Foundation permanece exclusiva do PedroCore; `automatic_collection` `Literal[False]`.
+- Baseline `1085 passed, 21 skipped` → pós-migração `1097 passed, 21 skipped, 0 failed`.
+- Ruff integral PASS; OpenAPI idêntico byte a byte (37 paths); grafo 158 documentos/841 links.
+- Zero alteração de banco, migrations, contratos públicos ou frontend.
+- Documentos: [[PedroCore IA/20-control-plane/ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]].
+
+## Frente anterior — Elyra Onboarding V1 Textual
 
 `PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL`.
 

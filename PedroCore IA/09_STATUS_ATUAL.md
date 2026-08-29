@@ -1,6 +1,39 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 25/08/2026
+Atualizado em: 29/08/2026
+
+## PEDROCORE-CONTROL-PLANE-01 — ERA 1 PASS / ERA 2 PASS
+
+O PedroCore passou a ter duas fronteiras internas declaradas e verificadas:
+**Runtime Plane** (responder agora) e **Learning Plane** (aprender depois),
+mais Shared Kernel e Consumer Capabilities. Continua modular monolith: um
+processo, um `pyproject`, um `app.main`. Nenhum microsservico.
+
+A fronteira e dado, nao prosa: `apps/api/app/architecture/planes.py` declara o
+plano dos 40 modulos e `tests/test_control_plane_boundaries.py` cobra a
+declaracao e a direcao da dependencia em 12 testes. Modulo novo sem plano
+declarado quebra o build; import Runtime -> Learning sem excecao justificada
+tambem.
+
+Unica alteracao de codigo funcional: `orchestration/service.py` passou a
+importar `training_data.acquisition` de forma TARDIA, dentro de
+`_elyra_learning_outcome`. O invariante "se o Learning Plane falhar, o
+Assistant ainda funciona" passou a valer tambem em tempo de importacao.
+
+Dataset Ownership reafirmado: a Dataset Foundation e exclusiva do PedroCore;
+projetos externos produzem fontes e evidencias. `automatic_collection`
+permanece `Literal[False]` e a readiness observada permanece
+`DATASET_NOT_READY`.
+
+Validacao: baseline `1085 passed, 21 skipped`; pos-migracao
+`1097 passed, 21 skipped, 0 failed` (+12 = exatamente os testes novos, zero
+regressao). Ruff integral PASS. OpenAPI identico byte a byte (37 paths, 156
+schemas). Grafo documental 158 documentos / 838 links / zero violacoes. Zero
+alteracao de banco, migration, contrato publico ou frontend.
+
+Documentos: [[ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]],
+[[PEDROCORE_CURRENT_ARCHITECTURE_BASELINE]],
+[[PEDROCORE_CONTROL_PLANE_MIGRATION_MAP]].
 
 ## PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL — PASS
 
