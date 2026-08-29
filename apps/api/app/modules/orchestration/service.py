@@ -55,10 +55,12 @@ from app.modules.elyra_learning.service import (
     NOT_FOUND_REASON as LEARNING_NOT_FOUND_REASON,
 )
 from app.modules.elyra_learning.service import elyra_learning_service
-from app.modules.training_data.acquisition import (
-    TrainingCandidateTransitionError,
-    training_candidate_service,
-)
+# ADR-PEDROCORE-CONTROL-PLANE-01: o Runtime Plane nao carrega a maquinaria do
+# Learning Plane na importacao. `training_data.schemas` e contrato puro e pode
+# vir no topo; `training_data.acquisition` arrasta Candidate Store, repository e
+# driver PostgreSQL, e por isso e importado tardiamente em
+# `_elyra_learning_outcome`. Assim uma falha do Learning Plane nao impede o
+# Assistant de carregar e responder.
 from app.modules.training_data.schemas import TrainingPurpose, TrainingSourceType
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
@@ -2165,6 +2167,14 @@ class OrchestrationService:
         started: float,
     ) -> OrchestrationOutcome:
         """Executa submissao ou revogacao governada, sem tocar em provider."""
+        # Import tardio por fronteira de plano — ver ADR-PEDROCORE-CONTROL-PLANE-01
+        # e `app/architecture/planes.py`. Esta e a UNICA funcao do Runtime Plane
+        # que alcanca a maquinaria do Learning Plane, e ela nunca executa provider.
+        from app.modules.training_data.acquisition import (
+            TrainingCandidateTransitionError,
+            training_candidate_service,
+        )
+
         validation = elyra_learning_service.validate_input(payload, caller)
         if not validation.valid:
             return self._elyra_contract_blocked_outcome(
