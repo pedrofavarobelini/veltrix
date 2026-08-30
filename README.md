@@ -1,6 +1,70 @@
 # PedroCore IA
 
-## FRENTE ATUAL — ELYRA ONBOARDING V1 TEXTUAL
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+Licenciado sob a **Apache License 2.0** (SPDX: `Apache-2.0`). Veja [LICENSE](LICENSE).
+
+## FRENTE ATUAL — AI RUNTIME & LEARNING CONTROL PLANE
+
+`PEDROCORE-CONTROL-PLANE-01` reorganizou o PedroCore em duas fronteiras
+internas declaradas e verificadas por teste, e construiu sobre elas a
+plataforma de integração universal.
+
+```text
+                     PEDROCORE (modular monolith)
+                              │
+        ┌─────────────────────┴─────────────────────┐
+   RUNTIME PLANE                              LEARNING PLANE
+   responder agora  ──── evidência/contratos ────►  aprender depois
+```
+
+**O que existe hoje**
+
+- **Universal Contracts V1**, congelados: Project Capability Manifest, Quality
+  Evidence (QEC), Execution Outcome, Learning Source e o envelope de
+  integração. Alterar a forma de qualquer um quebra o build.
+- **Evidence Platform**: ingestão fail-closed com validação de contrato,
+  fronteira de autoridade, varredura de privacidade, fingerprint do servidor,
+  idempotência e deduplicação.
+- **Learning Governance**: seleção manual, elegibilidade, privacidade,
+  proveniência, autorização e ciclo de vida de candidato.
+- **Resiliência**: outbox **durável** com backoff, dead-letter e reconciliação.
+  Sobrevive tanto ao PedroCore fora do ar quanto ao restart do próprio
+  consumidor — um outbox que não sobrevive ao processo é um buffer, não um
+  outbox.
+- **Dataset Control Plane**: registry, versionamento, linhagem e split, com
+  materialização travada por readiness real.
+- **Evaluation & Training Foundation**: baseline, comparação, promoção e
+  rollback — sem executar treinamento.
+
+**Princípio que atravessa tudo**
+
+O consumidor envia **fato observado**; o PedroCore emite **julgamento**. Um
+payload que tenta declarar elegibilidade, autorização, score autoritativo ou
+um Training Candidate pronto é recusado inteiro, em qualquer profundidade e
+qualquer grafia.
+
+```text
+Operational Data  !=  Training Candidate  !=  Canonical Training Example
+```
+
+**Estado**
+
+```text
+CONTROL_PLANE_READY      governança completa e testada
+DATASET_NOT_READY        correto — não há população real autorizada
+```
+
+`automatic_collection` é `Literal[False]`: um tipo que faz o validador recusar
+`True`, não uma flag desligada.
+
+**Validação:** `1340 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
+do frontend PASS; grafo documental íntegro; OpenAPI sem breaking change
+(37 → 39 paths, todos aditivos).
+
+Documentos: `PedroCore IA/20-control-plane/`.
+
+## FRENTE ANTERIOR — ELYRA ONBOARDING V1 TEXTUAL
 
 `PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL` registrou Elyra como consumer oficial:
 `project_id=elyra`, identidade `registered`, papel `common_consumer`, uma única

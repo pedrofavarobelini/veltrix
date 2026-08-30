@@ -6,6 +6,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Artefatos de build Python (gerados por `uv build` / `pip install -e .`)
+build/
+dist/
+*.egg-info/
+
 # Ambiente Node
 node_modules/
 dist/
@@ -43,6 +48,17 @@ docs/.obsidian/
 /PedroCore IA/.obsidian/core-plugins.json
 /PedroCore IA/.obsidian/graph.json
 /PedroCore IA/.obsidian/workspace.json
+
+# Estado operacional em disco (Final Hardening). Gerado em runtime pelo outbox
+# duravel e pelo Dataset Registry quando a persistencia local esta ligada.
+# E estado de execucao da maquina, nao fonte: versionar reintroduziria entregas
+# antigas de outra pessoa a cada clone.
+/apps/api/outbox/
+/apps/api/dataset-registry/
+outbox.json
+outbox.json.tmp
+dataset_registry.json
+dataset_registry.json.tmp
 
 # Artefatos de dataset/treinamento neural — nunca versionar
 /.huggingface/

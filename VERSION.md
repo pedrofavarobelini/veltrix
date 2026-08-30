@@ -1,6 +1,8 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 25/08/2026
+Atualizado em: 30/08/2026
+
+Licença: **Apache-2.0**.
 
 ## Versão atual de produto
 
@@ -10,7 +12,50 @@ V5.1.9
 
 0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
 
-## Frente atual — Elyra Onboarding V1 Textual
+## Frente atual — Control Plane completo (Eras 1 a 10)
+
+`PEDROCORE-CONTROL-PLANE-01`. Versão técnica do backend permanece `0.2.0`:
+não houve breaking change em contrato público.
+
+- Runtime Plane e Learning Plane declarados e verificados por teste (44 módulos).
+- Universal Contracts V1 congelados por fingerprint de schema.
+- Evidence Platform, Learning Governance V2, resiliência, Dataset Registry e
+  Training Foundation implementados.
+- `CONTROL_PLANE_READY` + `DATASET_NOT_READY`; `automatic_collection` `Literal[False]`.
+- `1340 passed, 21 skipped, 0 failed`; Ruff PASS; build web PASS.
+- Outbox e Dataset Registry duráveis, construídos por factory em produção.
+- Corrupção degrada e preserva o arquivo; nunca vira store vazio.
+- OpenAPI 37 → 39 paths, 156 → 163 schemas, zero breaking change.
+- Estado final: [[PedroCore IA/20-control-plane/PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
+
+## Frente anterior — Universal Contracts V1 (Era 3)
+
+`PEDROCORE-UNIVERSAL-CONTRACTS-01`. Versão técnica do backend permanece `0.2.0`:
+não houve mudança de contrato público.
+
+- Cinco contratos universais V1 em `apps/api/app/modules/universal_contracts/`.
+- Fronteira de autoridade recursiva: consumidor relata fato, nunca emite julgamento.
+- Learning Source ≠ Training Candidate; `automatic_collection` permanece `Literal[False]`.
+- Quatro acoplamentos por nome de projeto migrados para capability/trait declarativos.
+- `1152 passed, 21 skipped, 0 failed` (+55 contract tests); Ruff PASS.
+- OpenAPI idêntico byte a byte (37 paths, 156 schemas); grafo 160 documentos/850 links.
+- Documento: [[PedroCore IA/20-control-plane/ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]].
+
+## Frente anterior — Control Plane (Eras 1 e 2)
+
+`PEDROCORE-CONTROL-PLANE-01`. Versão técnica do backend permanece `0.2.0`:
+não houve mudança de contrato público.
+
+- Runtime Plane e Learning Plane declarados em `apps/api/app/architecture/planes.py`.
+- Fronteira cobrada por 12 testes em `tests/test_control_plane_boundaries.py`.
+- `orchestration` passou a importar a maquinaria do Learning Plane de forma tardia.
+- Dataset Foundation permanece exclusiva do PedroCore; `automatic_collection` `Literal[False]`.
+- Baseline `1085 passed, 21 skipped` → pós-migração `1097 passed, 21 skipped, 0 failed`.
+- Ruff integral PASS; OpenAPI idêntico byte a byte (37 paths); grafo 158 documentos/841 links.
+- Zero alteração de banco, migrations, contratos públicos ou frontend.
+- Documentos: [[PedroCore IA/20-control-plane/ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]].
+
+## Frente anterior — Elyra Onboarding V1 Textual
 
 `PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL`.
 

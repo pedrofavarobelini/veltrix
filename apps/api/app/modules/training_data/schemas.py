@@ -24,6 +24,10 @@ class TrainingSourceType(str, Enum):
     HUMAN_FEEDBACK = "human_feedback"
     # Stage 13 da Elyra: agregado numerico sanitizado de report_snapshot.
     ELYRA_REPORT_SNAPSHOT = "elyra_report_snapshot"
+    # Era 5: evidencia registrada pela Evidence Platform. Fonte OPERACIONAL —
+    # estar no registro nao torna nada elegivel; a promocao continua exigindo
+    # selecao explicita, pre-screen, autorizacao e todo o resto da policy.
+    EVIDENCE_RECORD = "evidence_record"
 
 
 class SourceOutcome(str, Enum):

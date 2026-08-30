@@ -55,11 +55,14 @@ from app.modules.elyra_learning.service import (
     NOT_FOUND_REASON as LEARNING_NOT_FOUND_REASON,
 )
 from app.modules.elyra_learning.service import elyra_learning_service
-from app.modules.training_data.acquisition import (
-    TrainingCandidateTransitionError,
-    training_candidate_service,
-)
+# ADR-PEDROCORE-CONTROL-PLANE-01: o Runtime Plane nao carrega a maquinaria do
+# Learning Plane na importacao. `training_data.schemas` e contrato puro e pode
+# vir no topo; `training_data.acquisition` arrasta Candidate Store, repository e
+# driver PostgreSQL, e por isso e importado tardiamente em
+# `_elyra_learning_outcome`. Assim uma falha do Learning Plane nao impede o
+# Assistant de carregar e responder.
 from app.modules.training_data.schemas import TrainingPurpose, TrainingSourceType
+from app.modules.universal_contracts.capability_manifest import ProducerTrait
 from app.modules.exploration.service import exploration_service
 from app.modules.intelligence_layer.service import intelligence_layer_service
 from app.modules.observability.service import observability_service
@@ -95,6 +98,7 @@ from app.modules.shadow_routing.service import shadow_routing_service
 from app.modules.report_memory.service import report_memory_service
 from app.modules.policy_enforcement.service import policy_enforcement_service
 from app.modules.real_features import service as real_features
+from app.modules.project_context.manifests import has_trait
 from app.modules.project_context.service import (
     EMPTY_ALLOWED_TASKS_WARNING,
     FINGUARD_ORIGIN_SYSTEMS,
@@ -373,11 +377,15 @@ class OrchestrationService:
             ELYRA_MULTIMODAL_TASK_TYPE,
             ELYRA_LEARNING_TASK_TYPE,
         }
+        # ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01: a deduplicacao governada passou
+        # a depender do trait declarado `IDEMPOTENT_SUBMISSION`, e nao do nome do
+        # consumidor. Habilitar um consumidor novo virou uma linha no registro de
+        # manifests, sem tocar neste modulo.
         can_deduplicate = bool(
             is_elyra
             and payload.idempotency_key
             and payload.correlation_id
-            and caller.project_id == "elyra"
+            and has_trait(caller.project_id, ProducerTrait.IDEMPOTENT_SUBMISSION)
         )
         if can_deduplicate:
             execution = await elyra_idempotency_service.execute(
@@ -2165,6 +2173,14 @@ class OrchestrationService:
         started: float,
     ) -> OrchestrationOutcome:
         """Executa submissao ou revogacao governada, sem tocar em provider."""
+        # Import tardio por fronteira de plano — ver ADR-PEDROCORE-CONTROL-PLANE-01
+        # e `app/architecture/planes.py`. Esta e a UNICA funcao do Runtime Plane
+        # que alcanca a maquinaria do Learning Plane, e ela nunca executa provider.
+        from app.modules.training_data.acquisition import (
+            TrainingCandidateTransitionError,
+            training_candidate_service,
+        )
+
         validation = elyra_learning_service.validate_input(payload, caller)
         if not validation.valid:
             return self._elyra_contract_blocked_outcome(

@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.contracts import codes
 from app.modules.real_features import service as real_features
+from app.modules.project_context.manifests import protected_resource_markers
 
 # Adapter Playwright read-only opt-in (IMPLEMENT-05F).
 #
@@ -12,7 +13,7 @@ from app.modules.real_features import service as real_features
 #   - só navega em base URLs da allowlist (PEDROCORE_EXPLORATION_ALLOWED_BASE_URLS);
 #   - somente leitura: coleta título/status/links visíveis; NUNCA clica, digita,
 #     submete formulário, faz login ou altera dados;
-#   - nunca acessa URLs do FinGuard por padrão;
+#   - nunca acessa URLs marcadas como recurso protegido de consumidor;
 #   - nunca roda no pytest padrão (flag off + dependência não instalada);
 #   - dependência NÃO é instalada por este projeto.
 
@@ -76,9 +77,12 @@ class PlaywrightReadOnlyAdapter:
 
         normalized = (base_url or "").strip().rstrip("/")
         allowed = real_features.playwright_allowed_base_urls()
+        # ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01: denylist declarativa, vinda dos
+        # Capability Manifests, no lugar do nome de projeto embutido.
+        lowered_url = normalized.lower()
         if (
             not normalized
-            or "finguard" in normalized.lower()
+            or any(marker in lowered_url for marker in protected_resource_markers())
             or not any(
                 normalized == entry or normalized.startswith(entry + "/")
                 for entry in allowed

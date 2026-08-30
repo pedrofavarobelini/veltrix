@@ -1,6 +1,115 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 25/08/2026
+Atualizado em: 30/08/2026
+
+## LICENCA — APACHE 2.0
+
+O repositorio passou a ser licenciado sob a Apache License 2.0 (SPDX
+`Apache-2.0`), com metadata em `pyproject.toml` e `package.json`. A escolha
+de licenca era a ultima pendencia humana antes da publicacao.
+
+Correcao junto: `pip install -e .` falhava por descoberta ambigua de pacotes
+(`app` e `migrations` no mesmo nivel) — defeito pre-existente que o passo de
+instalacao da CI teria encontrado na primeira execucao.
+
+## PEDROCORE-CONTROL-PLANE — ERAS 4 A 10 — PASS
+
+Evidence Platform, Learning Governance V2, resiliencia de integracao, Dataset
+Control Plane, Evaluation/Training Foundation e Contract Freeze concluidos.
+
+Estado arquitetural: `CONTROL_PLANE_READY`, coexistindo com
+`DATASET_NOT_READY` — que continua sendo o resultado correto, porque nao existe
+populacao real autorizada e nenhuma foi fabricada.
+
+Contratos V1 congelados por fingerprint de schema. Politica de breaking change
+definida: aditiva nao muda versao, breaking exige v2 com a v1 mantida, versao
+desconhecida e recusada fail-closed.
+
+Contrato publico: 37 -> 39 paths (2 aditivas, 0 removidas, 0 alteradas), 156 ->
+163 schemas, e uma unica alteracao aditiva (`TrainingSourceType` ganhou
+`evidence_record`). Zero breaking change.
+
+FINAL HARDENING: o outbox e o Dataset Registry passaram a ser DURAVEIS. O
+outbox em memoria protegia contra o servidor cair, mas nao contra o consumidor
+cair — e e ai que o dado se perde. Migrations 0007 e 0008 aditivas; 18 testes
+de restart real, um deles gravando em subprocesso que morre antes da leitura.
+`DATASET_NOT_READY` continua valendo: persistir governanca nao fabrica populacao.
+
+FINAL DURABILITY VERIFICATION: duas lacunas fechadas. A implementacao duravel
+nunca era construida fora de teste — agora ha factory ligada a mesma variavel
+de persistencia do resto do sistema, com `off` recusando fail-closed em vez de
+cair em memoria. E corrupcao deixou de virar store vazio: o arquivo ilegivel
+entra em estado degradado, o original e preservado com copia em quarentena, e a
+escrita e recusada ate revisao.
+
+Validacao: `1340 passed, 21 skipped, 0 failed` (+188 desde a Era 3, todos
+novos); Ruff integral PASS; `npm run build` PASS; grafo documental integro.
+Os 21 skips sao os mesmos blockers ambientais/opt-in desde a Era 1.
+
+Estado final detalhado: [[PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
+
+## PEDROCORE-UNIVERSAL-CONTRACTS-01 — ERA 3 PASS
+
+Cinco contratos universais V1 criados e versionados, sem dependencia semantica
+de nenhum consumidor: Project Capability Manifest, Quality Evidence (QEC),
+Execution Outcome, Learning Source e o envelope PedroCore Integration.
+
+Fronteira de autoridade explicita: o consumidor relata fato observado
+(`observed_*`, `producer_asserted_*`) e nunca emite julgamento. Tentar enviar
+`eligibility`, `authorized`, `training_candidate`, `quality_score` ou
+`automatic_collection` — em qualquer profundidade e em qualquer grafia — recusa
+a requisicao inteira com `CONTRACT_AUTHORITY_VIOLATION`.
+
+Learning Source NAO e Training Candidate: submeter uma fonte nao concede
+elegibilidade, autorizacao, status de candidato, pertinencia a dataset nem
+readiness. Toda promocao continua no Learning Plane. `automatic_collection`
+permanece `Literal[False]` e a readiness permanece `DATASET_NOT_READY`.
+
+Os quatro acoplamentos por nome de projeto no core generico foram migrados para
+capability/trait declarativos — dois deles (`artifact_reader` e o adaptador
+Playwright) nao constavam do relatorio da Era 1. A migracao corrigiu um bug
+latente: `finguard-local` nunca recebia a regra de seguranca porque a
+comparacao `== "finguard"` nao o alcancava.
+
+Validacao: `1152 passed, 21 skipped, 0 failed` (+55 = exatamente os contract
+tests novos); Ruff integral PASS; OpenAPI identico byte a byte a Era 2 (37
+paths, 156 schemas, zero breaking change); grafo documental integro.
+
+Documentos: [[ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]],
+[[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]].
+
+## PEDROCORE-CONTROL-PLANE-01 — ERA 1 PASS / ERA 2 PASS
+
+O PedroCore passou a ter duas fronteiras internas declaradas e verificadas:
+**Runtime Plane** (responder agora) e **Learning Plane** (aprender depois),
+mais Shared Kernel e Consumer Capabilities. Continua modular monolith: um
+processo, um `pyproject`, um `app.main`. Nenhum microsservico.
+
+A fronteira e dado, nao prosa: `apps/api/app/architecture/planes.py` declara o
+plano dos 40 modulos e `tests/test_control_plane_boundaries.py` cobra a
+declaracao e a direcao da dependencia em 12 testes. Modulo novo sem plano
+declarado quebra o build; import Runtime -> Learning sem excecao justificada
+tambem.
+
+Unica alteracao de codigo funcional: `orchestration/service.py` passou a
+importar `training_data.acquisition` de forma TARDIA, dentro de
+`_elyra_learning_outcome`. O invariante "se o Learning Plane falhar, o
+Assistant ainda funciona" passou a valer tambem em tempo de importacao.
+
+Dataset Ownership reafirmado: a Dataset Foundation e exclusiva do PedroCore;
+projetos externos produzem fontes e evidencias. `automatic_collection`
+permanece `Literal[False]` e a readiness observada permanece
+`DATASET_NOT_READY`.
+
+Validacao: baseline `1085 passed, 21 skipped`; pos-migracao
+`1097 passed, 21 skipped, 0 failed` (+12 = exatamente os testes novos, zero
+regressao). Ruff integral PASS. OpenAPI identico byte a byte (37 paths, 156
+schemas). Grafo documental 158 documentos / 838 links / zero violacoes. Zero
+alteracao de banco, migration, contrato publico ou frontend.
+
+Documentos: [[ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]],
+[[PEDROCORE_CURRENT_ARCHITECTURE_BASELINE]],
+[[PEDROCORE_CONTROL_PLANE_MIGRATION_MAP]].
 
 ## PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL — PASS
 

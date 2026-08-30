@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.modules.chat.router import router as chat_router
+from app.modules.evidence_platform.router import router as evidence_platform_router
 from app.modules.interaction_outcomes.router import router as interaction_outcomes_router
 from app.modules.observability.router import router as observability_router
 from app.modules.operational_memory.router import router as operational_memory_router
@@ -86,3 +87,4 @@ app.include_router(risk_engine_router, prefix="/api")
 app.include_router(safe_reuse_router, prefix="/api")
 app.include_router(observability_router, prefix="/api")
 app.include_router(training_data_router, prefix="/api")
+app.include_router(evidence_platform_router, prefix="/api")

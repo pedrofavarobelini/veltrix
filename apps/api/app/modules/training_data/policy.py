@@ -52,6 +52,17 @@ _PURPOSES_BY_SOURCE: dict[TrainingSourceType, frozenset[TrainingPurpose]] = {
     TrainingSourceType.HUMAN_FEEDBACK: frozenset(
         {TrainingPurpose.PREFERENCE, TrainingPurpose.EVALUATION_ONLY}
     ),
+    # Era 5. A uniao aqui e o teto; o piso e mais estreito e depende do TIPO de
+    # evidencia, aplicado em `adapters._evidence_proposal`. Uma evidencia de
+    # `learning_source`, por exemplo, so admite `EVALUATION_ONLY` — o mesmo
+    # cuidado que ja vale para `ELYRA_REPORT_SNAPSHOT`.
+    TrainingSourceType.EVIDENCE_RECORD: frozenset(
+        {
+            TrainingPurpose.GENERATIVE_SFT,
+            TrainingPurpose.RISK,
+            TrainingPurpose.EVALUATION_ONLY,
+        }
+    ),
 }
 
 

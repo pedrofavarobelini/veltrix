@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 
 from pydantic import JsonValue
 
+from app.modules.evidence_platform.schemas import EvidenceKind, EvidenceRecord
+from app.modules.evidence_platform.service import evidence_ingestion_service
 from app.modules.interaction_outcomes.schemas import InteractionOutcome
 from app.modules.interaction_outcomes.service import interaction_outcome_service
 from app.modules.operational_memory.schemas import MemoryLifecycle, OperationalMemoryEntry
@@ -19,6 +21,7 @@ from app.modules.training_data.schemas import (
     TrainingCandidateProposal,
     TrainingEvidenceReference,
     TrainingRiskMetadata,
+    TrainingPurpose,
     TrainingSourceSelection,
     TrainingSourceType,
 )
@@ -337,6 +340,137 @@ def _report_proposal(
     )
 
 
+
+# Era 5 — promocao governada de evidencia registrada.
+#
+# Cada TIPO de evidencia admite propositos diferentes, e o teto declarado na
+# policy nao basta. Uma fonte de aprendizado submetida por um consumidor e a
+# origem mais sensivel que existe aqui: ela nasce de dado de pessoa, e por isso
+# so admite `EVALUATION_ONLY` — treinar pesos a partir dela exigiria mudar esta
+# tabela, com ADR, e nao mudar a request.
+_PURPOSES_BY_EVIDENCE_KIND: dict[EvidenceKind, frozenset[TrainingPurpose]] = {
+    EvidenceKind.QUALITY_EVIDENCE: frozenset(
+        {TrainingPurpose.GENERATIVE_SFT, TrainingPurpose.EVALUATION_ONLY}
+    ),
+    EvidenceKind.EXECUTION_OUTCOME: frozenset(
+        {TrainingPurpose.RISK, TrainingPurpose.EVALUATION_ONLY}
+    ),
+    EvidenceKind.LEARNING_SOURCE: frozenset({TrainingPurpose.EVALUATION_ONLY}),
+}
+
+
+def _evidence_outcome(record: EvidenceRecord) -> SourceOutcome:
+    """Desfecho derivado do payload — nunca um campo que o produtor batizou.
+
+    O contrato universal ja separou fato de julgamento: `outcome`, `result` e
+    `producer_asserted_outcome` sao observacoes. Traduzi-las aqui e o PedroCore
+    formando a SUA opiniao a partir delas.
+    """
+    payload = record.payload or {}
+    if record.kind is EvidenceKind.QUALITY_EVIDENCE:
+        return {
+            "passed": SourceOutcome.SUCCESSFUL,
+            "failed": SourceOutcome.FAILED,
+            "blocked": SourceOutcome.BLOCKED,
+        }.get(str(payload.get("outcome")), SourceOutcome.UNKNOWN)
+    if record.kind is EvidenceKind.EXECUTION_OUTCOME:
+        return {
+            "succeeded": SourceOutcome.SUCCESSFUL,
+            "failed": SourceOutcome.FAILED,
+            "blocked": SourceOutcome.BLOCKED,
+            "cancelled": SourceOutcome.BLOCKED,
+            "rolled_back": SourceOutcome.FAILED,
+        }.get(str(payload.get("result")), SourceOutcome.UNKNOWN)
+    return {
+        "successful": SourceOutcome.SUCCESSFUL,
+        "failed": SourceOutcome.FAILED,
+        "accepted": SourceOutcome.ACCEPTED,
+        "rejected": SourceOutcome.REJECTED,
+        "blocked": SourceOutcome.BLOCKED,
+    }.get(str(payload.get("producer_asserted_outcome")), SourceOutcome.UNKNOWN)
+
+
+def _evidence_features(record: EvidenceRecord) -> dict[str, JsonValue]:
+    """Features DERIVADAS: contagens e rotulos, jamais o payload inteiro.
+
+    Copiar o payload bruto para dentro do candidato transformaria o registro de
+    evidencia em um atalho para conteudo nao minimizado entrar no dataset.
+    """
+    payload = record.payload or {}
+    features: dict[str, JsonValue] = {
+        "evidence_kind": record.kind.value,
+        "contract_version": record.contract_version,
+    }
+    if record.kind is EvidenceKind.QUALITY_EVIDENCE:
+        suites = payload.get("suites") or []
+        features["suite_count"] = len(suites)
+        features["total_cases"] = sum(int(item.get("total", 0)) for item in suites)
+        features["failed_cases"] = sum(int(item.get("failed", 0)) for item in suites)
+        features["environment"] = str(payload.get("environment", "unknown"))
+    elif record.kind is EvidenceKind.EXECUTION_OUTCOME:
+        features["operation"] = str(payload.get("operation", "unknown"))
+        features["final_state"] = str(payload.get("final_state", "unknown"))
+        features["diagnostic_count"] = len(payload.get("diagnostics") or [])
+    else:
+        derived = payload.get("derived_features") or {}
+        features["derived_feature_count"] = len(derived)
+        provenance = payload.get("provenance") or {}
+        features["source_kind"] = str(provenance.get("source_kind", "unknown"))
+    return features
+
+
+def _evidence_proposal(
+    selection: TrainingSourceSelection,
+    record: EvidenceRecord,
+) -> TrainingCandidateProposal:
+    allowed = _PURPOSES_BY_EVIDENCE_KIND[record.kind]
+    if selection.training_purpose not in allowed:
+        raise TrainingSourceSelectionError("EVIDENCE_PURPOSE_NOT_ALLOWED_FOR_KIND")
+
+    outcome = _evidence_outcome(record)
+    features = _evidence_features(record)
+    target: dict[str, JsonValue] = {
+        "observed_outcome": outcome.value,
+        "evidence_kind": record.kind.value,
+    }
+    quality = CandidateQualitySignals(
+        provenance_quality=1.0,
+        evidence_strength=0.8 if outcome is not SourceOutcome.UNKNOWN else 0.3,
+        completeness=0.9 if record.correlation_id else 0.7,
+        source_reliability=0.85,
+        outcome_known=outcome is not SourceOutcome.UNKNOWN,
+        qa_validated=record.kind is EvidenceKind.QUALITY_EVIDENCE,
+        human_feedback_present=False,
+        outcome_consistent=True,
+        contradiction_detected=False,
+    )
+    return TrainingCandidateProposal(
+        producer=selection.producer,
+        project_id=selection.project_id.strip().lower(),
+        source_type=TrainingSourceType.EVIDENCE_RECORD,
+        task_type=f"evidence_{record.kind.value}",
+        training_purpose=selection.training_purpose,
+        input_features=features,
+        context_features={"producer_id": record.producer_id},
+        target=target,
+        quality_signals=quality,
+        evidence_refs=[
+            TrainingEvidenceReference(
+                source_type=TrainingSourceType.EVIDENCE_RECORD,
+                source_id=record.evidence_record_id,
+                project_id=record.project_id,
+                source_schema_version=record.contract_version,
+                policy_version=record.policy_version,
+                outcome=outcome,
+                content_signature=record.fingerprint,
+                observed_at=record.submitted_at,
+                run_id=record.correlation_id,
+                verified=True,
+            )
+        ],
+        derived_content_only=True,
+    )
+
 class TrainingSourceAdapterRegistry:
     """Sete selectors sobre os stores operacionais existentes; coleta nunca é automática."""
 
@@ -355,6 +489,12 @@ class TrainingSourceAdapterRegistry:
             if selection.source_type is TrainingSourceType.HUMAN_FEEDBACK:
                 return _human_feedback_proposal(selection, outcome)
             return _interaction_proposal(selection, outcome)
+
+        if selection.source_type is TrainingSourceType.EVIDENCE_RECORD:
+            record = evidence_ingestion_service.get_evidence(project_id, source_id)
+            if record is None:
+                raise TrainingSourceSelectionError("OPERATIONAL_SOURCE_NOT_FOUND")
+            return _evidence_proposal(selection, record)
 
         if selection.source_type is TrainingSourceType.OPERATIONAL_PATTERN:
             memory = operational_memory_service.get_memory(project_id, source_id)
