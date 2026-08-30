@@ -106,6 +106,11 @@ _RUNTIME_MODULES = frozenset(
         # Capacidades operacionais opt-in
         "exploration",
         "ocr",
+        # Evidence Platform (Era 4). Runtime Plane, e nao Learning Plane: ela
+        # RECEBE e registra fato operacional sincronamente, e nao promove nada.
+        # Se estivesse no Learning Plane, ingerir evidencia exigiria a
+        # maquinaria de treinamento de pe — o oposto do invariante.
+        "evidence_platform",
         # Auditoria e observabilidade do runtime.
         #
         # Poderiam parecer infraestrutura transversal, mas nao sao: `audit`
