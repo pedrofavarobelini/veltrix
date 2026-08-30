@@ -2,6 +2,29 @@
 
 Atualizado em: 29/08/2026
 
+## PEDROCORE-CONTROL-PLANE — ERAS 4 A 10 — PASS
+
+Evidence Platform, Learning Governance V2, resiliencia de integracao, Dataset
+Control Plane, Evaluation/Training Foundation e Contract Freeze concluidos.
+
+Estado arquitetural: `CONTROL_PLANE_READY`, coexistindo com
+`DATASET_NOT_READY` — que continua sendo o resultado correto, porque nao existe
+populacao real autorizada e nenhuma foi fabricada.
+
+Contratos V1 congelados por fingerprint de schema. Politica de breaking change
+definida: aditiva nao muda versao, breaking exige v2 com a v1 mantida, versao
+desconhecida e recusada fail-closed.
+
+Contrato publico: 37 -> 39 paths (2 aditivas, 0 removidas, 0 alteradas), 156 ->
+163 schemas, e uma unica alteracao aditiva (`TrainingSourceType` ganhou
+`evidence_record`). Zero breaking change.
+
+Validacao: `1273 passed, 21 skipped, 0 failed` (+121 desde a Era 3, todos
+novos); Ruff integral PASS; `npm run build` PASS; grafo documental integro.
+Os 21 skips sao os mesmos blockers ambientais/opt-in desde a Era 1.
+
+Estado final detalhado: [[PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
+
 ## PEDROCORE-UNIVERSAL-CONTRACTS-01 — ERA 3 PASS
 
 Cinco contratos universais V1 criados e versionados, sem dependencia semantica

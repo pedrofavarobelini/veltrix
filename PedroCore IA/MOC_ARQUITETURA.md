@@ -20,6 +20,7 @@ e cobrados por `tests/test_universal_contracts.py`:
 
 - [[ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]] - decisao, fronteira de autoridade, dataset ownership e alternativas rejeitadas.
 - [[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]] - referencia de integracao dos cinco contratos, codigos de recusa e migracao dos acoplamentos.
+- [[PEDROCORE_CONTROL_PLANE_FINAL_STATE]] - estado final das Eras 1 a 10: arquitetura, contratos congelados, politica de breaking change, banco, testes e divida tecnica.
 
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 5 a 8 documentam arquitetura, endpoints, modulos e fluxo `/api/orchestrate`.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - fechamento final do core operacional seguro.

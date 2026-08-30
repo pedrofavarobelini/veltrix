@@ -253,7 +253,22 @@ A correção foi rodar a prova em **subprocesso**. Isolamento de processo é o
 único jeito honesto de perguntar "este módulo carrega sem aquele?" sem
 corromper a sessão que faz a pergunta.
 
-## 7. Compatibilidade
+## 7. Contagens verificadas das Eras seguintes
+
+As Eras 3 a 10 continuaram nesta frente. As contagens de arquivo de todas elas
+foram recontadas a partir do Git e consolidadas em
+[[PEDROCORE_CONTROL_PLANE_FINAL_STATE]], que e a fonte corrente. Duas
+contagens publicadas em relatorios intermediarios estavam erradas e ficam
+registradas aqui como drift corrigido:
+
+- Era 2 declarou "Criados (5)" enumerando 6 — o real e **6**;
+- Era 3 declarou "Modificados: 8" enumerando 9 e "Criados: 12" — o real e
+  **9 modificados e 13 criados**.
+
+Nos dois casos a causa foi a mesma: contar uma pasta de documentacao como uma
+linha so. A correcao esta aplicada na secao CREATED acima e no estado final.
+
+## 8. Compatibilidade
 
 Nenhuma mudança de contrato. Nenhuma camada de compatibilidade foi necessária
 porque nada quebrou. Nenhum caminho de migração é exigido de consumidores.

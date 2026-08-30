@@ -1,0 +1,87 @@
+# Verificação contínua do PedroCore IA.
+#
+# Roda exatamente os mesmos comandos documentados em CONTRIBUTING.md — se a CI
+# e a instrução local divergirem, uma das duas está mentindo.
+#
+# Nenhum provider real é chamado. Todos os opt-in (`PEDROCORE_RUN_REAL_*`)
+# permanecem no default `false`, e a suíte não tem acesso a chave alguma.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Um push novo cancela a execução anterior do mesmo ref: gastar runner
+# validando um commit que já foi substituído não ajuda ninguém.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend — testes, lint e grafo documental
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar dependências
+        working-directory: apps/api
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Ruff
+        working-directory: apps/api
+        run: python -m ruff check .
+
+      - name: Suíte de testes
+        working-directory: apps/api
+        # Os 21 skips são esperados: 13 exigem PostgreSQL de teste e 8 são
+        # opt-in de recurso real. `-rs` os lista para que um skip NOVO fique
+        # visível no log em vez de passar despercebido.
+        run: python -m pytest -q -rs
+
+      - name: Grafo documental
+        working-directory: apps/api
+        run: |
+          python -c "
+          from app.modules.docs_graph.service import build_graph
+          report = build_graph()
+          print(report.render())
+          raise SystemExit(0 if report.ok else 1)
+          "
+
+  frontend:
+    name: Frontend — typecheck e build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Auditoria de dependências
+        working-directory: apps/web
+        # Só produção: vulnerabilidade em ferramenta de build não é a mesma
+        # coisa que vulnerabilidade no que vai para o navegador.
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build
+        working-directory: apps/web
+        run: npm run build
