@@ -111,6 +111,10 @@ _RUNTIME_MODULES = frozenset(
         # Se estivesse no Learning Plane, ingerir evidencia exigiria a
         # maquinaria de treinamento de pe — o oposto do invariante.
         "evidence_platform",
+        # Resiliencia de integracao (Era 6): outbox de referencia e
+        # reconciliacao. Runtime Plane — existe para que o Assistant e a
+        # ingestao continuem uteis quando a rede falha.
+        "resilience",
         # Auditoria e observabilidade do runtime.
         #
         # Poderiam parecer infraestrutura transversal, mas nao sao: `audit`

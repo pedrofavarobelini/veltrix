@@ -36,6 +36,11 @@ from app.modules.evidence_platform.service import (
     EVIDENCE_IDEMPOTENCY_CONFLICT,
     evidence_ingestion_service,
 )
+from app.modules.resilience.reconciliation import (
+    ReconciliationReport,
+    ReconciliationRequest,
+    reconciliation_service,
+)
 from app.modules.report_memory.repository import (
     ReportMemoryRepositoryConfigurationError,
     ReportMemoryRepositoryError,
@@ -111,3 +116,21 @@ def list_evidence(
         "training_candidates_created": 0,
         "automatic_collection_performed": False,
     }
+
+
+@router.post(
+    "/evidence/{project_id}/reconcile",
+    response_model=ReconciliationReport,
+    summary="Informa quais idempotency_keys o PedroCore já possui",
+)
+def reconcile_evidence(project_id: str, payload: ReconciliationRequest, request: Request):
+    """Consulta de LEITURA — perguntar nunca faz o servidor passar a ter."""
+    error, _warnings, caller = authorize_technical_request(request, project_id)
+    if error is not None or caller is None:
+        return error
+    try:
+        return reconciliation_service.reconcile(project_id, payload)
+    except ReportMemoryRepositoryConfigurationError:
+        return operational_persistence_error(codes.EVIDENCE_PERSISTENCE_UNAVAILABLE)
+    except ReportMemoryRepositoryError:
+        return operational_persistence_error(codes.EVIDENCE_PERSISTENCE_UNAVAILABLE)
