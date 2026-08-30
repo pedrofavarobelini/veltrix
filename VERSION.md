@@ -20,7 +20,8 @@ não houve breaking change em contrato público.
 - Evidence Platform, Learning Governance V2, resiliência, Dataset Registry e
   Training Foundation implementados.
 - `CONTROL_PLANE_READY` + `DATASET_NOT_READY`; `automatic_collection` `Literal[False]`.
-- `1273 passed, 21 skipped, 0 failed`; Ruff PASS; build web PASS.
+- `1319 passed, 21 skipped, 0 failed`; Ruff PASS; build web PASS.
+- Outbox e Dataset Registry duráveis: sobrevivem a restart, provado por teste.
 - OpenAPI 37 → 39 paths, 156 → 163 schemas, zero breaking change.
 - Estado final: [[PedroCore IA/20-control-plane/PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
 

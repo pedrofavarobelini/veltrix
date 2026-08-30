@@ -140,6 +140,8 @@ Comparação Era 3 → final, campo a campo:
 | `0004_operational_memory_retrieval.sql` | índices de retrieval |
 | `0005_training_candidates.sql` | Candidate Store |
 | `0006_evidence_records.sql` | **Evidence Registry (Era 4)** |
+| `0007_outbox_entries.sql` | **Outbox durável (Final Hardening)** |
+| `0008_dataset_registry.sql` | **Definições e versões de dataset (Final Hardening)** |
 
 Todas aditivas, com checksum, aplicadas por
 `python -m app.modules.report_memory.migrate`. O runner descobre arquivos novos
@@ -191,16 +193,47 @@ Zero arquivos movidos. Zero removidos. Zero depreciados.
 > "Modificados: 8" enumerando 9 (real: 9) e "Criados: 12" (real: 13). A
 > divergência vinha de contar uma pasta de documentação como uma linha só.
 
+## 6.1 Durabilidade (Final Hardening)
+
+| Componente | Antes | Depois |
+|---|---|---|
+| Outbox | apenas em memória | `DurableOutboxStore` (arquivo, atômico) + `PostgreSQLOutboxStore` |
+| Dataset Registry | apenas em memória | `LocalJsonDatasetRegistryRepository` + migration `0008` |
+
+**Escrita atômica.** Ambos gravam em arquivo temporário e movem com
+`os.replace`. Escrever direto no destino tem uma janela em que o arquivo está
+truncado — e se o processo morre exatamente ali, o outbox volta corrompido. O
+modo de falha que ele existe para resolver seria a causa da perda.
+
+**O que conta como restart.** Instância nova, mesmo armazenamento. Reutilizar o
+mesmo objeto em memória não prova nada: ele nunca perdeu o estado. Um dos
+testes vai além e grava em **subprocesso separado**, que morre antes de o teste
+ler o arquivo.
+
+**Provado por 18 testes** (`tests/test_durability.py`): enqueue, persistência,
+sobrevivência de pendente, cronograma de backoff preservado, retry após
+restart, acknowledgement preservado, duplicata sem duplo registro, dead-letter
+revisável, requeue, reconciliação após restart, e arquivo corrompido que não
+derruba o consumidor.
+
+**Verificação por mutação:** desligar o carregamento do disco reprovou 9 dos 18
+testes. Os que sobreviveram são os que não dependem de restart — exatamente os
+esperados.
+
+**Persistir governança não fabricou população.** Um teste dedicado confirma que
+`DATASET_NOT_READY` continua valendo depois do reload, e que nenhuma versão de
+dataset foi materializada.
+
 ## 7. Testes
 
 | Suíte | Comando | Resultado |
 |---|---|---|
-| Backend integral | `python -m pytest -q` | **1273 passed, 21 skipped, 0 failed** |
+| Backend integral | `python -m pytest -q` | **1319 passed, 21 skipped, 0 failed** |
 | Lint | `python -m ruff check .` | **All checks passed!** |
 | Frontend | `npm run build` (`tsc -b && vite build`) | **PASS** |
 | Grafo documental | `docs_graph.build_graph()` | **íntegro** |
 
-Evolução: 1152 (baseline Era 3) → **1273** = **+121**, todos novos.
+Evolução: 1152 (baseline Era 3) → 1273 (Era 10) → **1319** = **+167**, todos novos.
 Zero regressão em todas as Eras.
 
 ### Os 21 skips
@@ -224,6 +257,7 @@ restaurado em seguida:
 | Fronteira de planos (Era 2) | import de topo Runtime→Learning | 2 testes reprovaram |
 | Anti-acoplamento (Era 3) | `project_id == "finguard"` no core | 1 teste reprovou |
 | Contract freeze (Era 9) | `quality_score` na QEC | 2 testes reprovaram |
+| Durabilidade (Hardening) | carregamento do disco desligado | 9 testes reprovaram |
 
 ## 8. Segurança
 
@@ -252,11 +286,24 @@ restaurado em seguida:
 | D2 | `class Config` do Pydantic v1 deprecado | `app/core/config.py:4` | manutenção |
 | D3 | BOM UTF-8 em 2 arquivos | `providers/mock_provider.py`, `tests/test_chat.py` | manutenção |
 | D4 | Contratos `elyra-*/v1` não migrados para os universais | `elyra_*/` | Era com esse objetivo |
-| D5 | Dataset Registry guarda definições em memória | `dataset_registry/service.py` | quando houver o que materializar |
-| D6 | Outbox de referência sem persistência em disco | `resilience/outbox.py` | quando um consumidor o adotar |
 
-D5 e D6 são deliberadas: persistir infraestrutura para governar o vazio seria
-custo sem retorno enquanto não há população nem consumidor usando.
+**D5 e D6 foram resolvidas no Final Hardening** e saíram desta tabela.
+
+A dívida original dizia que Dataset Registry e outbox viviam só em memória, e a
+justificativa era que persistir o vazio seria custo sem retorno. A revisão
+humana apontou que o raciocínio estava errado para o outbox — e estava.
+
+O outbox em memória protege contra o **servidor** cair, mas não contra o
+**consumidor** cair, que é exatamente onde o dado se perde: o processo grava a
+entrega pendente, morre antes de entregar, e a fila some com ele. Um outbox que
+não sobrevive ao próprio processo é um buffer, não um outbox. A propriedade
+central da Era 6 estava provada pela metade.
+
+Para o Dataset Registry o argumento também não se sustentava: o que se persiste
+ali é **metadata de governança** — quem declarou qual escopo, sob qual política,
+e o que entrou em cada versão. Uma decisão que morre com o processo vira boato,
+e a linhagem que torna um modelo auditável desaparece junto. Persistir
+governança não fabrica população.
 
 ## 10. O que NÃO foi feito
 

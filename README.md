@@ -24,8 +24,10 @@ plataforma de integração universal.
   idempotência e deduplicação.
 - **Learning Governance**: seleção manual, elegibilidade, privacidade,
   proveniência, autorização e ciclo de vida de candidato.
-- **Resiliência**: outbox local com backoff e dead-letter, mais reconciliação —
-  PedroCore fora do ar não derruba o consumidor.
+- **Resiliência**: outbox **durável** com backoff, dead-letter e reconciliação.
+  Sobrevive tanto ao PedroCore fora do ar quanto ao restart do próprio
+  consumidor — um outbox que não sobrevive ao processo é um buffer, não um
+  outbox.
 - **Dataset Control Plane**: registry, versionamento, linhagem e split, com
   materialização travada por readiness real.
 - **Evaluation & Training Foundation**: baseline, comparação, promoção e
@@ -52,7 +54,7 @@ DATASET_NOT_READY        correto — não há população real autorizada
 `automatic_collection` é `Literal[False]`: um tipo que faz o validador recusar
 `True`, não uma flag desligada.
 
-**Validação:** `1273 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
+**Validação:** `1319 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
 do frontend PASS; grafo documental íntegro; OpenAPI sem breaking change
 (37 → 39 paths, todos aditivos).
 

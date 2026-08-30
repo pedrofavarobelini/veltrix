@@ -23,6 +23,10 @@ import json
 from datetime import datetime, timezone
 
 from app.modules.caller_identity.schemas import AuthenticatedCallerContext
+from app.modules.dataset_registry.repository import (
+    DatasetRegistryRepository,
+    InMemoryDatasetRegistryRepository,
+)
 from app.modules.dataset_registry.schemas import (
     DatasetDefinition,
     DatasetLineageEntry,
@@ -73,19 +77,26 @@ def _split_for(fingerprint: str, seed: int, policy) -> str:
 
 
 class DatasetRegistryService:
-    """Registro de definicoes e versoes. Estado em memoria por enquanto.
+    """Registro de definicoes e versoes, sobre um repositorio pluggavel.
 
-    Persistir definicoes so faz sentido quando houver o que materializar; ate
-    la, guardar em banco seria infraestrutura para governar o vazio.
+    O default e em memoria; um repositorio duravel (arquivo) e injetado por
+    `set_repository`. A distincao importa: o que se persiste aqui e METADATA DE
+    GOVERNANCA — quem declarou qual escopo, sob qual politica, e o que entrou em
+    cada versao. Persistir governanca nao fabrica populacao, e
+    `DATASET_NOT_READY` continua valendo enquanto nao houver dado real.
     """
 
     def __init__(self) -> None:
-        self._definitions: dict[str, DatasetDefinition] = {}
-        self._versions: dict[str, list[DatasetVersion]] = {}
+        self._repository: DatasetRegistryRepository = (
+            InMemoryDatasetRegistryRepository()
+        )
+
+    def set_repository(self, repository: DatasetRegistryRepository | None) -> None:
+        """Injeta o repositorio. `None` volta ao store em memoria."""
+        self._repository = repository or InMemoryDatasetRegistryRepository()
 
     def reset(self) -> None:
-        self._definitions.clear()
-        self._versions.clear()
+        self._repository.clear()
 
     # -- definicao --------------------------------------------------------
 
@@ -97,23 +108,22 @@ class DatasetRegistryService:
         """Registra a governanca de um dataset. Nao produz dado algum."""
         if not training_candidate_service.admin_authorized(caller):
             raise DatasetRegistryError("DATASET_ADMIN_REQUIRED")
-        if definition.dataset_id in self._definitions:
+        if self._repository.get_definition(definition.dataset_id) is not None:
             raise DatasetRegistryError("DATASET_ALREADY_DEFINED")
         stored = definition.model_copy(
             update={"created_by": caller.credential_id, "status": DatasetStatus.DEFINED}
         )
-        self._definitions[stored.dataset_id] = stored
+        self._repository.save_definition(stored)
         return stored.model_copy(deep=True)
 
     def get(self, dataset_id: str) -> DatasetDefinition | None:
-        found = self._definitions.get(dataset_id)
-        return found.model_copy(deep=True) if found else None
+        return self._repository.get_definition(dataset_id)
 
     def list_definitions(self) -> list[DatasetDefinition]:
-        return [item.model_copy(deep=True) for item in self._definitions.values()]
+        return self._repository.list_definitions()
 
     def versions(self, dataset_id: str) -> list[DatasetVersion]:
-        return [item.model_copy(deep=True) for item in self._versions.get(dataset_id, [])]
+        return self._repository.versions(dataset_id)
 
     # -- materializacao ---------------------------------------------------
 
@@ -129,7 +139,7 @@ class DatasetRegistryService:
         """
         if not training_candidate_service.admin_authorized(caller):
             raise DatasetRegistryError("DATASET_ADMIN_REQUIRED")
-        definition = self._definitions.get(dataset_id)
+        definition = self._repository.get_definition(dataset_id)
         if definition is None:
             raise DatasetRegistryError("DATASET_NOT_DEFINED")
 
@@ -219,7 +229,7 @@ class DatasetRegistryService:
         for entry in lineage:
             counts[entry.split] += 1
 
-        existing = self._versions.setdefault(definition.dataset_id, [])
+        existing = self._repository.versions(definition.dataset_id)
         version = DatasetVersion(
             dataset_id=definition.dataset_id,
             version=len(existing) + 1,
@@ -237,9 +247,9 @@ class DatasetRegistryService:
             test_examples=counts["test"],
             lineage=tuple(lineage),
         )
-        existing.append(version)
-        self._definitions[definition.dataset_id] = definition.model_copy(
-            update={"status": DatasetStatus.MATERIALIZED}
+        self._repository.append_version(version)
+        self._repository.save_definition(
+            definition.model_copy(update={"status": DatasetStatus.MATERIALIZED})
         )
         return version
 

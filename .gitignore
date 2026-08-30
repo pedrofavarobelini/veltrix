@@ -44,6 +44,17 @@ docs/.obsidian/
 /PedroCore IA/.obsidian/graph.json
 /PedroCore IA/.obsidian/workspace.json
 
+# Estado operacional em disco (Final Hardening). Gerado em runtime pelo outbox
+# duravel e pelo Dataset Registry quando a persistencia local esta ligada.
+# E estado de execucao da maquina, nao fonte: versionar reintroduziria entregas
+# antigas de outra pessoa a cada clone.
+/apps/api/outbox/
+/apps/api/dataset-registry/
+outbox.json
+outbox.json.tmp
+dataset_registry.json
+dataset_registry.json.tmp
+
 # Artefatos de dataset/treinamento neural — nunca versionar
 /.huggingface/
 /apps/api/.huggingface/

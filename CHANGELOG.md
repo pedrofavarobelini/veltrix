@@ -52,6 +52,14 @@ schema ou contrato público existente foi removido ou alterado.
   como chave primária e deduplicação garantida pelo banco.
 - **Contract freeze** (`tests/test_contract_freeze.py`): alterar a forma de um
   contrato V1 quebra o build.
+- **Outbox durável** (`resilience/durable_outbox.py`) em arquivo (escrita
+  atômica) ou PostgreSQL, com migration `0007_outbox_entries.sql`. O outbox
+  agora sobrevive ao restart do processo consumidor.
+- **Persistência do Dataset Registry** (`dataset_registry/repository.py`) com
+  migration `0008_dataset_registry.sql`. Definições, versões e linhagem
+  sobrevivem ao restart.
+- `tests/test_durability.py` (18 testes de restart real) e
+  `tests/test_migrations_structure.py` (validação offline das migrations).
 - `SECURITY.md`, `CONTRIBUTING.md` e workflow de CI.
 
 ### Alterado
@@ -109,7 +117,7 @@ DATASET_NOT_READY        correto — não há população real autorizada
 ### Verificação
 
 ```text
-backend      1273 passed, 21 skipped, 0 failed
+backend      1319 passed, 21 skipped, 0 failed
 ruff         All checks passed!
 frontend     tsc -b && vite build PASS
 npm audit    0 vulnerabilities (produção)

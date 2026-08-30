@@ -19,7 +19,13 @@ Contrato publico: 37 -> 39 paths (2 aditivas, 0 removidas, 0 alteradas), 156 ->
 163 schemas, e uma unica alteracao aditiva (`TrainingSourceType` ganhou
 `evidence_record`). Zero breaking change.
 
-Validacao: `1273 passed, 21 skipped, 0 failed` (+121 desde a Era 3, todos
+FINAL HARDENING: o outbox e o Dataset Registry passaram a ser DURAVEIS. O
+outbox em memoria protegia contra o servidor cair, mas nao contra o consumidor
+cair — e e ai que o dado se perde. Migrations 0007 e 0008 aditivas; 18 testes
+de restart real, um deles gravando em subprocesso que morre antes da leitura.
+`DATASET_NOT_READY` continua valendo: persistir governanca nao fabrica populacao.
+
+Validacao: `1319 passed, 21 skipped, 0 failed` (+167 desde a Era 3, todos
 novos); Ruff integral PASS; `npm run build` PASS; grafo documental integro.
 Os 21 skips sao os mesmos blockers ambientais/opt-in desde a Era 1.
 
