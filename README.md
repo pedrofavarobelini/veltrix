@@ -54,7 +54,7 @@ DATASET_NOT_READY        correto — não há população real autorizada
 `automatic_collection` é `Literal[False]`: um tipo que faz o validador recusar
 `True`, não uma flag desligada.
 
-**Validação:** `1319 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
+**Validação:** `1340 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
 do frontend PASS; grafo documental íntegro; OpenAPI sem breaking change
 (37 → 39 paths, todos aditivos).
 

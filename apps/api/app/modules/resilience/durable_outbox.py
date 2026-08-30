@@ -48,6 +48,12 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from app.modules.resilience.outbox import DeliveryState, OutboxEntry, OutboxStore
+from app.modules.resilience.storage import (
+    DurableStorageCorruptionError,
+    DurableStorageDegradedError,
+    load_json_records,
+    parse_records,
+)
 
 
 class DurableOutboxStore(OutboxStore):
@@ -63,28 +69,47 @@ class DurableOutboxStore(OutboxStore):
         self._directory = Path(directory)
         self._directory.mkdir(parents=True, exist_ok=True)
         self._file = self._directory / f"{name}.json"
+        # Degradado significa: li algo ilegível e não vou gravar por cima.
+        self._degraded: DurableStorageCorruptionError | None = None
         self._load()
+
+    # -- estado -----------------------------------------------------------
+
+    @property
+    def degraded(self) -> bool:
+        """A camada de entrega está bloqueada por corrupção detectada?"""
+        return self._degraded is not None
+
+    @property
+    def corruption(self) -> DurableStorageCorruptionError | None:
+        """Diagnóstico sanitizado da corrupção, quando houver."""
+        return self._degraded
+
+    def _require_writable(self) -> None:
+        if self._degraded is not None:
+            raise DurableStorageDegradedError(self._file)
 
     # -- persistência -----------------------------------------------------
 
     def _load(self) -> None:
-        """Lê o arquivo. Entrada corrompida é ignorada, não derruba o processo.
+        """Carrega o arquivo, ou entra em modo degradado.
 
-        Um registro ilegível não pode impedir os outros de serem entregues: a
-        alternativa seria uma linha ruim travando a fila inteira.
+        Arquivo ilegível NÃO vira fila vazia. Fingir vazio faria o consumidor
+        concluir que não há nada pendente e a próxima escrita apagaria entregas
+        que ninguém chegou a ver — corrupção recuperável virando perda
+        definitiva.
         """
-        if not self._file.exists():
-            return
         try:
-            raw = json.loads(self._file.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return
-        for item in raw if isinstance(raw, list) else []:
-            try:
-                entry = OutboxEntry(**item)
-            except Exception:
-                continue
-            self._entries[entry.entry_id] = entry
+            raw = load_json_records(self._file)
+            if raw is None:
+                return
+            for entry in parse_records(self._file, raw, OutboxEntry):
+                self._entries[entry.entry_id] = entry
+        except DurableStorageCorruptionError as error:
+            # O store fica vazio em memória, mas marcado: nada será gravado por
+            # cima e toda escrita é recusada explicitamente.
+            self._entries.clear()
+            self._degraded = error
 
     def _persist(self) -> None:
         with self._lock:
@@ -100,15 +125,24 @@ class DurableOutboxStore(OutboxStore):
     # -- escrita ----------------------------------------------------------
 
     def enqueue(self, **kwargs) -> OutboxEntry:
+        self._require_writable()
         entry = super().enqueue(**kwargs)
         self._persist()
         return entry
 
     def _replace(self, entry: OutboxEntry) -> None:
+        self._require_writable()
         super()._replace(entry)
         self._persist()
 
     def clear(self) -> None:
+        """Limpa o store. Permitida mesmo degradado: é a saída da quarentena.
+
+        Depois que alguém revisou a cópia preservada, `clear()` é o gesto
+        explícito de "reconheci a perda e quero um store limpo". Bloqueá-la
+        deixaria o consumidor sem caminho de recuperação.
+        """
+        self._degraded = None
         super().clear()
         self._persist()
 

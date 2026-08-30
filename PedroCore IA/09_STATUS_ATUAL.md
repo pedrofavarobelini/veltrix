@@ -25,7 +25,14 @@ cair — e e ai que o dado se perde. Migrations 0007 e 0008 aditivas; 18 testes
 de restart real, um deles gravando em subprocesso que morre antes da leitura.
 `DATASET_NOT_READY` continua valendo: persistir governanca nao fabrica populacao.
 
-Validacao: `1319 passed, 21 skipped, 0 failed` (+167 desde a Era 3, todos
+FINAL DURABILITY VERIFICATION: duas lacunas fechadas. A implementacao duravel
+nunca era construida fora de teste — agora ha factory ligada a mesma variavel
+de persistencia do resto do sistema, com `off` recusando fail-closed em vez de
+cair em memoria. E corrupcao deixou de virar store vazio: o arquivo ilegivel
+entra em estado degradado, o original e preservado com copia em quarentena, e a
+escrita e recusada ate revisao.
+
+Validacao: `1340 passed, 21 skipped, 0 failed` (+188 desde a Era 3, todos
 novos); Ruff integral PASS; `npm run build` PASS; grafo documental integro.
 Os 21 skips sao os mesmos blockers ambientais/opt-in desde a Era 1.
 

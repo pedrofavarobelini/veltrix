@@ -31,6 +31,12 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from app.modules.dataset_registry.schemas import DatasetDefinition, DatasetVersion
+from app.modules.resilience.storage import (
+    DurableStorageCorruptionError,
+    DurableStorageDegradedError,
+    load_json_object,
+    parse_records,
+)
 
 
 @runtime_checkable
@@ -92,28 +98,46 @@ class LocalJsonDatasetRegistryRepository(InMemoryDatasetRegistryRepository):
         self._directory = Path(directory)
         self._directory.mkdir(parents=True, exist_ok=True)
         self._file = self._directory / "dataset_registry.json"
+        self._degraded: DurableStorageCorruptionError | None = None
         self._load()
 
+    @property
+    def degraded(self) -> bool:
+        """O registry está bloqueado por corrupção detectada?"""
+        return self._degraded is not None
+
+    @property
+    def corruption(self) -> DurableStorageCorruptionError | None:
+        return self._degraded
+
+    def _require_writable(self) -> None:
+        if self._degraded is not None:
+            raise DurableStorageDegradedError(self._file)
+
     def _load(self) -> None:
-        if not self._file.exists():
-            return
+        """Carrega o registry, ou entra em modo degradado read-only.
+
+        Metadata de governança perdida NUNCA vira "registry vazio". Um registry
+        vazio diz "ninguém decidiu nada", e essa é uma afirmação forte e falsa:
+        as decisões existiram, e tratá-las como inexistentes permitiria
+        redefinir um dataset já definido e gravar por cima da linhagem que
+        tornava um modelo auditável.
+        """
         try:
-            raw = json.loads(self._file.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return
-        if not isinstance(raw, dict):
-            return
-        for item in raw.get("definitions", []):
-            try:
-                super().save_definition(DatasetDefinition(**item))
-            except Exception:
-                # Uma definição ilegível não pode impedir as outras de carregar.
-                continue
-        for item in raw.get("versions", []):
-            try:
-                super().append_version(DatasetVersion(**item))
-            except Exception:
-                continue
+            raw = load_json_object(self._file)
+            if raw is None:
+                return
+            for definition in parse_records(
+                self._file, raw.get("definitions", []), DatasetDefinition
+            ):
+                super().save_definition(definition)
+            for version in parse_records(
+                self._file, raw.get("versions", []), DatasetVersion
+            ):
+                super().append_version(version)
+        except DurableStorageCorruptionError as error:
+            super().clear()
+            self._degraded = error
 
     def _persist(self) -> None:
         payload = {
@@ -134,13 +158,17 @@ class LocalJsonDatasetRegistryRepository(InMemoryDatasetRegistryRepository):
         os.replace(temporary, self._file)
 
     def save_definition(self, definition: DatasetDefinition) -> None:
+        self._require_writable()
         super().save_definition(definition)
         self._persist()
 
     def append_version(self, version: DatasetVersion) -> None:
+        self._require_writable()
         super().append_version(version)
         self._persist()
 
     def clear(self) -> None:
+        """Saída explícita da quarentena, após revisão humana da cópia."""
+        self._degraded = None
         super().clear()
         self._persist()

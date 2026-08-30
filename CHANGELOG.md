@@ -58,7 +58,15 @@ schema ou contrato público existente foi removido ou alterado.
 - **Persistência do Dataset Registry** (`dataset_registry/repository.py`) com
   migration `0008_dataset_registry.sql`. Definições, versões e linhagem
   sobrevivem ao restart.
-- `tests/test_durability.py` (18 testes de restart real) e
+- **Factories de persistência** (`resilience/factory.py`,
+  `dataset_registry/factory.py`): a implementação durável passou a ser
+  realmente construída em produção, pela mesma variável de ambiente do resto do
+  sistema. Antes, `DurableOutboxStore` só era instanciado em teste.
+- **Segurança contra corrupção** (`resilience/storage.py`): arquivo ilegível
+  entra em estado degradado com cópia em quarentena, em vez de virar store
+  vazio e ser sobrescrito na escrita seguinte.
+- `tests/test_durability.py` (18 testes de restart real),
+  `tests/test_durability_hardening.py` (21 de corrupção e wiring) e
   `tests/test_migrations_structure.py` (validação offline das migrations).
 - `SECURITY.md`, `CONTRIBUTING.md` e workflow de CI.
 
@@ -117,7 +125,7 @@ DATASET_NOT_READY        correto — não há população real autorizada
 ### Verificação
 
 ```text
-backend      1319 passed, 21 skipped, 0 failed
+backend      1340 passed, 21 skipped, 0 failed
 ruff         All checks passed!
 frontend     tsc -b && vite build PASS
 npm audit    0 vulnerabilities (produção)

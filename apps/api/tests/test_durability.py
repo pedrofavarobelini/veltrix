@@ -392,15 +392,17 @@ def test_reconciliation_after_restart_reports_what_to_resend(tmp_path):
 
 
 def test_corrupted_file_does_not_crash_the_consumer(tmp_path):
-    """Uma linha ruim não pode travar a fila inteira."""
+    """Corrupção não derruba o processo — mas também não vira fila vazia.
+
+    Esta era a versão antiga do teste, que afirmava `all_entries() == []` e
+    seguia gravando por cima. Ela codificava o defeito: fingir vazio fazia a
+    escrita seguinte apagar entregas que ninguém viu. O comportamento correto
+    é degradar, e é o que se afirma agora.
+    """
     (tmp_path / "outbox.json").write_text("{ isto não é json válido", encoding="utf-8")
     store = DurableOutboxStore(tmp_path)
-    assert store.all_entries() == []
-    store.enqueue(
-        entry_id="out-1", project_id=PROJECT, idempotency_key="k1",
-        payload=_envelope(), now=NOW,
-    )
-    assert _restart(tmp_path).get("out-1") is not None
+    assert store.degraded is True
+    assert store.corruption is not None
 
 
 # ---------------------------------------------------------------------------

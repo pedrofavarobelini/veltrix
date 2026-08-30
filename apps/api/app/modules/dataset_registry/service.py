@@ -23,10 +23,12 @@ import json
 from datetime import datetime, timezone
 
 from app.modules.caller_identity.schemas import AuthenticatedCallerContext
-from app.modules.dataset_registry.repository import (
-    DatasetRegistryRepository,
-    InMemoryDatasetRegistryRepository,
+from app.modules.dataset_registry.factory import build_dataset_registry_repository
+from app.modules.dataset_registry.repository import DatasetRegistryRepository
+from app.modules.report_memory.repository import (
+    ReportMemoryRepositoryConfigurationError,
 )
+from app.modules.report_memory.service import persistence_mode
 from app.modules.dataset_registry.schemas import (
     DatasetDefinition,
     DatasetLineageEntry,
@@ -87,16 +89,49 @@ class DatasetRegistryService:
     """
 
     def __init__(self) -> None:
-        self._repository: DatasetRegistryRepository = (
-            InMemoryDatasetRegistryRepository()
-        )
+        # Nao ha default em memoria aqui, e a ausencia e o ponto. Um default
+        # implicito faria producao usar store efemero sem ninguem escolher
+        # isso — que era exatamente o defeito desta camada antes.
+        self._override: DatasetRegistryRepository | None = None
+        self._resolved: DatasetRegistryRepository | None = None
+        self._resolved_mode: str | None = None
 
     def set_repository(self, repository: DatasetRegistryRepository | None) -> None:
-        """Injeta o repositorio. `None` volta ao store em memoria."""
-        self._repository = repository or InMemoryDatasetRegistryRepository()
+        """Injeta um repositorio (teste). `None` volta a resolver do ambiente."""
+        self._override = repository
+        self._resolved = None
+        self._resolved_mode = None
+
+    def _repository_or_raise(self) -> DatasetRegistryRepository:
+        """Resolve uma vez e reaproveita enquanto o modo nao mudar.
+
+        A instancia precisa ser cacheada: construir um store novo a cada acesso
+        mandaria a escrita para um objeto e a leitura para outro, e um store em
+        memoria pareceria nao guardar nada. O modo entra na chave para que
+        mudar a configuracao (em teste ou em runtime) reconstrua de fato.
+        """
+        if self._override is not None:
+            return self._override
+        mode = persistence_mode()
+        if self._resolved is None or self._resolved_mode != mode:
+            self._resolved = build_dataset_registry_repository()
+            self._resolved_mode = mode
+        return self._resolved
+
+    @property
+    def _repository(self) -> DatasetRegistryRepository:
+        return self._repository_or_raise()
 
     def reset(self) -> None:
-        self._repository.clear()
+        """Limpa o store atual. Silencioso quando nao ha store configurado."""
+        self._resolved = None
+        self._resolved_mode = None
+        try:
+            self._repository_or_raise().clear()
+        except ReportMemoryRepositoryConfigurationError:
+            # `reset` e usado em teardown de teste; exigir configuracao ali
+            # transformaria limpeza em pre-requisito de configuracao.
+            return
 
     # -- definicao --------------------------------------------------------
 

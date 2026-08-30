@@ -210,15 +210,65 @@ mesmo objeto em memória não prova nada: ele nunca perdeu o estado. Um dos
 testes vai além e grava em **subprocesso separado**, que morre antes de o teste
 ler o arquivo.
 
-**Provado por 18 testes** (`tests/test_durability.py`): enqueue, persistência,
+### Wiring de produção
+
+A durabilidade não vale como classe disponível — vale como caminho realmente
+percorrido. A implementação é escolhida pela **mesma** variável do resto do
+sistema, `PEDROCORE_REPORT_MEMORY_PERSISTENCE`:
+
+| modo | outbox | dataset registry | durável? |
+|---|---|---|---|
+| `off` | **recusa** fail-closed | **recusa** fail-closed | — |
+| `memory` | `OutboxStore` | `InMemory...` | não (explícito) |
+| `local_json` | `DurableOutboxStore` | `LocalJson...` | **sim** |
+| `postgresql` | `PostgreSQLOutboxStore` | **recusa** (não implementado) | sim / — |
+
+`off` recusa em vez de cair em memória: um outbox que silenciosamente não
+persiste promete uma garantia de entrega que não tem, e o consumidor descobre
+no primeiro restart — com dado já perdido. `memory` continua disponível, mas
+só por escolha explícita.
+
+O registry PostgreSQL **recusa** em vez de cair para arquivo. As tabelas
+existem na migration `0008`, mas o repositório não foi escrito; cair para
+arquivo faria o operador acreditar que a governança está no banco de que ele
+faz backup quando está em um arquivo local que ninguém copia.
+
+### Corrupção: detectar, preservar, degradar
+
+A primeira versão tratava arquivo ilegível como store vazio. Isso é pior do que
+não persistir: o consumidor conclui que não há nada pendente, e a escrita
+seguinte apaga entregas que ninguém chegou a ver.
+
+| Antes | Depois |
+|---|---|
+| corrompido → fila vazia | corrompido → estado **degradado** |
+| registro inválido → descartado | registro inválido → **corrupção** |
+| escrita seguinte sobrescrevia | escrita **recusada** até revisão |
+| — | original preservado + **cópia** em quarentena |
+
+A quarentena é cópia e não movimentação: mover liberaria o caminho original e a
+escrita seguinte criaria um arquivo novo por cima — o desaparecimento que se
+quer impedir. `clear()` é a saída explícita, depois que alguém revisou.
+
+O diagnóstico carrega caminho, motivo e índice do registro — **nunca o
+conteúdo**. Um outbox corrompido contém payloads de evidência, e reproduzi-los
+na mensagem os colocaria no log de quem tentava protegê-los.
+
+**Provado por 39 testes** (`tests/test_durability.py` e
+`test_durability_hardening.py`): enqueue, persistência,
 sobrevivência de pendente, cronograma de backoff preservado, retry após
 restart, acknowledgement preservado, duplicata sem duplo registro, dead-letter
 revisável, requeue, reconciliação após restart, e arquivo corrompido que não
 derruba o consumidor.
 
-**Verificação por mutação:** desligar o carregamento do disco reprovou 9 dos 18
-testes. Os que sobreviveram são os que não dependem de restart — exatamente os
-esperados.
+**Verificação por mutação**, três sabotagens deliberadas, todas restauradas:
+
+| Sabotagem | Reprovou |
+|---|---|
+| carregamento do disco desligado | 9 de 18 |
+| corrupção volta a virar lista vazia | 5 de 21 |
+| quarentena move em vez de copiar | 4 de 21 |
+| serviço volta a default em memória | 2 de 21 |
 
 **Persistir governança não fabricou população.** Um teste dedicado confirma que
 `DATASET_NOT_READY` continua valendo depois do reload, e que nenhuma versão de
@@ -228,12 +278,12 @@ dataset foi materializada.
 
 | Suíte | Comando | Resultado |
 |---|---|---|
-| Backend integral | `python -m pytest -q` | **1319 passed, 21 skipped, 0 failed** |
+| Backend integral | `python -m pytest -q` | **1340 passed, 21 skipped, 0 failed** |
 | Lint | `python -m ruff check .` | **All checks passed!** |
 | Frontend | `npm run build` (`tsc -b && vite build`) | **PASS** |
 | Grafo documental | `docs_graph.build_graph()` | **íntegro** |
 
-Evolução: 1152 (baseline Era 3) → 1273 (Era 10) → **1319** = **+167**, todos novos.
+Evolução: 1152 (baseline Era 3) → 1273 (Era 10) → 1319 → **1340** = **+188**, todos novos.
 Zero regressão em todas as Eras.
 
 ### Os 21 skips
@@ -258,6 +308,7 @@ restaurado em seguida:
 | Anti-acoplamento (Era 3) | `project_id == "finguard"` no core | 1 teste reprovou |
 | Contract freeze (Era 9) | `quality_score` na QEC | 2 testes reprovaram |
 | Durabilidade (Hardening) | carregamento do disco desligado | 9 testes reprovaram |
+| Corrupção (Verification) | corrompido volta a virar vazio | 5 testes reprovaram |
 
 ## 8. Segurança
 
