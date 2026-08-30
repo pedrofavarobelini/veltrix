@@ -10,6 +10,13 @@ Contratos: [[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]].
 Baseline inicial: [[PEDROCORE_CURRENT_ARCHITECTURE_BASELINE]].
 Migração: [[PEDROCORE_CONTROL_PLANE_MIGRATION_MAP]].
 
+## 0. Licença
+
+**Apache License 2.0** (SPDX `Apache-2.0`). O arquivo `LICENSE` está na raiz
+do repositório, e a metadata correspondente em `apps/api/pyproject.toml`
+(`License-Expression: Apache-2.0`, verificado no wheel construído) e em
+`apps/web/package.json`.
+
 ## 1. Arquitetura final
 
 ```text

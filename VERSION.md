@@ -1,6 +1,8 @@
 # PedroCore IA — Versionamento
 
-Atualizado em: 29/08/2026
+Atualizado em: 30/08/2026
+
+Licença: **Apache-2.0**.
 
 ## Versão atual de produto
 

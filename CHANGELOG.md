@@ -17,6 +17,10 @@ schema ou contrato público existente foi removido ou alterado.
 
 ### Adicionado
 
+- **`LICENSE` — Apache License 2.0** (SPDX `Apache-2.0`), com a metadata
+  correspondente em `apps/api/pyproject.toml` (`License-Expression`) e
+  `apps/web/package.json`.
+
 - **Fronteiras de plano declaradas e verificadas** (`app/architecture/planes.py`).
   Runtime Plane, Learning Plane, Shared Kernel e Consumer Capabilities. Um
   módulo novo sem plano declarado quebra o build; a direção da dependência é
@@ -97,6 +101,12 @@ schema ou contrato público existente foi removido ou alterado.
   que nomeia um sistema revela a terceiros quais o PedroCore conhece.
 - `postcss` atualizado de 8.5.15 para 8.5.26 (duas vulnerabilidades altas,
   transitivas via `vite`, apenas em tempo de build). Saída do build inalterada.
+- **`pip install -e .` falhava** com "Multiple top-level packages discovered in
+  a flat-layout: ['app', 'migrations']". Defeito pré-existente que o passo de
+  instalação da CI teria encontrado na primeira execução. Corrigido com
+  descoberta explícita de pacotes (`[tool.setuptools.packages.find]`); o wheel
+  agora inclui `app` e exclui `migrations`, que são SQL aplicado por um runner
+  e não um pacote Python.
 - Duas contagens de arquivo publicadas em relatórios intermediários estavam
   erradas por contar uma pasta de documentação como uma linha; recontadas a
   partir do Git e corrigidas na documentação.

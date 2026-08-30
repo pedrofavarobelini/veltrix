@@ -6,6 +6,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Artefatos de build Python (gerados por `uv build` / `pip install -e .`)
+build/
+dist/
+*.egg-info/
+
 # Ambiente Node
 node_modules/
 dist/

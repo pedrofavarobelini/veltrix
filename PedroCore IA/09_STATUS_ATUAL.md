@@ -1,6 +1,16 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 29/08/2026
+Atualizado em: 30/08/2026
+
+## LICENCA — APACHE 2.0
+
+O repositorio passou a ser licenciado sob a Apache License 2.0 (SPDX
+`Apache-2.0`), com metadata em `pyproject.toml` e `package.json`. A escolha
+de licenca era a ultima pendencia humana antes da publicacao.
+
+Correcao junto: `pip install -e .` falhava por descoberta ambigua de pacotes
+(`app` e `migrations` no mesmo nivel) — defeito pre-existente que o passo de
+instalacao da CI teria encontrado na primeira execucao.
 
 ## PEDROCORE-CONTROL-PLANE — ERAS 4 A 10 — PASS
 

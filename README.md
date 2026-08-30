@@ -1,5 +1,9 @@
 # PedroCore IA
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+Licenciado sob a **Apache License 2.0** (SPDX: `Apache-2.0`). Veja [LICENSE](LICENSE).
+
 ## FRENTE ATUAL — AI RUNTIME & LEARNING CONTROL PLANE
 
 `PEDROCORE-CONTROL-PLANE-01` reorganizou o PedroCore em duas fronteiras
