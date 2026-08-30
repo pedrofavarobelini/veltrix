@@ -142,6 +142,10 @@ _RUNTIME_MODULES = frozenset(
 _LEARNING_MODULES = frozenset(
     {
         "training_data",
+        # Dataset Control Plane (Era 7). Learning Plane porque o Dataset
+        # Ownership e do PedroCore: definir escopo, versionar, registrar
+        # linhagem e decidir split sao decisoes de aprendizado, nao de runtime.
+        "dataset_registry",
     }
 )
 
