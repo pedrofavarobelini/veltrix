@@ -265,6 +265,17 @@ class EvidenceIngestionService:
     ) -> int:
         return self._required_repository().count(project_id, kind=kind)
 
+    def get_evidence(
+        self, project_id: str, evidence_record_id: str
+    ) -> EvidenceRecord | None:
+        """Leitura por id — usada pelo Learning Plane na selecao governada.
+
+        Ler daqui e a direcao CORRETA da dependencia: o Learning Plane consome
+        evidencia do Runtime Plane. O contrario — a Evidence Platform criando
+        candidato — e o que a Era 4 proibiu.
+        """
+        return self._required_repository().get(project_id, evidence_record_id)
+
 
 _MEMORY_SINGLETON = InMemoryEvidenceRepository()
 

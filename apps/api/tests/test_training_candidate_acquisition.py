@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.modules.caller_identity.service import FLAG_CALLER_REGISTRY
+from app.modules.evidence_platform.schemas import EvidenceKind, EvidenceRecord
+from app.modules.evidence_platform.service import evidence_ingestion_service
 from app.modules.interaction_outcomes.repository import (
     PostgreSQLInteractionOutcomeRepository,
 )
@@ -316,6 +318,29 @@ def _report(report_id: str, report_type: str) -> ReportMemoryEntry:
     )
 
 
+
+def _evidence_record() -> EvidenceRecord:
+    """Evidencia ja registrada, do jeito que a Era 4 a grava."""
+    moment = datetime(2026, 8, 29, 12, 0, 0, tzinfo=timezone.utc)
+    return EvidenceRecord(
+        evidence_record_id="evidence-adapter-1",
+        project_id="alpha",
+        producer_id="alpha-technical-tool",
+        kind=EvidenceKind.QUALITY_EVIDENCE,
+        event_id="evt-adapter-1",
+        correlation_id="corr-adapter-1",
+        contract_version="pedrocore-quality-evidence/v1",
+        fingerprint="sha256:" + "c" * 64,
+        submitted_at=moment,
+        received_at=moment,
+        payload={
+            "outcome": "passed",
+            "environment": "ci",
+            "suites": [{"suite_id": "unit", "outcome": "passed", "total": 4, "passed": 4}],
+        },
+    )
+
+
 def test_internal_source_adapters_use_existing_domain_records(monkeypatch):
     """Cobre todas as origens com adapter interno.
 
@@ -337,6 +362,15 @@ def test_internal_source_adapters_use_existing_domain_records(monkeypatch):
         "get_report",
         lambda _project, source_id: reports.get(source_id),
     )
+    # Era 5: a Evidence Platform e uma origem com adapter INTERNO porque o
+    # registro pertence ao PedroCore — selecionar dele nao exige alcancar a
+    # base de consumidor algum. A selecao continua manual.
+    evidence = _evidence_record()
+    monkeypatch.setattr(
+        evidence_ingestion_service,
+        "get_evidence",
+        lambda _project, source_id: evidence if source_id == evidence.evidence_record_id else None,
+    )
     selections = [
         (TrainingSourceType.INTERACTION_OUTCOME, "adapter-outcome", TrainingPurpose.GENERATIVE_SFT),
         (TrainingSourceType.OPERATIONAL_PATTERN, "memory-adapter-1", TrainingPurpose.GENERATIVE_SFT),
@@ -345,6 +379,7 @@ def test_internal_source_adapters_use_existing_domain_records(monkeypatch):
         (TrainingSourceType.RISK_ANALYSIS, "report-risk", TrainingPurpose.RISK),
         (TrainingSourceType.EXECUTION_OUTCOME, "report-execution", TrainingPurpose.RISK),
         (TrainingSourceType.HUMAN_FEEDBACK, "adapter-outcome", TrainingPurpose.PREFERENCE),
+        (TrainingSourceType.EVIDENCE_RECORD, "evidence-adapter-1", TrainingPurpose.GENERATIVE_SFT),
     ]
 
     proposals = [

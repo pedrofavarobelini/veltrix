@@ -74,6 +74,24 @@ _SOURCE_DEFINITIONS = (
     # capaz de coletar esta origem sozinho. O conteudo chega ja minimizado,
     # sanitizado, com proveniencia e fingerprint, pela capability
     # `governed_learning_candidate_submission`.
+    # Era 5: evidencia registrada pela Evidence Platform. Coletavel por adapter
+    # interno porque o registro e DO PedroCore — nao exige alcancar a base de
+    # nenhum consumidor. Ainda assim, a selecao continua manual.
+    TrainingSourceDefinition(
+        source_type=TrainingSourceType.EVIDENCE_RECORD,
+        entity="EvidenceRecord",
+        module="evidence_platform",
+        required_provenance=[
+            "evidence_record_id",
+            "fingerprint",
+            "contract_version",
+            "policy_version",
+        ],
+        target_basis=(
+            "fato operacional recebido por contrato universal, ja validado "
+            "contra privacidade e autoridade na ingestao"
+        ),
+    ),
     TrainingSourceDefinition(
         source_type=TrainingSourceType.ELYRA_REPORT_SNAPSHOT,
         entity="ElyraLearningExport",
