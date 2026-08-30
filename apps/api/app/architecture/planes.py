@@ -146,6 +146,10 @@ _LEARNING_MODULES = frozenset(
         # Ownership e do PedroCore: definir escopo, versionar, registrar
         # linhagem e decidir split sao decisoes de aprendizado, nao de runtime.
         "dataset_registry",
+        # Evaluation & Training Foundation (Era 8). Learning Plane: decide o
+        # que treinar, com qual dataset e sob qual politica. Quem roda a GPU e
+        # um `TrainingBackend` — nenhum nome de provider entra no dominio.
+        "training_foundation",
     }
 )
 
