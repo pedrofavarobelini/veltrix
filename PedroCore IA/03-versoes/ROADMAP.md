@@ -4,6 +4,61 @@
 
 > Nota DOCFIX: o estado atual canônico está em [[../00_MAPEAMENTO_GERAL_PEDROCORE]]. Seções históricas de planejamento foram preservadas, mas devem ser lidas como contexto da época em que foram escritas.
 
+## ERAS 1–3 — ESTADO E ROADMAP DE TREINAMENTO (20/08/2026)
+
+Fechamento: [[../19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
+
+- Era 1 — Operational Intelligence Foundation: **PASS**.
+- Era 2 — Motor de Risco de Execução por IA: **PASS**.
+- Era 3 — Training Foundation: **FOUNDATION PASS / TRAINING DEFERRED**.
+- Candidate Acquisition Foundation: **IMPLEMENTED**.
+- Candidatos reais autorizados: **0**; `DATASET_NOT_READY`.
+
+Roadmap `PLANNED`, condicionado a dados reais e Readiness PASS:
+
+```text
+Canonical Dataset V1
+→ sanitization / deduplication / quality gate
+→ train / validation / test
+→ hardware e license audit
+→ benchmark de base model
+→ Hugging Face + PEFT/LoRA/SFT
+→ fine-tuning
+→ comparação base × fine-tuned
+→ acceptance gate / packaging
+→ futura integração LocalModelProvider
+```
+
+Nenhum item dessa cadeia deve ser lido como implementado. O adapter/contrato
+`local_model` existente não é um Local Provider treinado.
+
+## PEDROCORE-V1-FINAL-CLOSURE — CONCLUÍDA (16/08/2026)
+
+Status: **concluída**. Mapa: [[../MOC_UX_V1]].
+
+Saiu da lista de pendências e passou a ser estado corrente:
+
+- interface pública fechada (composer, drawer, seletor de IA) — V5.2.0;
+- modo DEV dos providers internos coerente entre drawer e composer;
+- entrada de voz no composer;
+- anexos textuais reais pelo contrato `artifacts` existente;
+- primeira suíte de testes do frontend (`86 passed`);
+- auditoria de segurança dos cenários A/B/C/D;
+- reconciliação documental e `SECURITY.md`/`CONTRIBUTING.md`.
+
+### Continua pendente de verdade
+
+- **`LICENSE`** — decisão humana/jurídica; único item que impede a publicação.
+- **Requisitos de deploy público** (cenário D): autenticação obrigatória no
+  `/api/chat`, rate limiting, teto de payload e TLS. Ver
+  [[../20-ux-v1/MODELO_DE_AMEACA]].
+- **V2 — Multimodal**: imagem, PDF e DOCX. Exige mudar a assinatura de
+  `BaseAIProvider.generate_response`, hoje só textual. Escopo completo em
+  [[../20-ux-v1/V2_MULTIMODAL]].
+- **Segundo provider real homologado** (Claude ou OpenAI), em frente própria.
+- Transport real do `local_model`; persistência da observabilidade; execução
+  real de OCR e Playwright — todos opt-in e dependentes de aprovação.
+
 ## FINGUARD-PEDROCORE-ASSISTANT-FINAL-CLOSE-01
 
 Status: **encerrada. O Assistente IA está fechado.**

@@ -1,6 +1,14 @@
 # MOC Versoes Status
 
-## Frente atual — 2026-08-14
+## Checkpoint atual — 2026-08-20
+
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]]
+- Era 1 PASS; Era 2 PASS; Era 3 FOUNDATION PASS / TRAINING DEFERRED.
+- Zero candidatos reais autorizados; `DATASET_NOT_READY`.
+- `924 passed, 7 skipped, 2 warnings`; Ruff global PASS; Pyright Era 3 sem erros.
+- Fechamento documental sem alteração de versão, tag ou Git.
+
+## Frente anterior — 2026-08-14
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]]
 - [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]]
@@ -24,6 +32,7 @@ Mapa de versao, status, changelog e fechamento.
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]]
 - [[18-provider-output-budget-cancellation/FECHAMENTO_PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]]
 - [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]] — Assistente IA encerrado (3/4)
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]]
 
 ## Tags e commits
 

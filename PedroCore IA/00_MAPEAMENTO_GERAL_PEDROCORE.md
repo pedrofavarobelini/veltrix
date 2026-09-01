@@ -1,6 +1,19 @@
 # Mapeamento Geral PedroCore IA
 
-Atualizado em: 26/07/2026
+Atualizado em: 20/08/2026
+
+> **Checkpoint canônico atual — Eras 1–3.** Era 1 (Operational Intelligence)
+> PASS; Era 2 (Motor de Risco) PASS; Era 3 FOUNDATION PASS / TRAINING DEFERRED.
+> Candidate Acquisition está implementada, mas há zero candidatos reais
+> autorizados e `DATASET_NOT_READY`. Canonical Dataset, splits, Hugging Face,
+> fine-tuning, modelo próprio e Local Provider treinado não existem neste
+> checkpoint. Arquitetura consolidada e roadmap:
+> [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
+
+> As notas de checkpoint abaixo preservam fatos históricos de cada frente. Para
+> números e estado corrente, prevalece o fechamento Eras 1–3: backend
+> `924 passed, 7 skipped, 2 warnings`, Ruff global PASS e Pyright Era 3 sem
+> erros.
 
 > Nota MULTI-PROVIDER-SAFE-EVOLUTION: as Etapas 1–7 e as correções estão consolidadas em [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] e [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]]. Arquitetura multi-provider concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível. Última validação integral: `570 passed, 7 skipped, 2 warnings`; eval `14/14`, `risk_level="none"`; zero chamadas externas reais.
 

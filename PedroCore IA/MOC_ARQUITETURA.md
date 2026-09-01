@@ -22,6 +22,8 @@ e cobrados por `tests/test_universal_contracts.py`:
 - [[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]] - referencia de integracao dos cinco contratos, codigos de recusa e migracao dos acoplamentos.
 - [[PEDROCORE_CONTROL_PLANE_FINAL_STATE]] - estado final das Eras 1 a 10: arquitetura, contratos congelados, politica de breaking change, banco, testes e divida tecnica.
 
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]] -
+  arquitetura consolidada de Operational Intelligence, Risk Engine e Training Foundation.
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 5 a 8 documentam arquitetura, endpoints, modulos e fluxo `/api/orchestrate`.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - fechamento final do core operacional seguro.
 - [[10-api/EXEMPLOS_API_MVP]] - exemplos seguros de `/api/chat` e `/api/orchestrate`.

@@ -1,3 +1,20 @@
+/**
+ * Artefato textual enviado junto da mensagem.
+ *
+ * Espelha `ArtifactInput` do backend (`modules/artifacts/schemas.py`). Existe
+ * desde a frente de artefatos e já é o transporte usado por FinGuard e
+ * Structa — os anexos do composer entram por aqui, sem endpoint novo.
+ *
+ * `metadata` é intencionalmente omitido: o backend REJEITA o artefato inteiro
+ * quando encontra chave de caminho de arquivo, e o composer não tem o que
+ * enviar além de nome e conteúdo.
+ */
+export type ArtifactInput = {
+  type: string;
+  name?: string;
+  content?: string;
+};
+
 export type ChatRequest = {
   message: string;
   mode: string;
@@ -5,6 +22,7 @@ export type ChatRequest = {
   model?: string;
   system_prompt?: string;
   allow_real_provider?: boolean;
+  artifacts?: ArtifactInput[];
 };
 
 export type ChatResponse = {
@@ -18,6 +36,8 @@ export type ChatResponse = {
   warning_codes?: string[];
   status?: string;
   error?: string | null;
+  /** Avisos do processamento de artefatos (truncamento, tipo desconhecido, …). */
+  artifact_warnings?: string[];
 };
 
 export type ProviderInfo = {

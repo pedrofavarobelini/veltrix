@@ -3,14 +3,53 @@
 Atualizado em: 30/08/2026
 
 Licença: **Apache-2.0**.
+Atualizado em: 20/08/2026
+
+## Checkpoint documental atual
+
+O fechamento das Eras 1–3 não altera versão de produto, pacote ou tag:
+
+```text
+Era 1  PASS
+Era 2  PASS
+Era 3  FOUNDATION PASS / TRAINING DEFERRED
+```
+
+Candidate Acquisition Foundation está implementada; candidatos reais
+autorizados permanecem em zero e o resultado é `DATASET_NOT_READY`. Canonical
+Dataset, splits, Hugging Face, fine-tuning, modelo próprio e Local Provider
+treinado não foram entregues. Ver
+`PedroCore IA/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md`.
+
+## As três numerações — leia isto antes de comparar números
+
+O projeto tem **três** eixos de versão independentes. Confundi-los é a fonte
+mais comum de leitura errada da documentação.
+
+| Eixo | Valor atual | O que marca |
+| --- | --- | --- |
+| **Produto (UI)** | `V5.2.0` | Entregas visuais/funcionais do frontend. É o rótulo exibido na interface. |
+| **Técnica (API)** | `0.2.0` | Versão do pacote Python em `apps/api/pyproject.toml` e em `FastAPI(version=…)`. |
+| **Marco Git (tag)** | `v7.0.0` | Marcos técnicos do repositório. **Não** acompanha o produto. |
+
+Consequência a ter em mente: a tag `v6.0.0` marca o **MVP backend**, e não a
+versão 6 do produto. Produto e tag nunca foram sincronizados e não devem ser.
 
 ## Versão atual de produto
 
-V5.1.9
+**V5.2.0** — elevada de `V5.1.9` por `PEDROCORE-V1-FINAL-CLOSURE`.
+
+É um **minor** da linha 5.x porque a frente acrescentou recursos de interface —
+composer único, drawer de Configurações, ditado por voz e anexos textuais — sem
+quebrar nenhum contrato de API. Nenhuma numeração histórica foi renumerada.
+
+Não foi escolhido `V6.0.0` deliberadamente: colidiria com a leitura da tag
+`v6.0.0`, que significa outra coisa.
 
 ## Versão técnica do backend
 
-0.2.0 (`apps/api/pyproject.toml`) — sem alteração nesta frente.
+`0.2.0` (`apps/api/pyproject.toml`) — **sem alteração**. Nenhum arquivo de
+`apps/api/` foi modificado por esta frente.
 
 ## Frente atual — Control Plane completo (Eras 1 a 10)
 
@@ -70,6 +109,23 @@ não houve mudança de contrato público.
   eval `14/14`, `risk_level=none`; grafo 155 documentos/822 links; zero
   chamadas externas.
 - Gate: [[PedroCore IA/17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+## Frente atual — PEDROCORE-V1-FINAL-CLOSURE
+
+Fechamento da interface pública da V1. Mapa: `PedroCore IA/MOC_UX_V1.md`.
+Relatório: `PedroCore IA/20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01.md`.
+
+- Composer único com seletor de IA, anexos e microfone; Configurações em drawer
+  acessível; sem cards de provider no topo.
+- Modo DEV coerente: `mock` é destino de conversa com selo `DEV`; `auto`,
+  `local_qa` e `local_model` não são destinos e passaram a ser exibidos como
+  referência não selecionável.
+- Voz sem gravar, guardar ou transmitir áudio.
+- Anexos textuais pelo contrato `artifacts` já existente — nenhum endpoint novo.
+- Primeira suíte de testes do frontend: `86 passed`, com versões **exatas**.
+- Multimodal adiado formalmente para a V2.
+- Validação: backend `751 passed, 7 skipped, 2 warnings`; frontend `86 passed`;
+  typecheck e build PASS; grafo documental íntegro.
+- Nenhuma tag criada nesta frente.
 
 ## Frente anterior — onboarding seguro do Structa
 
@@ -141,17 +197,28 @@ Resumo:
 
 ## Observação sobre versionamento
 
-Existem duas numerações distintas no projeto, que não devem ser confundidas:
+A taxonomia completa está no topo deste documento. Registro histórico: nenhuma
+das numerações foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E); a versão de
+produto passou de `V5.1.9` para `V5.2.0` apenas em `PEDROCORE-V1-FINAL-CLOSURE`.
 
-- **Versão de produto** (V5.1.9): marca entregas visuais/funcionais de frontend.
-- **Versão técnica do backend** (`0.2.0`): versão do pacote Python da API.
+## Próximos passos
 
-Nenhuma das duas foi alterada por `PEDROCORE-REPLAN-01` (01A a 01E).
+### Decisão humana pendente
 
-## Próximos passos (opcionais, pós-fechamento)
+- **`LICENSE`** — não foi criada por decisão deliberada: escolher licença é
+  decisão jurídica do proprietário, não do executor técnico. É o único item que
+  impede a publicação no GitHub.
 
+### Antes de expor a API na internet
+
+- Autenticação obrigatória no `/api/chat`, rate limiting, teto de payload e TLS.
+  Ver `PedroCore IA/20-ux-v1/MODELO_DE_AMEACA.md`.
+
+### Opcionais, pós-fechamento
+
+- V2 — Multimodal (imagem/PDF/DOCX): `PedroCore IA/20-ux-v1/V2_MULTIMODAL.md`.
 - Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI mediante decisão explícita.
-- Push para GitHub/portfólio e deploy — decisões humanas futuras.
-- Execução real de OCR/multimodal/Playwright somente com flags, dependências instaladas manualmente e revisão humana.
+- Execução real de OCR/Playwright somente com flags, dependências instaladas manualmente e revisão humana.
+- Transport real do `local_model`; persistência da observabilidade.
 - Saneamento adicional de documentos históricos duplicados dentro de `PedroCore IA/`, se o usuário quiser reduzir ruído do vault.
 - Bloco 12 (dashboard/logs/admin): cancelado por decisão de produto — não é pendência.

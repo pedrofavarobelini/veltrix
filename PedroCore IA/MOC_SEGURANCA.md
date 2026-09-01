@@ -4,6 +4,15 @@ Mapa dos limites de seguranca do PedroCore IA.
 
 ## Referencias atuais
 
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]] -
+  limites consolidados das Eras 1–3 e do roadmap de treinamento.
+- [[10-contratos/CONTRATO_OPERATIONAL_MEMORY]] - evidência, promoção e lifecycle.
+- [[10-contratos/CONTRATO_EXECUTION_CONTRACT]] - HMAC, scope, gates e review humano.
+- [[10-contratos/CONTRATO_TRAINING_DATA_CANDIDATE]] - privacy, provenance e autorização neural.
+- [[16-training-data/DATASET_READINESS_AUDIT]] - zero candidatos reais autorizados.
+- [[20-ux-v1/MODELO_DE_AMEACA]] - **cenários A/B/C/D**: seguro para uso local,
+  ecossistema local e código público; NÃO seguro para API na internet, com a
+  lista dos requisitos de deploy que faltam.
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]] - secoes 11 a 19 e 27.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]] - garantias finais.
 - [[MOC_QA_SAFETY_HARDENING]] - safety hardening commitado em `d6106b7`.
@@ -39,6 +48,22 @@ Mapa dos limites de seguranca do PedroCore IA.
 - Fallback real: default-off, somente para `provider_pre_dispatch + not_dispatched + external_dispatch=false`, no máximo um secundário; timeout nunca qualifica.
 - Structa: somente `registered + technical_tool + qa_report_analysis + gemini` em ambiente não produtivo; `local_trusted`, wildcard e providers diferentes são negados.
 
+### Frontend (UX V1)
+
+- Chaves de API **nunca** no navegador: o `localStorage` guarda preferências e o
+  **ID** do provider autorizado, que é consentimento e não credencial.
+- Autorização por provider: trocar de IA descarta a anterior; autorização de um
+  provider não vale para outro.
+- Sem XSS: nenhum `dangerouslySetInnerHTML`, `innerHTML` ou `eval` em
+  `apps/web/src`; conteúdo renderizado como texto pelo escape do React.
+- Microfone: áudio não é gravado, guardado, logado nem enviado ao PedroCore ou
+  a provider; a interface não afirma que a transcrição é offline.
+- Anexos: allowlist por extensão, MIME como sinal secundário, limites abaixo dos
+  do backend, nome saneado tratado como metadado e nunca como caminho, conteúdo
+  nunca executado nem exibido.
+- Providers internos ficam fora da build pública; a área técnica do drawer é
+  eliminada do bundle de produção.
+
 ## Codigo relacionado
 
 - `apps/api/app/modules/policy_enforcement/`
@@ -65,3 +90,9 @@ Mapa dos limites de seguranca do PedroCore IA.
   do cenário Organizar não pôde ser determinada.
 - Valores de orçamento de saída derivam do `response_style` das tasks, não de
   medição real de tokens; podem precisar de ajuste após sonda autorizada.
+- **`/api/chat` não tem autenticação.** É deliberado: o endpoint serve o próprio
+  frontend local e mantém compatibilidade com consumidores antigos. Isso é
+  aceitável nos cenários A, B e C, e é bloqueante para o cenário D. Ver
+  [[20-ux-v1/MODELO_DE_AMEACA]].
+- Não há rate limiting nem teto global de payload; ambos são requisitos de
+  deploy, não de uso local.

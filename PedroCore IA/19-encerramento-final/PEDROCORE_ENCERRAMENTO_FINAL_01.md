@@ -1,5 +1,11 @@
 # PedroCore IA — Encerramento final
 
+> **Checkpoint histórico do encerramento do core.** O core aqui descrito
+> permanece encerrado no próprio escopo. O estado consolidado posterior das
+> Eras 1–3 está em
+> [[PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]] e prevalece para testes,
+> Operational Intelligence, Risk Engine e Training Foundation.
+
 Frente: `FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01`.
 
 Status: **CANÔNICO ATUAL**. Este documento descreve o estado final do PedroCore

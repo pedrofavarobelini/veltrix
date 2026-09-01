@@ -9,6 +9,30 @@
   Gate PASS, `959 passed`, zero chamadas externas.
 - [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]] — contrato executável para a Stage
   09 consumir em execução separada.
+## Eras 1–3 — CANÔNICO ATUAL
+
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]] —
+  fechamento consolidado de Operational Intelligence, Risk Engine e Training
+  Foundation.
+- **Era 1:** PASS — Operational Intelligence Foundation.
+- **Era 2:** PASS — Motor de Risco de Execução por IA.
+- **Era 3:** FOUNDATION PASS / TRAINING DEFERRED.
+- Training Candidates reais autorizados: **0**; readiness:
+  **`DATASET_NOT_READY`**.
+- Última evidência backend disponível: `924 passed, 7 skipped, 2 warnings`;
+  Ruff global PASS; Pyright Era 3 sem erros.
+
+## UX V1 — ESTADO DE PRODUTO PRESERVADO
+
+- [[MOC_UX_V1]] — mapa das frentes `PEDROCORE-V1-FINAL-CLOSURE` e
+  `PEDROCORE-V1-FINAL-UI-FIX`: composer único, Configurações em drawer, catálogo
+  correto das IAs públicas, modo DEV coerente, ditado por voz, anexos textuais
+  reais e a primeira suíte de testes do frontend.
+- [[20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01]] — relatório final e gates.
+- Versão de produto: **V5.2.0**. Backend: `0.2.0`, **inalterado** nas duas frentes.
+- Backend `751 passed, 7 skipped`; frontend `117 passed`; typecheck e build PASS.
+- Grafo documental: 138 documentos, 800 links, zero órfãos e zero links quebrados.
+- Multimodal (imagem/PDF/DOCX) **adiado formalmente**: [[20-ux-v1/V2_MULTIMODAL]].
 
 ## Consumer Structa — ATUAL
 
@@ -18,7 +42,7 @@
 - [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]] —
   Gate próprio PASS; não é a Etapa 13 do Structa.
 
-## Encerramento final — CANÔNICO ATUAL
+## Encerramento do core — HISTÓRICO PRESERVADO
 
 - [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] - **PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO**. Assistente IA homologado **4/4**; nenhuma implementação obrigatória restante.
 - Suíte integral atual: `959 passed, 21 skipped`; eval `14/14`, `risk_level="none"`.
@@ -50,6 +74,7 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[MOC_INTEGRACOES]] - FinGuard e contratos externos.
 - [[MOC_TESTES]] - comandos, suite padrao e testes opt-in.
 - [[MOC_VERSOES_STATUS]] - versoes, tags, status e changelog.
+- [[MOC_UX_V1]] - interface pública: composer, drawer, voz, anexos e testes frontend.
 - [[MOC_ESTUDO_PEDROCORE]] - notas de estudo e auditoria.
 - [[MOC_MULTI_PROVIDER_SAFE_EVOLUTION]] - catálogo, identidade, binding, roteamento, health e fallback.
 - [[MOC_FECHAMENTOS]] - todos os fechamentos de frente, do MVP ao encerramento final.
@@ -67,6 +92,24 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 - [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]]
 - [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]]
+- [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]]
+
+## Operational Intelligence, Risk Engine e Training Foundation
+
+- [[14-intelligence-layer/REPORT_INTELLIGENCE_FOUNDATION]]
+- [[14-intelligence-layer/REPORT_MEMORY]]
+- [[14-intelligence-layer/INTERACTION_OUTCOMES]]
+- [[14-intelligence-layer/OPERATIONAL_MEMORY]]
+- [[14-intelligence-layer/RETRIEVAL_V1]]
+- [[14-intelligence-layer/SAFE_REUSE_FOUNDATION]]
+- [[15-risk-engine/RISK_ENGINE_FOUNDATION]]
+- [[15-risk-engine/PRE_EXECUTION_RISK_V1]]
+- [[15-risk-engine/EXECUTION_CONTRACT_RISK_GATES]]
+- [[15-risk-engine/POST_EXECUTION_QA]]
+- [[15-risk-engine/HISTORICAL_RISK_INTELLIGENCE]]
+- [[16-training-data/DATASET_FOUNDATION]]
+- [[16-training-data/TRAINING_CANDIDATE_LIFECYCLE]]
+- [[16-training-data/DATASET_READINESS_AUDIT]]
 
 ## Fundação de inteligência própria (MODEL-FOUNDATION-01)
 
@@ -117,6 +160,8 @@ Entrada principal do grafo Obsidian do PedroCore IA.
 ## Navegacao rapida
 
 - Para entender o sistema inteiro: [[00_MAPEAMENTO_GERAL_PEDROCORE]].
+- Para entender a interface atual: [[MOC_UX_V1]].
+- Para avaliar risco de publicação/deploy: [[20-ux-v1/MODELO_DE_AMEACA]].
 - Para testar sem risco: [[MOC_TESTES]].
 - Para revisar QA/safety atual: [[MOC_QA_SAFETY_HARDENING]].
 - Para integracao FinGuard: [[MOC_INTEGRACOES]].
