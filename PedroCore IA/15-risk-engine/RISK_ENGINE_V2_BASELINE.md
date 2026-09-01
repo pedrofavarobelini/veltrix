@@ -66,7 +66,7 @@ mas mudar seu contrato HTTP quebra consumidores externos.
 
 Estes são achados de leitura de código, não hipóteses de roadmap.
 
-### P1 — Persistência do risco não é do risco
+### P1 — Persistência do risco não é do risco  ✅ RESOLVIDO no R2
 
 O Risk Engine não tem repositório próprio. Ele depende de `report_memory` e
 `operational_memory` para persistir e recuperar histórico. Consequência prática:
@@ -154,9 +154,9 @@ Onde o V2 pode crescer sem reescrever o V1:
 Incremental, cada etapa verificável isoladamente e sem breaking change:
 
 ```text
-R0  baseline verificado                         ← ESTE DOCUMENTO
-R1  testes negativos de gate e bypass           (sem mudar produção)
-R2  repositório próprio + migration aditiva     (resolve P1)
+R0  baseline verificado                         ← ESTE DOCUMENTO ✅
+R1  testes negativos de gate e bypass           (sem mudar produção) ✅
+R2  repositório próprio + migration aditiva     (resolve P1) ✅
 R3  métrica de blast radius, campo aditivo      (resolve P3)
 R4  contrato universal de risco, rota aditiva   (resolve P5)
 R5  decisão sobre Scenario Simulation           (resolve P2 — elevar ou renomear)
@@ -193,10 +193,127 @@ Classificado `DEFERRED`, para não confundir roadmap com escopo:
 
 Nenhum deles é necessário para as etapas R1–R5.
 
-## 10. Estado
+## 10. Stage R2 — persistência própria (P1 resolvido)
+
+### O que passou a existir
 
 ```text
-STAGE R0        CONCLUÍDO — baseline verificado
-STAGE R1        PRÓXIMO — testes negativos de gate
-CÓDIGO V1       INTOCADO por esta frente
+risk_engine/
+├── persistence_schemas.py    RiskAnalysisRecord · RiskOutcomeRecord · RiskHistorySlice
+├── repository.py             RiskRepository (Protocol) · InMemory · PostgreSQL
+└── persistence_service.py    projeção domínio → registro
+migrations/0009_risk_history.sql
+```
+
+### Modelo de dados — projeção, não cópia
+
+`PreExecutionRiskAnalysis` e `PostExecutionOutcome` são objetos ricos e carregam
+o raciocínio do motor, onde texto vindo do consumidor pode estar. O que se
+persiste é **o fato**: identificadores, versão de política, severidade
+agregada, dimensões numéricas, códigos de motivo, desvio de escopo, gate,
+status e tempo.
+
+**A privacidade é a ausência de campo.** Não existe `request_text`, `prompt`,
+`command`, `diff` ou `payload` no registro. Um campo que não existe não vaza,
+não precisa ser sanitizado e não é esquecido na revisão. `reason_codes` tem
+limite de tamanho por entrada, para que uma lista de códigos não vire, na
+prática, um campo de texto livre.
+
+A severidade agregada é derivada como a **pior dimensão**, não a média: uma
+dimensão `CRITICAL` diluída entre cinco `INFO` viraria `LOW`, e o histórico
+passaria a mentir sobre o que o motor tinha visto.
+
+### Modos de persistência
+
+Chave **própria**, `PEDROCORE_RISK_PERSISTENCE` — e essa independência é o
+ponto da Stage:
+
+| modo | implementação | comportamento |
+|---|---|---|
+| `off` (default) | nenhuma | desabilitado; `require_*` levanta |
+| `memory` | `InMemoryRiskRepository` | efêmero por escolha explícita |
+| `postgresql` | `PostgreSQLRiskRepository` | exige `PEDROCORE_RISK_DATABASE_URL` |
+
+**Sem fallback silencioso.** URL ausente levanta; banco indisponível levanta. Um
+histórico que silenciosamente vira efêmero faria um `BLOCK` baseado em
+histórico mudar de comportamento sem ninguém perceber — e a decisão de risco é
+exatamente onde isso não pode acontecer.
+
+A URL é própria e **não** reaproveita a de outro domínio: reusá-la em silêncio
+recriaria o acoplamento que a Stage desfez, num lugar mais difícil de ver.
+
+### Isolamento de projeto
+
+`get(project_id, record_id)` — o projeto está na **chave**, não em um `if`
+posterior. O desenho alternativo já teria carregado o dado do outro projeto
+antes de decidir, e bastaria esquecer o `if` uma vez. No PostgreSQL isso é
+`PRIMARY KEY (project_id, analysis_id)`.
+
+O mesmo id em dois projetos são dois registros distintos, não colisão.
+
+### Idempotência e conflito
+
+| Situação | Resultado |
+|---|---|
+| mesmo id, mesmo fingerprint | `False` — replay reconhecido, no-op |
+| mesmo id, fingerprint diferente | `RiskRecordConflictError` |
+
+Replay idêntico é ruído esperado; mesmo id com conteúdo diferente é sinal de
+bug ou adulteração. Sobrescrever apagaria o registro original sem que ninguém
+soubesse, então são tratados de forma oposta.
+
+### Relação com Report Memory e Operational Memory
+
+```text
+POST EXECUTION
+    ├── Risk Repository      fonte de verdade do domínio Risk
+    ├── Report Memory        projeção operacional/relatório
+    └── Operational Memory   padrão operacional aprendido
+```
+
+Nada foi removido. As integrações existentes continuam recebendo o que sempre
+receberam; elas deixam de ser a **única** origem. As responsabilidades não
+foram fundidas — `execution_outcome_report`, `qa` e `operational_memory` ficam
+fora do registro de risco justamente porque já têm dono, e duplicá-los criaria
+duas versões da mesma verdade.
+
+### Modos de falha
+
+| Situação | Comportamento |
+|---|---|
+| persistência `off` | não grava, não levanta; igual ao anterior à Stage |
+| modo inválido | `RiskRepositoryConfigurationError` |
+| `postgresql` sem URL | `RiskRepositoryConfigurationError` |
+| banco indisponível | `RiskRepositoryError` — nunca memória |
+| falha ao gravar durante análise | **a análise continua**; registrar é efeito colateral, e um motor que para de analisar porque o banco caiu seria pior que um motor sem histórico |
+
+### Rollback
+
+Migration `0009` é aditiva e não destrutiva; duas tabelas novas, nenhuma
+alteração em `0001`–`0008`. Com `PEDROCORE_RISK_PERSISTENCE=off` — o default —
+o comportamento é idêntico ao anterior à Stage. Rollback de código é
+`git revert` do commit, sem migração reversa de dados.
+
+### Verificação
+
+```text
+25 testes em memória · 5 opt-in PostgreSQL (skip sem banco de teste)
+mutação: ignorar project_id       → 1 teste reprovou
+mutação: fallback para memória    → 2 testes reprovaram
+OpenAPI                            39 paths, 163 schemas — idêntico
+contract freeze                    intacto
+```
+
+O teste que fecha P1 é `test_risk_history_survives_report_memory_being_off`:
+Report Memory desligada, persistência de risco ligada, história do risco
+continua existindo e recuperável.
+
+## 11. Estado
+
+```text
+STAGE R0        PASS — baseline verificado
+STAGE R1        PASS — testes negativos de gate (19)
+STAGE R2        PASS — persistência própria (P1 resolvido)
+STAGE R3        PRÓXIMO — métrica de blast radius (P3)
+CÓDIGO V1       contratos públicos intocados; integração aditiva
 ```

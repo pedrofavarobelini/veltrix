@@ -4,6 +4,8 @@ from collections import defaultdict
 
 from app.modules.retrieval.schemas import RetrievalQuery
 from app.modules.retrieval.service import retrieval_service
+from app.modules.risk_engine.persistence_service import risk_persistence_service
+from app.modules.risk_engine.repository import RiskRepositoryError
 from app.modules.risk_engine.pre_execution_schemas import (
     BlastRadius,
     HistoricalEvidence,
@@ -229,7 +231,7 @@ class PreExecutionRiskService:
             min(1.0, foundation.confidence * 0.8 + (0.1 if rules else 0.0) + (0.1 if history.sample_size else 0.0)),
             6,
         )
-        return PreExecutionRiskAnalysis(
+        analysis = PreExecutionRiskAnalysis(
             analysis_id=analysis_id,
             request_id=request.request_id,
             project_id=request.project_id.strip().lower(),
@@ -246,6 +248,15 @@ class PreExecutionRiskService:
             confidence=confidence,
             uncertainty=round(1.0 - confidence, 6),
         )
+        # Stage R2: o dominio Risk passa a guardar a propria previsao. Falha de
+        # persistencia NAO altera a analise — registrar e efeito colateral, e um
+        # motor de risco que para de analisar porque o banco caiu seria pior do
+        # que um motor sem historico.
+        try:
+            risk_persistence_service.record_analysis(analysis)
+        except RiskRepositoryError:
+            pass
+        return analysis
 
 
 pre_execution_risk_service = PreExecutionRiskService()
