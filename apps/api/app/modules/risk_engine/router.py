@@ -8,6 +8,7 @@ from app.modules.caller_identity.technical_api import (
 )
 from app.modules.contracts import codes
 from app.modules.report_memory.repository import ReportMemoryRepositoryError
+from app.modules.risk_engine.repository import RiskRepositoryError
 from app.modules.risk_engine.schemas import RiskAssessment, RiskRequest
 from app.modules.risk_engine.pre_execution_schemas import PreExecutionRiskAnalysis
 from app.modules.risk_engine.pre_execution_service import pre_execution_risk_service
@@ -183,6 +184,12 @@ def query_historical_risk(payload: HistoricalRiskQuery, request: Request):
         return producer_error
     try:
         return historical_risk_service.summarize(payload)
+    except RiskRepositoryError:
+        # Repositorio proprio de risco configurado e indisponivel. Fail-closed:
+        # devolver "sem historico" faria a consulta parecer segura quando ela
+        # apenas nao conseguiu ler. A mensagem e o codigo ja existente; nenhum
+        # detalhe do banco atravessa a fronteira da API.
+        return operational_persistence_error(codes.RISK_HISTORY_PERSISTENCE_UNAVAILABLE)
     except ReportMemoryRepositoryError:
         return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)
 
@@ -198,5 +205,7 @@ def benchmark_historical_risk(payload: HistoricalBenchmarkRequest, request: Requ
         return producer_error
     try:
         return historical_risk_service.benchmark(payload)
+    except RiskRepositoryError:
+        return operational_persistence_error(codes.RISK_HISTORY_PERSISTENCE_UNAVAILABLE)
     except ReportMemoryRepositoryError:
         return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)

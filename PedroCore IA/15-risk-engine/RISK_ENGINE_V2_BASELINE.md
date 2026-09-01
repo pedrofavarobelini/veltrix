@@ -66,7 +66,7 @@ mas mudar seu contrato HTTP quebra consumidores externos.
 
 Estes são achados de leitura de código, não hipóteses de roadmap.
 
-### P1 — Persistência do risco não é do risco  ✅ RESOLVIDO no R2
+### P1 — Persistência do risco não é do risco  ✅ FECHADO no R2.1
 
 O Risk Engine não tem repositório próprio. Ele depende de `report_memory` e
 `operational_memory` para persistir e recuperar histórico. Consequência prática:
@@ -156,7 +156,8 @@ Incremental, cada etapa verificável isoladamente e sem breaking change:
 ```text
 R0  baseline verificado                         ← ESTE DOCUMENTO ✅
 R1  testes negativos de gate e bypass           (sem mudar produção) ✅
-R2  repositório próprio + migration aditiva     (resolve P1) ✅
+R2  repositório próprio + migration aditiva     (store) ✅
+R2.1 Historical Risk consome o store           (fecha P1) ✅
 R3  métrica de blast radius, campo aditivo      (resolve P3)
 R4  contrato universal de risco, rota aditiva   (resolve P5)
 R5  decisão sobre Scenario Simulation           (resolve P2 — elevar ou renomear)
@@ -304,16 +305,90 @@ OpenAPI                            39 paths, 163 schemas — idêntico
 contract freeze                    intacto
 ```
 
-O teste que fecha P1 é `test_risk_history_survives_report_memory_being_off`:
-Report Memory desligada, persistência de risco ligada, história do risco
-continua existindo e recuperável.
+O teste `test_risk_history_survives_report_memory_being_off` prova que o
+**store** é independente. Isso não era suficiente — ver §12.
 
-## 11. Estado
+## 12. Stage R2.1 — Historical Risk conectado ao store (P1 realmente fechado)
+
+### A lacuna que a auditoria encontrou
+
+O R2 criou o repositório e provou que **ele** funciona com Report Memory
+desligada. Mas o `HistoricalRiskService` continuava reconstruindo
+`risk_policy_version` — um fato do domínio Risk — lendo metadata de Report
+Memory:
+
+```python
+report = report_memory_service.get_report(project_id, evidence.source_id)
+policy = report.metadata.get("risk_policy_version")
+```
+
+Com Report Memory desligada, a política simplesmente não era resolvida.
+**O gate do R2 mediu a camada errada:** provou independência do store e
+declarou independência do domínio. As duas coisas não são a mesma.
+
+Registro honesto do que aconteceu:
+
+```text
+R2    criou o store próprio                    correto, mas parcial
+R2.1  conectou o serviço histórico ao store    P1 fechado ponta a ponta
+```
+
+### A correlação usada
+
+Verificada no fluxo pós-execução, não suposta — `report_id=outcome_id` em
+`post_execution_service.py:200` e `source_id=report.report_id` em `:260`:
+
+```text
+evidence.source_id == report_id == outcome_id
+    → RiskOutcomeRecord.risk_analysis_id
+    → RiskAnalysisRecord.analysis_policy_version
+```
+
+### Precedência de resolução
+
+| Situação | Fonte |
+|---|---|
+| persistência `off` | Report Memory — caminho V1 **intocado** |
+| ligada, registro existe | **domínio Risk** |
+| ligada, registro ausente | Report Memory — **legado**, dado anterior ao R2 |
+| ligada, repositório indisponível | **levanta** — nunca cai para o legado |
+
+O fallback legado existe porque registros gravados antes do R2 não estão no
+store próprio, e apagá-los do caminho de leitura seria perder história real. A
+origem de cada resolução é marcada internamente (`POLICY_SOURCE_RISK_DOMAIN` /
+`POLICY_SOURCE_LEGACY_REPORT`) sem tocar no schema público.
+
+**Falha de repositório configurado não vira fallback.** Devolver "sem
+histórico" faria a consulta parecer segura quando ela apenas não conseguiu ler
+— e é sobre esse número que uma decisão de risco se apoia.
+
+### API
+
+`RiskRepositoryError` passou a ser convertido em erro operacional sanitizado,
+com código próprio `RISK_HISTORY_PERSISTENCE_UNAVAILABLE` — distinto do de
+Operational Memory, porque são dois stores e colapsá-los esconderia qual caiu.
+Nenhum detalhe de banco atravessa a fronteira da API.
+
+### Verificação
+
+```text
+9 testes novos  serviço usa o domínio Risk · Report Memory não é consultada
+                quando o domínio responde · V1 intocado com persistência off
+                · legado resolve · nada é inventado · fail-closed · sem
+                vazamento de internals · endpoint sanitizado · código distinto
+
+mutação  ignorar o Risk Repository        → 4 testes reprovaram
+         falha do repo vira fallback      → 2 testes reprovaram
+```
+
+## 13. Estado
 
 ```text
 STAGE R0        PASS — baseline verificado
 STAGE R1        PASS — testes negativos de gate (19)
-STAGE R2        PASS — persistência própria (P1 resolvido)
+STAGE R2        PASS — persistência própria (store)
+STAGE R2.1      PASS — Historical Risk conectado ao store
+P1              CLOSED
 STAGE R3        PRÓXIMO — métrica de blast radius (P3)
 CÓDIGO V1       contratos públicos intocados; integração aditiva
 ```
