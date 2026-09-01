@@ -6,6 +6,7 @@ from app.modules.retrieval.schemas import RetrievalQuery
 from app.modules.retrieval.service import retrieval_service
 from app.modules.risk_engine.persistence_service import risk_persistence_service
 from app.modules.risk_engine.repository import RiskRepositoryError
+from app.modules.risk_engine.blast_radius_metric import compute_blast_radius_metric
 from app.modules.risk_engine.pre_execution_schemas import (
     BlastRadius,
     HistoricalEvidence,
@@ -150,7 +151,7 @@ class PreExecutionRiskService:
         )
         if len(targets) >= 20 and _SEVERITY_SCORE[severity] < 0.8:
             severity = RiskSeverity.HIGH
-        return BlastRadius(
+        radius = BlastRadius(
             files=files,
             modules=modules,
             database=[item for item in database if item],
@@ -161,20 +162,213 @@ class PreExecutionRiskService:
             security_boundaries=security,
             magnitude=severity,
         )
+        # A metrica e derivada do proprio raio ja montado: uma fonte, nao duas.
+        return radius.model_copy(
+            update={"metric": compute_blast_radius_metric(radius)}
+        )
 
     @staticmethod
     def _simulations(request: RiskRequest, rules, foundation) -> list[ScenarioSimulation]:
+        """Cenarios analiticos relevantes. Stage R5.
+
+        Os seis primeiros valem para qualquer operacao mutante e por isso sao
+        sempre emitidos. Os demais so aparecem quando o FATO correspondente
+        existe na requisicao — cenario irrelevante emitido para completar lista
+        treina quem le a ignorar a lista inteira.
+
+        Nada aqui executa: `mode` continua `analytical_dry_run` e
+        `target_operation_executed` continua `False`.
+        """
         codes = sorted({rule.reason_code for rule in rules})
         forbidden = [item.code for item in foundation.signals if item.category == "scope"]
-        destructive = request.requested_operation.destructive or request.requested_operation.kind is OperationKind.DELETE
-        return [
-            ScenarioSimulation(scenario="success", severity=RiskSeverity.INFO, trigger_codes=[], expected_effect="Mudanças permanecem no escopo e validações são concluídas."),
-            ScenarioSimulation(scenario="partial_failure", severity=RiskSeverity.HIGH if destructive else RiskSeverity.MEDIUM, trigger_codes=codes, expected_effect="Parte da operação falha e exige contenção sem ampliar escopo."),
-            ScenarioSimulation(scenario="scope_deviation", severity=RiskSeverity.CRITICAL if forbidden else RiskSeverity.HIGH, trigger_codes=forbidden, expected_effect="Alvos fora do contrato precisam ser bloqueados antes da execução."),
-            ScenarioSimulation(scenario="dependency_failure", severity=RiskSeverity.MEDIUM, trigger_codes=["DEPENDENCY_FAILURE"], expected_effect="Dependência indisponível impede conclusão segura."),
-            ScenarioSimulation(scenario="rollback_requirement", severity=RiskSeverity.HIGH if not request.context.rollback_plan_present and foundation.intent.mutating else RiskSeverity.MEDIUM, trigger_codes=["ROLLBACK_REQUIRED"], expected_effect="Restauração deve ocorrer usando plano previamente aprovado."),
-            ScenarioSimulation(scenario="security_impact", severity=max((rule.severity for rule in rules if rule.category == "security"), key=lambda value: _SEVERITY_SCORE[value], default=RiskSeverity.LOW), trigger_codes=sorted(rule.reason_code for rule in rules if rule.category == "security"), expected_effect="Boundary de segurança afetado exige revisão explícita."),
+        destructive = (
+            request.requested_operation.destructive
+            or request.requested_operation.kind is OperationKind.DELETE
+        )
+        targets = sorted(set(request.requested_operation.targets))
+        security_codes = sorted(
+            rule.reason_code for rule in rules if rule.category == "security"
+        )
+        security_severity = max(
+            (rule.severity for rule in rules if rule.category == "security"),
+            key=lambda value: _SEVERITY_SCORE[value],
+            default=RiskSeverity.LOW,
+        )
+        mutating = foundation.intent.mutating
+        no_rollback = not request.context.rollback_plan_present
+        migration_codes = sorted(
+            rule.reason_code
+            for rule in rules
+            if rule.reason_code in {"DATABASE_MIGRATION", "SCHEMA_CHANGE"}
+        )
+        required_tests = sorted(set(request.context.required_tests))
+        integrations = sorted(set(request.context.external_integrations))
+        database_scope = [request.context.database] if request.context.database else []
+
+        scenarios = [
+            ScenarioSimulation(
+                scenario="success",
+                severity=RiskSeverity.INFO,
+                trigger_codes=[],
+                expected_effect="Mudancas permanecem no escopo e validacoes sao concluidas.",
+                preconditions=["escopo respeitado", "validacoes disponiveis"],
+                affected_scope=targets,
+                containment="Nenhuma contencao necessaria.",
+                rollback_requirement="none",
+                verification=required_tests or ["suite declarada pelo consumidor"],
+                residual_risk=RiskSeverity.INFO,
+                confidence=0.9,
+            ),
+            ScenarioSimulation(
+                scenario="partial_failure",
+                severity=RiskSeverity.HIGH if destructive else RiskSeverity.MEDIUM,
+                trigger_codes=codes,
+                expected_effect="Parte da operacao falha e exige contencao sem ampliar escopo.",
+                preconditions=["operacao interrompida no meio"],
+                affected_scope=targets,
+                containment="Interromper e conter dentro do escopo aprovado.",
+                rollback_requirement="required" if destructive else "recommended",
+                verification=required_tests,
+                residual_risk=RiskSeverity.MEDIUM if destructive else RiskSeverity.LOW,
+                confidence=0.7 if codes else 0.5,
+            ),
+            ScenarioSimulation(
+                scenario="scope_deviation",
+                severity=RiskSeverity.CRITICAL if forbidden else RiskSeverity.HIGH,
+                trigger_codes=forbidden,
+                expected_effect="Alvos fora do contrato precisam ser bloqueados antes da execucao.",
+                preconditions=["alvo fora do escopo declarado"],
+                affected_scope=sorted(set(request.context.forbidden_scope)) or targets,
+                containment="Bloquear antes da execucao; desvio nao e contido depois.",
+                rollback_requirement="required" if forbidden else "recommended",
+                verification=["conferencia de escopo contra o contrato"],
+                residual_risk=RiskSeverity.HIGH if forbidden else RiskSeverity.MEDIUM,
+                confidence=0.9 if forbidden else 0.6,
+            ),
+            ScenarioSimulation(
+                scenario="dependency_failure",
+                severity=RiskSeverity.MEDIUM,
+                trigger_codes=["DEPENDENCY_FAILURE"],
+                expected_effect="Dependencia indisponivel impede conclusao segura.",
+                preconditions=["dependencia necessaria indisponivel"],
+                affected_scope=targets,
+                containment="Abortar antes de mutacao parcial.",
+                rollback_requirement="recommended" if mutating else "none",
+                verification=["disponibilidade da dependencia"],
+                residual_risk=RiskSeverity.LOW,
+                confidence=0.5,
+            ),
+            ScenarioSimulation(
+                scenario="rollback_requirement",
+                severity=RiskSeverity.HIGH if no_rollback and mutating else RiskSeverity.MEDIUM,
+                trigger_codes=["ROLLBACK_REQUIRED"],
+                expected_effect="Restauracao deve ocorrer usando plano previamente aprovado.",
+                preconditions=(
+                    ["plano de rollback ausente"]
+                    if no_rollback
+                    else ["plano de rollback declarado"]
+                ),
+                affected_scope=targets,
+                containment=(
+                    "Sem plano aprovado, a restauracao e improvisada."
+                    if no_rollback
+                    else "Executar o plano declarado."
+                ),
+                rollback_requirement="required" if mutating else "none",
+                verification=["plano de rollback exercitado"],
+                residual_risk=(
+                    RiskSeverity.HIGH if no_rollback and mutating else RiskSeverity.LOW
+                ),
+                confidence=0.8,
+            ),
+            ScenarioSimulation(
+                scenario="security_impact",
+                severity=security_severity,
+                trigger_codes=security_codes,
+                expected_effect="Boundary de seguranca afetado exige revisao explicita.",
+                preconditions=["fronteira de seguranca tocada"],
+                affected_scope=security_codes or targets,
+                containment="Revisao humana antes da execucao.",
+                rollback_requirement="required" if security_codes else "recommended",
+                verification=["revisao de seguranca registrada"],
+                residual_risk=security_severity,
+                confidence=0.85 if security_codes else 0.4,
+            ),
         ]
+
+        # --- condicionais: so quando o fato correspondente existe ------------
+
+        if destructive or migration_codes:
+            scenarios.append(
+                ScenarioSimulation(
+                    scenario="data_corruption",
+                    severity=RiskSeverity.CRITICAL,
+                    trigger_codes=migration_codes or ["DESTRUCTIVE_OPERATION"],
+                    expected_effect="Dado corrompido ou perdido sem restauracao garantida.",
+                    preconditions=["operacao destrutiva ou alteracao de schema"],
+                    affected_scope=database_scope or targets,
+                    containment="Backup verificado antes de iniciar.",
+                    rollback_requirement="required",
+                    verification=["restauracao testada a partir do backup"],
+                    residual_risk=RiskSeverity.HIGH,
+                    confidence=0.85,
+                )
+            )
+
+        if migration_codes:
+            scenarios.append(
+                ScenarioSimulation(
+                    scenario="migration_failure",
+                    severity=RiskSeverity.HIGH,
+                    trigger_codes=migration_codes,
+                    expected_effect="Migracao falha no meio e deixa o schema inconsistente.",
+                    preconditions=["migracao aplicada parcialmente"],
+                    affected_scope=database_scope,
+                    containment="Migracao reversivel ou janela de manutencao.",
+                    rollback_requirement="required",
+                    verification=["migracao aplicada e revertida em ambiente equivalente"],
+                    residual_risk=RiskSeverity.MEDIUM,
+                    confidence=0.8,
+                )
+            )
+
+        if required_tests:
+            scenarios.append(
+                ScenarioSimulation(
+                    scenario="test_failure",
+                    severity=RiskSeverity.MEDIUM,
+                    trigger_codes=["REQUIRED_TEST_FAILED"],
+                    expected_effect="Teste exigido falha e a mudanca nao pode ser aprovada.",
+                    preconditions=["teste declarado como obrigatorio"],
+                    affected_scope=required_tests,
+                    containment="Nao promover enquanto o teste falhar.",
+                    rollback_requirement="recommended" if mutating else "none",
+                    verification=required_tests,
+                    residual_risk=RiskSeverity.LOW,
+                    confidence=0.75,
+                )
+            )
+
+        if integrations:
+            scenarios.append(
+                ScenarioSimulation(
+                    scenario="external_service_failure",
+                    severity=RiskSeverity.MEDIUM,
+                    trigger_codes=["EXTERNAL_SERVICE_FAILURE"],
+                    expected_effect=(
+                        "Integracao externa indisponivel deixa efeito parcial fora do sistema."
+                    ),
+                    preconditions=["integracao externa declarada"],
+                    affected_scope=integrations,
+                    containment="Efeito externo nao e revertido pelo rollback local.",
+                    rollback_requirement="required" if mutating else "recommended",
+                    verification=["conciliacao com o servico externo"],
+                    residual_risk=RiskSeverity.MEDIUM,
+                    confidence=0.6,
+                )
+            )
+
+        return scenarios
 
     def analyze(self, request: RiskRequest) -> PreExecutionRiskAnalysis:
         foundation = risk_engine_foundation_service.analyze(request)

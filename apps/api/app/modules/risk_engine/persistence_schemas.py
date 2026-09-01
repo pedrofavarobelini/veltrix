@@ -99,6 +99,13 @@ class RiskAnalysisRecord(BaseModel):
     reason_codes: tuple[str, ...] = Field(default_factory=tuple)
     blast_radius_level: ShortText | None = None
 
+    # Stage R3 — metrica de ALCANCE, opcional. `None` em registro gravado antes
+    # do R3: forcar um numero neles inventaria um alcance que ninguem mediu.
+    blast_metric_version: ShortText | None = None
+    blast_boundary_breadth: int | None = Field(default=None, ge=0, le=8)
+    blast_item_extent: int | None = Field(default=None, ge=0)
+    blast_boundary_counts: dict[str, int] | None = None
+
     # Fingerprint do conteudo persistido. E o que permite reconhecer um replay
     # identico sem comparar objeto a objeto, e detectar conflito quando o mesmo
     # id chega com conteudo diferente.
@@ -107,6 +114,30 @@ class RiskAnalysisRecord(BaseModel):
 
     # Reafirmado no registro: guardar analise nao executa nada.
     target_operation_executed: Literal[False] = False
+
+    @model_validator(mode="after")
+    def _blast_metric_is_all_or_nothing(self) -> RiskAnalysisRecord:
+        """Metrica presente ou ausente por inteiro.
+
+        Amplitude preenchida com extensao nula descreveria um alcance
+        impossivel — fronteiras tocadas sem nenhum item dentro delas.
+        """
+        present = [
+            self.blast_metric_version,
+            self.blast_boundary_breadth,
+            self.blast_item_extent,
+        ]
+        if any(item is not None for item in present) and any(
+            item is None for item in present
+        ):
+            raise ValueError("métrica de blast radius incompleta")
+        if (
+            self.blast_item_extent is not None
+            and self.blast_boundary_breadth is not None
+            and self.blast_item_extent < self.blast_boundary_breadth
+        ):
+            raise ValueError("item_extent não pode ser menor que boundary_breadth")
+        return self
 
     @model_validator(mode="after")
     def _codes_are_codes(self) -> RiskAnalysisRecord:

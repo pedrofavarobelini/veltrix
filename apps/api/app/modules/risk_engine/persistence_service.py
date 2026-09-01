@@ -155,6 +155,11 @@ class RiskPersistenceService:
             "dimensions": [item.model_dump(mode="json") for item in dimensions],
             "reason_codes": list(reason_codes),
         }
+        # A metrica NAO entra no fingerprint de proposito. Ela e derivada de
+        # dados que ja estao na analise, entao nao acrescenta identidade — e
+        # inclui-la faria a mesma analise, reprojetada apos o R3, colidir com o
+        # registro gravado antes dele. Continuidade vale mais que simetria.
+        metric = getattr(analysis.blast_radius, "metric", None)
         return RiskAnalysisRecord(
             analysis_id=analysis.analysis_id,
             project_id=analysis.project_id.strip().lower(),
@@ -166,6 +171,10 @@ class RiskPersistenceService:
             dimensions=dimensions,
             reason_codes=reason_codes,
             blast_radius_level=analysis.blast_radius.magnitude.value,
+            blast_metric_version=metric.metric_version if metric else None,
+            blast_boundary_breadth=metric.boundary_breadth if metric else None,
+            blast_item_extent=metric.item_extent if metric else None,
+            blast_boundary_counts=dict(metric.boundary_counts) if metric else None,
             fingerprint=fingerprint_of(payload),
             created_at=now or datetime.now(timezone.utc),
         )

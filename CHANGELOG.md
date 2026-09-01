@@ -17,6 +17,13 @@ schema ou contrato público existente foi removido ou alterado.
 
 ### Adicionado
 
+- **Risk Engine V2 — R0 a R5** (`PedroCore IA/15-risk-engine/RISK_ENGINE_V2_BASELINE.md`).
+  Persistência própria do domínio Risk (migrations `0009` e `0010`), Historical
+  Risk consumindo esse store, métrica quantitativa de blast radius, contrato
+  universal `pedrocore-risk-request/v1` e Scenario Simulation V2 com cenários
+  relevantes ao payload. Os cinco problemas do baseline (P1–P5) fechados, cada
+  um com teste e verificação por mutação.
+
 - **`LICENSE` — Apache License 2.0** (SPDX `Apache-2.0`), com a metadata
   correspondente em `apps/api/pyproject.toml` (`License-Expression`) e
   `apps/web/package.json`.

@@ -1,6 +1,23 @@
 # PedroCore IA — Status Atual
 
-Atualizado em: 30/08/2026
+Atualizado em: 01/09/2026
+
+## RISK ENGINE V2 — R0 a R5 — READY
+
+Motor de risco encerrado como V2. Os cinco problemas objetivos do baseline
+foram fechados com evidencia: persistencia propria do dominio Risk (P1),
+simulacao relevante ao payload (P2), metrica de alcance explicavel (P3),
+protecao de bypass de gate provada por teste (P4) e contrato universal de
+submissao de risco (P5).
+
+Os cinco contratos V1 congelados permanecem byte a byte intactos: a submissao
+de risco entrou como contrato PROPRIO — `pedrocore-risk-request/v1` — em vez de
+alterar o schema do envelope de integracao.
+
+Validacao: `1443 passed, 26 skipped, 0 failed`; Ruff PASS; frontend 117 passed;
+OpenAPI 39 paths, alteracoes apenas aditivas (8 campos opcionais em 2 schemas).
+
+Proximo encerramento: rename do produto para Veltrix — NAO executado.
 
 ## LICENCA — APACHE 2.0
 

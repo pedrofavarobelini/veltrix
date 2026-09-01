@@ -39,6 +39,7 @@ from app.modules.universal_contracts.capability_manifest import (
 from app.modules.universal_contracts.envelope import PedroCoreIntegrationEnvelopeV1
 from app.modules.universal_contracts.execution_outcome import ExecutionOutcomeV1
 from app.modules.universal_contracts.learning_source import LearningSourceV1
+from app.modules.risk_engine.universal_contract import RiskRequestContractV1
 from app.modules.universal_contracts.quality_evidence import QualityEvidenceV1
 from app.modules.universal_contracts.versioning import (
     CAPABILITY_MANIFEST_V1,
@@ -46,6 +47,7 @@ from app.modules.universal_contracts.versioning import (
     INTEGRATION_ENVELOPE_V1,
     LEARNING_SOURCE_V1,
     QUALITY_EVIDENCE_V1,
+    RISK_REQUEST_V1,
     ContractVersionStatus,
     version_status,
 )
@@ -57,6 +59,10 @@ FROZEN_V1_SCHEMAS: dict[str, str] = {
     "execution_outcome": "sha256:25f62fcf94713bf81ec26c806782c5749439d08aae2c180003f5691abdd0e35c",
     "learning_source": "sha256:77021aec2dce490a8b7eb41cb9f9833322b6044ed91eb3ad9a1bb466a5995da8",
     "integration_envelope": "sha256:5e9a5c35beab6d6f0c3b6b9c20310d0661f936589775c44b6fa20051006780e4",
+    # Stage R4 do Risk Engine V2 — contrato NOVO, congelado desde o nascimento.
+    # Os cinco acima nao mudaram: a submissao de risco entrou como contrato
+    # proprio justamente para nao alterar o schema do envelope.
+    "risk_request": "sha256:6ed6f7466596da80d9082e07cd10b521b361511b964ed4cc1bb7f185c913037c",
 }
 
 FROZEN_MODELS: dict[str, type[BaseModel]] = {
@@ -65,6 +71,7 @@ FROZEN_MODELS: dict[str, type[BaseModel]] = {
     "execution_outcome": ExecutionOutcomeV1,
     "learning_source": LearningSourceV1,
     "integration_envelope": PedroCoreIntegrationEnvelopeV1,
+    "risk_request": RiskRequestContractV1,
 }
 
 FROZEN_VERSION_IDENTIFIERS: dict[str, str] = {
@@ -73,6 +80,7 @@ FROZEN_VERSION_IDENTIFIERS: dict[str, str] = {
     "execution_outcome": EXECUTION_OUTCOME_V1,
     "learning_source": LEARNING_SOURCE_V1,
     "integration_envelope": INTEGRATION_ENVELOPE_V1,
+    "risk_request": RISK_REQUEST_V1,
 }
 
 

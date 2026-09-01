@@ -187,12 +187,15 @@ _INSERT_ANALYSIS = """
 INSERT INTO pedrocore_risk_analyses (
     analysis_id, project_id, request_id, analysis_policy_version, severity,
     confidence, uncertainty, blast_radius_level, reason_codes, dimensions,
-    fingerprint, created_at, policy_version
+    fingerprint, created_at, policy_version,
+    blast_metric_version, blast_boundary_breadth, blast_item_extent,
+    blast_boundary_counts
 ) VALUES (
     %(analysis_id)s, %(project_id)s, %(request_id)s, %(analysis_policy_version)s,
     %(severity)s, %(confidence)s, %(uncertainty)s, %(blast_radius_level)s,
     %(reason_codes)s, %(dimensions)s, %(fingerprint)s, %(created_at)s,
-    %(policy_version)s
+    %(policy_version)s, %(blast_metric_version)s, %(blast_boundary_breadth)s,
+    %(blast_item_extent)s, %(blast_boundary_counts)s
 )
 ON CONFLICT (project_id, analysis_id) DO NOTHING
 """
@@ -218,7 +221,9 @@ ON CONFLICT (project_id, outcome_id) DO NOTHING
 _ANALYSIS_COLUMNS = """
     analysis_id, project_id, request_id, analysis_policy_version, severity,
     confidence, uncertainty, blast_radius_level, reason_codes, dimensions,
-    fingerprint, created_at, policy_version
+    fingerprint, created_at, policy_version,
+    blast_metric_version, blast_boundary_breadth, blast_item_extent,
+    blast_boundary_counts
 """
 
 _OUTCOME_COLUMNS = """
@@ -245,6 +250,10 @@ def _analysis_from_row(row: tuple) -> RiskAnalysisRecord:
         fingerprint=row[10],
         created_at=row[11],
         policy_version=row[12],
+        blast_metric_version=row[13],
+        blast_boundary_breadth=row[14],
+        blast_item_extent=row[15],
+        blast_boundary_counts=row[16],
     )
 
 
@@ -311,6 +320,14 @@ class PostgreSQLRiskRepository:
                     "fingerprint": record.fingerprint,
                     "created_at": record.created_at,
                     "policy_version": record.policy_version,
+                    "blast_metric_version": record.blast_metric_version,
+                    "blast_boundary_breadth": record.blast_boundary_breadth,
+                    "blast_item_extent": record.blast_item_extent,
+                    "blast_boundary_counts": (
+                        Jsonb(record.blast_boundary_counts)
+                        if record.blast_boundary_counts is not None
+                        else None
+                    ),
                 },
             )
             return cursor.rowcount == 1

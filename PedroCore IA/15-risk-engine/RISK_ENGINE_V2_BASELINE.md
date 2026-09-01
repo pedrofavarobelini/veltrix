@@ -1,4 +1,4 @@
-# Risk Engine V2 — Baseline Arquitetural (Stage R0)
+# Risk Engine V2 — Baseline e Encerramento (R0 a R5)
 
 Mapa da frente: [[MOC_ARQUITETURA]].
 Contratos V1: [[10-contratos/CONTRATO_RISK_ENGINE_FOUNDATION]],
@@ -74,21 +74,21 @@ com `PEDROCORE_REPORT_MEMORY_PERSISTENCE=off`, a inteligência histórica não t
 onde ler, e um `BLOCK` baseado em histórico se comporta de forma diferente
 conforme uma variável que não é dele.
 
-### P2 — Simulação é enumeração fixa, não simulação
+### P2 — Simulação é enumeração fixa, não simulação  ✅ FECHADO no R5
 
-`_simulations` devolve três cenários fixos (`success`, `partial_failure`,
-`worst_case`) com severidade derivada de flags. É honesto no nome do campo
+`_simulations` devolvia seis cenários fixos, emitidos sempre — relevantes ou
+não — com severidade derivada de flags. É honesto no nome do campo
 (`mode="analytical_dry_run"`), mas o nome "Scenario Simulation" sugere mais do
 que o mecanismo entrega. Um V2 precisa decidir entre elevar o mecanismo ou
 rebaixar o nome — manter a assimetria é o pior dos dois.
 
-### P3 — Blast radius não tem unidade
+### P3 — Blast radius não tem unidade  ✅ FECHADO no R3
 
 `BlastRadius` descreve alcance de forma qualitativa. Sem métrica comparável,
 duas análises não podem ser ordenadas por gravidade, e o histórico não pode
 aprender "isto foi pior do que aquilo".
 
-### P4 — Gate é calculado, mas não é intransponível por construção
+### P4 — Gate é calculado, mas não é intransponível por construção  ✅ FECHADO no R1
 
 Os gates existem e são testados. O que não existe é uma prova estrutural de que
 um `BLOCK` não pode ser contornado por um caminho alternativo — hoje isso é
@@ -96,7 +96,7 @@ garantido por revisão, não por teste dedicado de bypass. A Era 3 já mostrou
 neste projeto que "ninguém tentou ainda" e "é impossível" são coisas
 diferentes.
 
-### P5 — O Risk Engine não usa os Universal Contracts
+### P5 — O Risk Engine não usa os Universal Contracts  ✅ FECHADO no R4
 
 Ele nasceu antes deles. Recebe `RiskRequest` próprio, enquanto QEC, Execution
 Outcome e Learning Source já têm envelope, fronteira de autoridade e
@@ -158,6 +158,9 @@ R0  baseline verificado                         ← ESTE DOCUMENTO ✅
 R1  testes negativos de gate e bypass           (sem mudar produção) ✅
 R2  repositório próprio + migration aditiva     (store) ✅
 R2.1 Historical Risk consome o store           (fecha P1) ✅
+R3  metrica de blast radius                    (fecha P3) ✅
+R4  contrato universal de risco                (fecha P5) ✅
+R5  Scenario Simulation V2                     (fecha P2) ✅
 R3  métrica de blast radius, campo aditivo      (resolve P3)
 R4  contrato universal de risco, rota aditiva   (resolve P5)
 R5  decisão sobre Scenario Simulation           (resolve P2 — elevar ou renomear)
@@ -381,14 +384,193 @@ mutação  ignorar o Risk Repository        → 4 testes reprovaram
          falha do repo vira fallback      → 2 testes reprovaram
 ```
 
-## 13. Estado
+## 14. Stage R3 — métrica de blast radius (P3 fechado)
+
+`BlastRadius` descrevia alcance qualitativamente. Sem número comparável, duas
+análises não podiam ser ordenadas e o histórico não aprendia "isto atingiu mais
+do que aquilo".
+
+`BlastRadiusMetric` mede **alcance, não perigo**:
+
+| campo | o que é |
+|---|---|
+| `boundary_breadth` | quantas das 8 fronteiras foram tocadas |
+| `item_extent` | quantos itens distintos, somados |
+| `boundary_counts` | a conta aberta, conferível item a item |
+| `metric_version` | permite evoluir sem reinterpretar números antigos |
+
+**Sem pesos arbitrários.** Não há "banco vale 3, arquivo vale 1" — pesar
+fronteiras exigiria uma teoria sobre qual é pior, e essa teoria seria inventada
+aqui. Quem quiser ponderar faz depois, com política própria, e a métrica crua
+continua disponível para conferir.
+
+**Separada da severidade, por construção.** Alterar 40 arquivos de teste tem
+alcance maior e perigo menor que alterar um arquivo de credencial. Um número
+que misturasse as duas não responderia nenhuma das duas perguntas. `magnitude`
+foi preservada e coexiste. A métrica **não entra no cálculo do gate**.
+
+Propriedades garantidas por teste: determinística, invariante a ordem,
+invariante a duplicata, monotônica em itens e em fronteiras, e com o agregado
+sempre decorrendo do detalhe.
+
+**Persistência aditiva.** Migration `0010` acrescenta quatro colunas
+*nullable* a `pedrocore_risk_analyses`; a `0009` não foi tocada. Registro
+gravado antes do R3 fica com métrica `NULL` — forçar um número neles inventaria
+um alcance que ninguém mediu. Uma `CHECK` garante que as colunas são
+consistentes entre si ou todas ausentes.
+
+**A métrica ficou fora do fingerprint de propósito.** Ela é derivada de dados
+já presentes na análise, então não acrescenta identidade — e incluí-la faria a
+mesma análise, reprojetada após o R3, colidir com o registro gravado antes
+dele. Continuidade vale mais que simetria.
+
+## 15. Stage R4 — contrato universal de risco (P5 fechado)
+
+O Risk Engine nasceu antes dos Universal Contracts: recebia submissão por um
+caminho que não passava pela fronteira de autoridade.
+
+`pedrocore-risk-request/v1` fecha isso. O consumidor declara **fato** —
+operação, alvos, ambiente, permissões, contexto — e **não** declara veredito.
+`gate`, `safe`, `approved`, `risk_level`, `risk_severity`, `override`, `bypass`
+e `force` entraram no vocabulário reservado da fronteira de autoridade, e um
+payload que os traga é recusado inteiro, em qualquer profundidade.
+
+### Por que contrato próprio e não payload do envelope
+
+A opção natural seria acrescentar `risk_request` a `IntegrationPayloadType`.
+Isso mudaria o JSON Schema de `PedroCoreIntegrationEnvelopeV1` e, com ele, um
+fingerprint congelado.
+
+A política trata "valor novo em enum" como aditivo que *pode* atualizar o
+fingerprint com justificativa. Mas o envelope é o contrato mais central dos
+cinco, e alterá-lo para acomodar um domínio ainda em evolução trocaria
+estabilidade permanente por conveniência temporária.
+
+**Os cinco fingerprints V1 ficam byte a byte intactos.** O contrato novo nasce
+congelado, e reutiliza a mesma maquinaria — registro de versões, fronteira de
+autoridade, vínculo de identidade, verificação de capability. É um contrato
+universal a mais, não um caminho paralelo com regras próprias.
+
+`to_risk_request_payload()` adapta para o `RiskRequest` V1 que o motor já
+entende, com `producer` e `project_id` vindos da credencial autenticada. **O
+motor não mudou:** o contrato novo é uma porta nova para a mesma sala.
+
+## 16. Stage R5 — Scenario Simulation V2 (P2 fechado)
+
+Antes: seis cenários fixos, emitidos sempre, relevantes ou não. Cenário
+irrelevante emitido para completar lista treina quem lê a ignorar a lista
+inteira.
+
+Agora os seis base continuam (valem para qualquer operação mutante) e os
+condicionais aparecem **só quando o fato correspondente existe**:
+
+| cenário | condição |
+|---|---|
+| `data_corruption` | operação destrutiva ou alteração de schema |
+| `migration_failure` | migração declarada |
+| `test_failure` | testes exigidos declarados |
+| `external_service_failure` | integração externa declarada |
+
+Cada cenário passou a explicar **como agir**, não só quão grave é:
+`preconditions`, `affected_scope`, `containment`, `rollback_requirement`,
+`verification`, `residual_risk` e `confidence`.
+
+`residual_risk` é separado de `severity` porque o que sobra depois da contenção
+não é o impacto bruto. `confidence` é explícito porque cenário derivado de
+regra determinística vale mais que cenário derivado de heurística, e
+apresentá-los com o mesmo peso esconderia a diferença.
+
+**Nada executa.** `mode` continua `analytical_dry_run` e
+`target_operation_executed` continua `False`. Nenhum provider é chamado — o
+caminho determinístico é suficiente, e IA pode ajudar na interpretação em uma
+Era futura sem virar dependência.
+
+## 17. Auditoria final do motor
+
+### Gates
+
+`PASS` · `PASS_WITH_WARNINGS` · `REVIEW_REQUIRED` · `BLOCK`, com
+`reason_codes` sempre presentes — decisão sem motivo não é auditável.
+
+**Severidade de risco ≠ gate de execução.** A severidade descreve o que se
+observou; o gate decide o que pode acontecer. `BLOCK` vem de escopo proibido,
+permissão ausente, operação desconhecida ou segredo em produção — nunca de um
+campo enviado pelo consumidor, e nunca da métrica de alcance.
+
+### Execution Contract
+
+Assinatura HMAC-SHA256 com chave obrigatória de ≥32 caracteres; vínculo de
+projeto, ambiente, agente, escopo permitido e proibido; expiração. Testado
+contra adulteração de gate, ampliação de escopo pós-assinatura, expiração,
+reuso para outra operação, travessia de projeto, chave ausente, chave fraca e
+chave trocada.
+
+**Revisão humana decide sobre risco, não conserta integridade.** Um revisor
+legítimo que aprove contrato adulterado recebe `BLOCK` com
+`INVALID_CONTRACT_CANNOT_BE_OVERRIDDEN` — aceitar transformaria a revisão no
+bypass que a assinatura existia para impedir. O gate original nunca é apagado.
+
+### Pós-execução e histórico
+
+`predicted` × `observed` fica no repositório próprio do Risk. Report Memory e
+Operational Memory continuam recebendo o que sempre receberam. **O Risk Engine
+não cria Training Candidate** — promoção pertence ao Learning Plane.
+
+## 18. Roadmap aprovado — NÃO implementado nesta frente
+
+Registrado para que fique claro o que existe e o que não existe:
 
 ```text
-STAGE R0        PASS — baseline verificado
-STAGE R1        PASS — testes negativos de gate (19)
-STAGE R2        PASS — persistência própria (store)
-STAGE R2.1      PASS — Historical Risk conectado ao store
-P1              CLOSED
-STAGE R3        PRÓXIMO — métrica de blast radius (P3)
-CÓDIGO V1       contratos públicos intocados; integração aditiva
+Consumer SDK · Policy Engine · Control Center · Evaluation Plane V2
+Model Registry / Promotion · Shadow Mode
+Quality/Cost/Latency Routing · Prompt Registry
+Unified Audit Trail / Correlation · SLO / Operational Health
+Compatibility Matrix · Disaster Recovery
+```
+
+### Possible Future Evolutions — apenas estudo
+
+```text
+MCP + A2A Gateway · Just-in-Time Capability Leases
+Proof of Execution · Decision Replay / Time Travel
+Counterfactual Risk Lab · OpenTelemetry GenAI
+```
+
+Tecnologias relacionadas a acompanhar: CycloneDX/AI-BOM, Sigstore/in-toto.
+
+**Nada disso foi implementado.** Nenhum código desta frente os antecipa.
+
+## 19. Próximo encerramento — rename
+
+```text
+NEXT MAJOR CLOSEOUT: product rename to Veltrix
+```
+
+Não executado aqui. A nomenclatura técnica atual (`PEDROCORE_*`,
+`pedrocore_*`) foi **preservada** deliberadamente, inclusive nos contratos e
+identificadores criados nesta frente — introduzir `VELTRIX_*` isolado agora
+criaria duas convenções convivendo sem estratégia.
+
+O rename precisará mapear, sem busca-e-troca cega: branding, UI, README e
+docs, repositório, pacotes, variáveis de ambiente, identificadores de contrato,
+identificadores de banco e compatibilidade com o legado. Identificador de
+contrato e nome de coluna são especialmente delicados: trocá-los quebra
+consumidor e exige migration com alias.
+
+## 20. Estado final
+
+```text
+STAGE R0     PASS — baseline verificado
+STAGE R1     PASS — testes negativos de gate (19)
+STAGE R2     PASS — persistência própria (store)
+STAGE R2.1   PASS — Historical Risk conectado ao store
+STAGE R3     PASS — métrica de blast radius (18 testes)
+STAGE R4     PASS — contrato universal de risco (26 testes com R5)
+STAGE R5     PASS — Scenario Simulation V2
+
+P1 CLOSED · P2 CLOSED · P3 CLOSED · P4 CLOSED · P5 CLOSED
+
+migrations   0009 (R2) · 0010 (R3), ambas aditivas
+contratos    5 fingerprints V1 intactos + 1 novo congelado
+OpenAPI      39 paths · 2 schemas estendidos, só campos opcionais
 ```
