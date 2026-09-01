@@ -10,12 +10,38 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ---
 
+
+## Risk Engine V2 — fechamento de produto
+
+Console, CLI e porta HTTP sobre o motor já fechado em R0–R5. O motor não mudou.
+
+- **Risk Console** — TUI em Textual (`pedrocore risk`), em PT-BR, consumindo o
+  core no mesmo processo. Não decide risco: o gate vem da política.
+- **CLI** — `analyze`, `inspect`, `contract`, `validate-contract`, `history`,
+  `benchmark`. Código de saída próprio para `BLOCK`. Saída `--json` em UTF-8.
+- **R4 HTTP** — `POST /api/risk/universal/analyze`, porta operacional do
+  contrato universal de risco. Fecha a dívida do fechamento anterior.
+- **PostgreSQL real** — os 22 casos antes `skip` executados contra banco
+  descartável: migrations 0009 e 0010, insert/read, durabilidade,
+  idempotência, conflito, isolamento de projeto, histórico e métrica de blast.
+- **Arquitetura** — `risk_console` declarado no Runtime Plane.
+
+Aditivo: OpenAPI ganha 1 rota e 2 schemas; nada removido, nenhum `required`
+novo, nenhum tipo alterado. A UI React principal não foi alterada.
+
 ## [Não lançado] — AI Runtime & Learning Control Plane
 
 Reorganização arquitetural em dez Eras. **Zero breaking change**: nenhuma rota,
 schema ou contrato público existente foi removido ou alterado.
 
 ### Adicionado
+
+- **Risk Engine V2 — R0 a R5** (`PedroCore IA/15-risk-engine/RISK_ENGINE_V2_BASELINE.md`).
+  Persistência própria do domínio Risk (migrations `0009` e `0010`), Historical
+  Risk consumindo esse store, métrica quantitativa de blast radius, contrato
+  universal `pedrocore-risk-request/v1` e Scenario Simulation V2 com cenários
+  relevantes ao payload. Os cinco problemas do baseline (P1–P5) fechados, cada
+  um com teste e verificação por mutação.
 
 - **`LICENSE` — Apache License 2.0** (SPDX `Apache-2.0`), com a metadata
   correspondente em `apps/api/pyproject.toml` (`License-Expression`) e

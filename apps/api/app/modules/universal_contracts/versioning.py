@@ -43,6 +43,10 @@ QUALITY_EVIDENCE_V1 = "pedrocore-quality-evidence/v1"
 EXECUTION_OUTCOME_V1 = "pedrocore-execution-outcome/v1"
 LEARNING_SOURCE_V1 = "pedrocore-learning-source/v1"
 INTEGRATION_ENVELOPE_V1 = "pedrocore-integration/v1"
+# Stage R4 do Risk Engine V2. Contrato proprio em vez de payload do envelope:
+# acrescentar um valor a `IntegrationPayloadType` mudaria o JSON Schema do
+# envelope e, com ele, um fingerprint congelado. Os cinco V1 ficam intactos.
+RISK_REQUEST_V1 = "pedrocore-risk-request/v1"
 
 
 class ContractVersionStatus(str, Enum):
@@ -72,6 +76,7 @@ _VERSION_STATUS: dict[str, ContractVersionStatus] = {
     EXECUTION_OUTCOME_V1: ContractVersionStatus.SUPPORTED,
     LEARNING_SOURCE_V1: ContractVersionStatus.SUPPORTED,
     INTEGRATION_ENVELOPE_V1: ContractVersionStatus.SUPPORTED,
+    RISK_REQUEST_V1: ContractVersionStatus.SUPPORTED,
 }
 
 CONTRACT_VERSION_STATUS: MappingProxyType[str, ContractVersionStatus] = MappingProxyType(

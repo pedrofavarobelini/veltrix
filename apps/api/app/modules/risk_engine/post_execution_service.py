@@ -26,6 +26,8 @@ from app.modules.risk_engine.execution_contract_schemas import (
     RiskGate,
 )
 from app.modules.risk_engine.execution_contract_service import execution_contract_service
+from app.modules.risk_engine.persistence_service import risk_persistence_service
+from app.modules.risk_engine.repository import RiskRepositoryError
 from app.modules.risk_engine.post_execution_schemas import (
     ExecutionComparison,
     ExecutionEvidence,
@@ -269,7 +271,7 @@ class PostExecutionService:
                 lifecycle=memory.lifecycle.value if memory else None,
                 duplicate=candidate_duplicate,
             )
-        return PostExecutionOutcome(
+        outcome = PostExecutionOutcome(
             outcome_id=outcome_id,
             project_id=evidence.project_id.strip().lower(),
             evidence_id=evidence.evidence_id,
@@ -295,6 +297,13 @@ class PostExecutionService:
                 report.report_id,
             ],
         )
+        # Stage R2: o observado tambem vira historia propria do dominio Risk,
+        # ao lado — nao no lugar — de Report Memory e Operational Memory.
+        try:
+            risk_persistence_service.record_outcome(outcome)
+        except RiskRepositoryError:
+            pass
+        return outcome
 
 
 post_execution_service = PostExecutionService()

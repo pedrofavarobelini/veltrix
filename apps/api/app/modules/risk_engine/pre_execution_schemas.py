@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.modules.operational_memory.schemas import MemoryLifecycle, PatternType
+from app.modules.risk_engine.blast_radius_metric import BlastRadiusMetric
 from app.modules.risk_engine.schemas import RiskAssessment, RiskFinding, RiskSeverity, RiskSignal
 
 PRE_EXECUTION_RISK_POLICY_VERSION = "pre-execution-risk-v1"
@@ -81,9 +82,26 @@ class BlastRadius(BaseModel):
     external_integrations: list[str] = Field(default_factory=list)
     security_boundaries: list[str] = Field(default_factory=list)
     magnitude: RiskSeverity
+    # Stage R3: metrica quantitativa de ALCANCE, aditiva e opcional.
+    # `magnitude` (severidade) e preservada; as duas respondem perguntas
+    # diferentes e por isso coexistem em vez de uma substituir a outra.
+    # `None` em analises produzidas antes do R3.
+    metric: BlastRadiusMetric | None = None
 
 
 class ScenarioSimulation(BaseModel):
+    """Cenario analitico. NUNCA executa a operacao alvo.
+
+    Stage R5: os campos abaixo de `expected_effect` sao ADITIVOS e opcionais.
+    Eles existem porque "este cenario e HIGH" nao ajuda ninguem a agir — o que
+    ajuda e saber o que dispara, o que ele atinge, como conter, o que verificar
+    e o que sobra de risco depois da contencao.
+
+    `confidence` e explicito porque um cenario derivado de regra deterministica
+    e mais confiavel que um derivado de heuristica, e apresentar os dois com o
+    mesmo peso seria esconder a diferenca.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     scenario: str
@@ -91,6 +109,16 @@ class ScenarioSimulation(BaseModel):
     severity: RiskSeverity
     trigger_codes: list[str] = Field(default_factory=list)
     expected_effect: str
+
+    # Stage R5 — aditivos. `None`/vazio em analises anteriores.
+    preconditions: list[str] = Field(default_factory=list)
+    affected_scope: list[str] = Field(default_factory=list)
+    containment: str | None = None
+    rollback_requirement: Literal["none", "recommended", "required"] = "none"
+    verification: list[str] = Field(default_factory=list)
+    residual_risk: RiskSeverity | None = None
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+
     target_operation_executed: Literal[False] = False
 
 

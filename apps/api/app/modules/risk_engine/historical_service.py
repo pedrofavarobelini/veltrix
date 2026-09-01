@@ -7,6 +7,7 @@ from collections import Counter
 from app.modules.operational_memory.schemas import EvidenceSourceType, PatternType
 from app.modules.operational_memory.service import operational_memory_service
 from app.modules.report_memory.service import report_memory_service
+from app.modules.risk_engine.persistence_service import risk_persistence_service
 from app.modules.retrieval.schemas import RetrievalQuery
 from app.modules.retrieval.service import retrieval_service
 from app.modules.risk_engine.historical_schemas import (
@@ -41,20 +42,89 @@ def _stable_benchmark_id(payload: HistoricalBenchmarkRequest) -> str:
     return "benchmark_" + hashlib.sha256(encoded).hexdigest()[:24]
 
 
+# Origem de onde a versao de politica de risco foi resolvida. Nao vaza para o
+# schema publico — existe para que o teste possa provar QUAL caminho respondeu,
+# e nao apenas que alguem respondeu.
+POLICY_SOURCE_RISK_DOMAIN = "risk_repository"
+POLICY_SOURCE_LEGACY_REPORT = "report_memory_legacy"
+
+
 class HistoricalRiskService:
+    """Inteligencia historica de risco.
+
+    Stage R2.1: a versao da politica de risco passou a ser lida do proprio
+    dominio Risk quando a persistencia dele esta ligada. Antes, um fato do Risk
+    Engine so podia ser reconstruido atraves de Report Memory — o que fazia a
+    configuracao de outro dominio decidir se havia ou nao historico de risco.
+
+    Report Memory continua sendo consultada, mas como caminho LEGADO: registros
+    gravados antes do Stage R2 nao existem no repositorio proprio, e apaga-los
+    do caminho de leitura seria perder historia real.
+    """
+
     @staticmethod
-    def _risk_policies(project_id: str, memory) -> list[str]:
+    def _policy_from_risk_domain(project_id: str, source_id: str) -> str | None:
+        """Resolve a politica pelo dominio Risk.
+
+        Correlacao usada, verificada no fluxo pos-execucao:
+
+            evidence.source_id == report_id == outcome_id
+                -> RiskOutcomeRecord.risk_analysis_id
+                -> RiskAnalysisRecord.analysis_policy_version
+
+        Devolve `None` quando a persistencia esta desligada (a decisao volta a
+        ser do caminho V1) ou quando o registro nao existe (dado legado).
+        Falha de um repositorio CONFIGURADO propaga: esconder isso faria a
+        consulta parecer "sem historico" quando na verdade e "sem acesso".
+        """
+        if not risk_persistence_service.enabled():
+            return None
+        outcome = risk_persistence_service.outcome(project_id, source_id)
+        if outcome is None:
+            return None
+        analysis = risk_persistence_service.analysis(project_id, outcome.risk_analysis_id)
+        if analysis is None:
+            return None
+        return analysis.analysis_policy_version
+
+    @staticmethod
+    def _policy_from_report_memory(project_id: str, source_id: str) -> str | None:
+        """Caminho legado: reconstroi a politica a partir do relatorio."""
+        report = report_memory_service.get_report(project_id, source_id)
+        if report is None or not report.metadata:
+            return None
+        policy = report.metadata.get("risk_policy_version")
+        return policy if isinstance(policy, str) and policy else None
+
+    @classmethod
+    def _resolve_risk_policies(
+        cls, project_id: str, memory
+    ) -> tuple[list[str], dict[str, str]]:
+        """Politicas e a origem de cada resolucao.
+
+        O dominio Risk responde primeiro. Report Memory so entra quando o
+        registro proprio nao existe — o que, na pratica, significa dado
+        anterior ao Stage R2.
+        """
         policies: set[str] = set()
+        sources: dict[str, str] = {}
         for evidence in memory.evidence:
             if evidence.source_type is not EvidenceSourceType.REPORT:
                 continue
-            report = report_memory_service.get_report(project_id, evidence.source_id)
-            if report is None or not report.metadata:
-                continue
-            policy = report.metadata.get("risk_policy_version")
-            if isinstance(policy, str) and policy:
+            policy = cls._policy_from_risk_domain(project_id, evidence.source_id)
+            if policy is not None:
+                sources[evidence.source_id] = POLICY_SOURCE_RISK_DOMAIN
+            else:
+                policy = cls._policy_from_report_memory(project_id, evidence.source_id)
+                if policy is not None:
+                    sources[evidence.source_id] = POLICY_SOURCE_LEGACY_REPORT
+            if policy:
                 policies.add(policy)
-        return sorted(policies)
+        return sorted(policies), sources
+
+    @classmethod
+    def _risk_policies(cls, project_id: str, memory) -> list[str]:
+        return cls._resolve_risk_policies(project_id, memory)[0]
 
     def summarize(self, query: HistoricalRiskQuery) -> HistoricalRiskSummary:
         project_id = query.project_id.strip().lower()

@@ -170,7 +170,13 @@ def test_blast_radius_exposes_each_affected_boundary():
     assert "AUTH_AUTHZ_CHANGE" in radius.security_boundaries
 
 
-def test_six_scenarios_are_analytical_dry_runs_only():
+def test_relevant_scenarios_are_analytical_dry_runs_only():
+    """Stage R5: os seis cenarios base mais os relevantes ao payload.
+
+    Antes do R5 a lista era fixa. Agora cenario condicional so aparece quando
+    o FATO correspondente existe — este payload declara `required_tests` e
+    `external_integrations`, entao os dois cenarios correspondentes entram.
+    """
     analysis = pre_execution_risk_service.analyze(
         RiskRequest.model_validate(_payload())
     )
@@ -181,6 +187,8 @@ def test_six_scenarios_are_analytical_dry_runs_only():
         "dependency_failure",
         "rollback_requirement",
         "security_impact",
+        "test_failure",
+        "external_service_failure",
     ]
     assert all(item.mode == "analytical_dry_run" for item in analysis.simulations)
     assert all(item.target_operation_executed is False for item in analysis.simulations)

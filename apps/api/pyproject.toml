@@ -17,11 +17,27 @@ dependencies = [
     "psycopg[binary]>=3.2",
 ]
 
+# O Risk Console e uma TUI local: o container da API nao precisa dela, e quem
+# so quer analisar risco no terminal nao precisa do ferramental de teste. Por
+# isso `console` e um extra, e o grupo `dev` referencia o proprio extra para
+# que exista UMA fonte de verdade da versao do Textual.
+[project.optional-dependencies]
+console = [
+    "textual>=1.0.0,<7.0.0",
+]
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.0",
     "ruff>=0.8.0",
+    "pedrocore-ia-api[console]",
 ]
+
+# Ponto de entrada unico do produto. O nome do comando esta centralizado em
+# `app.modules.risk_console.branding` para que o rename PedroCore -> Veltrix
+# adicione um alias sem cacar strings pelo codigo.
+[project.scripts]
+pedrocore = "app.modules.risk_console.cli:main"
 
 # Descoberta explicita de pacotes.
 #
@@ -29,6 +45,17 @@ dev = [
 # adivinhar qual e o pacote — o que fazia `pip install -e .` falhar, inclusive
 # no passo de instalacao da CI. `migrations` sao arquivos SQL aplicados por um
 # runner, nao um pacote Python, e `tests` nao e distribuido.
+# Sem backend de build declarado, o `uv sync` instalava as dependencias mas
+# pulava `[project.scripts]` com o aviso "this project is not packaged" — e o
+# comando `pedrocore` nunca aparecia no PATH do venv. Declarar o backend que o
+# projeto ja usava implicitamente e o que faz o ponto de entrada existir.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true
+
 [tool.setuptools.packages.find]
 include = ["app*"]
 

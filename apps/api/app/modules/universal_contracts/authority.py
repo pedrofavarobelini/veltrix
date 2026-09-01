@@ -72,6 +72,18 @@ _RESERVED_FIELD_NAMES: frozenset[str] = frozenset(
         "authoritativequalityscore",
         "trustscore",
         "confidencescore",
+        # Veredito de risco (Stage R4). O consumidor traz o fato; quem decide
+        # se e seguro e o motor. Aceitar `gate` ou `safe` do payload
+        # transformaria o Risk Engine em carimbo.
+        "gate",
+        "riskgate",
+        "risklevel",
+        "riskseverity",
+        "safe",
+        "approved",
+        "override",
+        "bypass",
+        "force",
         # O interruptor que nao existe
         "automaticcollection",
         "automaticcollectionperformed",

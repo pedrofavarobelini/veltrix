@@ -33,14 +33,27 @@ def _unique(values: list[str]) -> list[str]:
     return sorted({item.strip() for item in values if item.strip()}, key=str.lower)
 
 
+def infer_operation_kind(text: str) -> OperationKind:
+    """Infere a operacao a partir do texto livre.
+
+    Extraido de `IntentAnalyzer` sem mudanca de comportamento para que o Risk
+    Console possa PRE-PREENCHER a operacao usando exatamente a mesma tabela de
+    termos que o motor usa. Duas tabelas divergiriam com o tempo, e o console
+    passaria a sugerir uma operacao que o motor nao reconhece.
+
+    O console mostra o resultado como inferido e deixa o humano corrigir: quem
+    declara a operacao continua sendo o consumidor, nao o texto.
+    """
+    lowered = text.lower()
+    for operation, terms in _OPERATION_TERMS:
+        if any(term in lowered for term in terms):
+            return operation
+    return OperationKind.UNKNOWN
+
+
 class IntentAnalyzer:
     def analyze(self, request: RiskRequest) -> ExecutionIntent:
-        lowered = request.request_text.lower()
-        inferred = OperationKind.UNKNOWN
-        for operation, terms in _OPERATION_TERMS:
-            if any(term in lowered for term in terms):
-                inferred = operation
-                break
+        inferred = infer_operation_kind(request.request_text)
         explicit = request.requested_operation.kind is not OperationKind.UNKNOWN
         consistent = inferred in {OperationKind.UNKNOWN, request.requested_operation.kind}
         operation = request.requested_operation.kind
