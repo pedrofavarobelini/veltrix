@@ -31,6 +31,10 @@ e cobrados por `tests/test_universal_contracts.py`:
 - [[17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7]] - pipeline normal, timeout ambíguo e fallback seguro.
 - [[18-provider-output-budget-cancellation/PEDROCORE_PROVIDER_OUTPUT_BUDGET_CANCELLATION_01]] - orçamento de saída, timeout de transporte, cliente Gemini assíncrono e lifecycle.
 
+### Risk Engine V2 — fundacao
+
+- [[15-risk-engine/RISK_ENGINE_V2_BASELINE]] - baseline verificado do V1, problemas objetivos, invariantes, pontos de extensao e plano incremental R0-R5.
+
 ## Endpoints
 
 - `GET /` - `apps/api/app/main.py`
