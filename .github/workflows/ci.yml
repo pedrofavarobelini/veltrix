@@ -55,9 +55,13 @@ jobs:
 
       - name: Suíte de testes
         working-directory: apps/api
-        # Os 21 skips são esperados: 13 exigem PostgreSQL de teste e 8 são
+        # Os 30 skips são esperados: 22 exigem PostgreSQL de teste e 8 são
         # opt-in de recurso real. `-rs` os lista para que um skip NOVO fique
         # visível no log em vez de passar despercebido.
+        #
+        # Os 22 de PostgreSQL foram executados contra banco real no fechamento
+        # do Risk Engine V2; aqui continuam `skip` porque a CI não provisiona
+        # banco — um skip é honesto, um PASS sem banco não seria.
         run: uv run --frozen python -m pytest -q -rs
 
       - name: Grafo documental

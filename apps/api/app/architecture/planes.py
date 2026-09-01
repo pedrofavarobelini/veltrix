@@ -94,6 +94,11 @@ _RUNTIME_MODULES = frozenset(
         "interaction_outcomes",
         # Risk Engine e Execution Contracts (mesmo modulo, `risk_engine`)
         "risk_engine",
+        # Risk Console: CLI e TUI sobre o Risk Engine. E Runtime, e nao
+        # Consumer Capability, porque nao pertence a nenhum consumidor —
+        # atende qualquer projeto que declare `risk_analysis`. Nao decide
+        # risco: consome os mesmos servicos que o router HTTP consome.
+        "risk_console",
         # Safe Reuse
         "safe_reuse",
         # QA e avaliacao operacional do runtime

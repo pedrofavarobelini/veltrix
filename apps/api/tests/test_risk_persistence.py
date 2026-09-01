@@ -466,3 +466,102 @@ def test_postgresql_history_survives_a_new_repository_instance(postgres_url):
     PostgreSQLRiskRepository(postgres_url).add_outcome(_outcome())
     revived = PostgreSQLRiskRepository(postgres_url)
     assert revived.history(ALPHA).sample_size == 1
+
+
+# ---------------------------------------------------------------------------
+# Stage R3 e fechamento — o que a migration 0010 acrescentou, contra banco real
+# ---------------------------------------------------------------------------
+
+
+def test_postgresql_migration_0010_adds_the_blast_metric_columns(postgres_url):
+    """As quatro colunas do R3 existem, e todas nasceram opcionais.
+
+    Contar coluna a coluna em vez de confiar no runner: um INSERT desalinhado
+    com o SELECT so aparece contra banco de verdade, e foi exatamente esse o
+    erro que a contagem manual pegou durante o R3.
+    """
+    import psycopg
+
+    with psycopg.connect(postgres_url) as connection:
+        rows = connection.execute(
+            """
+            SELECT column_name, is_nullable
+            FROM information_schema.columns
+            WHERE table_name = 'pedrocore_risk_analyses'
+              AND column_name LIKE 'blast_%'
+            ORDER BY column_name
+            """
+        ).fetchall()
+
+    columns = {name: nullable for name, nullable in rows}
+    assert set(columns) == {
+        "blast_boundary_counts",
+        "blast_boundary_breadth",
+        "blast_item_extent",
+        "blast_metric_version",
+        "blast_radius_level",
+    }
+    for name in (
+        "blast_boundary_counts",
+        "blast_boundary_breadth",
+        "blast_item_extent",
+        "blast_metric_version",
+    ):
+        assert columns[name] == "YES", f"{name} deveria ser nullable (migration aditiva)"
+
+
+def test_postgresql_persists_and_returns_the_blast_metric(postgres_url):
+    """A métrica volta do banco igual à que entrou."""
+    repository = PostgreSQLRiskRepository(postgres_url)
+    record = _analysis(
+        analysis_id="risk-analysis-metric",
+        blast_metric_version="blast-radius-metric-v1",
+        blast_boundary_breadth=3,
+        blast_item_extent=7,
+        blast_boundary_counts={"files": 4, "modules": 2, "database": 1},
+    )
+    assert repository.add_analysis(record) is True
+
+    found = PostgreSQLRiskRepository(postgres_url).get_analysis(ALPHA, "risk-analysis-metric")
+    assert found is not None
+    assert found.blast_metric_version == "blast-radius-metric-v1"
+    assert found.blast_boundary_breadth == 3
+    assert found.blast_item_extent == 7
+    assert found.blast_boundary_counts == {"files": 4, "modules": 2, "database": 1}
+
+
+def test_postgresql_keeps_pre_r3_records_without_a_metric(postgres_url):
+    """Registro anterior ao R3 continua sem métrica — e não vira zero.
+
+    Zero seria indistinguivel de "nada foi atingido", que e uma afirmacao que
+    ninguem mediu.
+    """
+    repository = PostgreSQLRiskRepository(postgres_url)
+    assert repository.add_analysis(_analysis(analysis_id="risk-analysis-legacy")) is True
+
+    found = repository.get_analysis(ALPHA, "risk-analysis-legacy")
+    assert found.blast_metric_version is None
+    assert found.blast_boundary_breadth is None
+    assert found.blast_item_extent is None
+    assert found.blast_boundary_counts is None
+
+
+def test_postgresql_history_feeds_the_historical_risk_service(postgres_url, monkeypatch):
+    """A ponte do R2.1, agora contra banco real e não contra o store isolado.
+
+    Este e o caso que a auditoria do Stage R2 apontou como nao provado: o que
+    importa nao e o repositorio responder, e o SERVICO de historico ler dele.
+    """
+    monkeypatch.setenv(FLAG_RISK_PERSISTENCE, "postgresql")
+    monkeypatch.setenv(FLAG_RISK_DATABASE_URL, postgres_url)
+    risk_persistence_service.reset()
+
+    repository = PostgreSQLRiskRepository(postgres_url)
+    repository.add_analysis(_analysis(analysis_id="risk-analysis-hist"))
+    repository.add_outcome(_outcome(outcome_id="risk-outcome-hist"))
+
+    history = risk_persistence_service.history(ALPHA)
+    assert history.sample_size >= 1
+    assert any(item.analysis_id == "risk-analysis-hist" for item in history.analyses)
+    assert all(item.project_id == ALPHA for item in history.analyses)
+    risk_persistence_service.reset()

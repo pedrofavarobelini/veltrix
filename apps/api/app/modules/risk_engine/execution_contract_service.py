@@ -62,6 +62,18 @@ def _context_signature(request: RiskRequest) -> str:
     return "sha256:" + hashlib.sha256(_canonical(request)).hexdigest()
 
 
+def context_signature(request: RiskRequest) -> str:
+    """Assinatura do contexto analisado, publica para o Risk Console.
+
+    O console usa isto para saber se o formulario ainda corresponde a analise
+    exibida. E deliberadamente a MESMA funcao que sela o contrato: se o
+    console tivesse a propria nocao de "mudou", ele poderia considerar
+    equivalente um par que o contrato considera diferente — e ofereceria como
+    aprovado um prompt que a assinatura nao cobre.
+    """
+    return _context_signature(request)
+
+
 def _permission_required(operation: OperationKind) -> str | None:
     return {
         OperationKind.READ: "read:",
@@ -128,6 +140,20 @@ class ExecutionContractService:
         if analysis.signals or analysis.historical_evidence.sample_size:
             return RiskGate.PASS_WITH_WARNINGS, ["NON_BLOCKING_RISK_SIGNALS"]
         return RiskGate.PASS, ["POLICY_REQUIREMENTS_SATISFIED"]
+
+    def gate_for(self, analysis, request: RiskRequest) -> tuple[RiskGate, list[str]]:
+        """Gate de uma analise, sem emitir contrato.
+
+        Existe porque o Risk Console precisa MOSTRAR o gate mesmo quando a
+        emissao de contrato esta indisponivel — sem chave de assinatura
+        configurada, `issue()` falha, e um console que so soubesse o gate ao
+        emitir contrato nao serviria para o caso mais comum: olhar antes.
+
+        Delega para `_gate`, a MESMA funcao que `issue()` usa. Um segundo
+        calculo de gate para a interface seria uma segunda politica, e a
+        interface passaria a poder discordar do contrato.
+        """
+        return self._gate(analysis, request)
 
     def issue(
         self,

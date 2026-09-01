@@ -33,6 +33,15 @@ from app.modules.risk_engine.execution_contract_service import (
     execution_contract_service,
 )
 from app.modules.risk_engine.service import risk_engine_foundation_service
+from app.modules.risk_engine.universal_contract import (
+    RISK_CONTRACT_AUTHORITY_VIOLATION,
+    RISK_CONTRACT_CAPABILITY_NOT_DECLARED,
+    RISK_CONTRACT_MANIFEST_MISSING,
+    RiskContractAnalysisResponse,
+    RiskContractSubmission,
+    RiskRequestContractV1,
+    validate_risk_contract,
+)
 
 router = APIRouter(tags=["Execution Risk Engine"])
 
@@ -74,6 +83,70 @@ def _contract_configuration_error() -> JSONResponse:
             "warning_codes": [codes.RISK_CONTRACT_CONFIGURATION_INVALID],
         },
     )
+
+
+# Codigos de autoridade e de capability sao 403: o pedido foi entendido e
+# recusado por quem o enviou nao poder pedir aquilo. Versao e forma sao 422: o
+# pedido nao foi entendido. Misturar os dois faria um integrador procurar erro
+# de digitacao onde havia falta de permissao.
+_RISK_CONTRACT_STATUS = {
+    RISK_CONTRACT_AUTHORITY_VIOLATION: 403,
+    RISK_CONTRACT_CAPABILITY_NOT_DECLARED: 403,
+    RISK_CONTRACT_MANIFEST_MISSING: 403,
+}
+
+
+@router.post("/risk/universal/analyze", response_model=RiskContractAnalysisResponse)
+def analyze_universal_risk_contract(payload: RiskContractSubmission, request: Request):
+    """Submissao de risco pelo contrato universal `pedrocore-risk-request/v1`.
+
+    Porta operacional do Stage R4. O consumidor declara FATO — operacao,
+    alvos, ambiente, permissoes, contexto — e nunca veredito: `gate`, `safe`,
+    `approved`, `risk_level`, `override` e afins sao recusados pela fronteira
+    de autoridade, em qualquer profundidade do payload.
+
+    A identidade nao vem do contrato: `producer` e `project_id` sao conferidos
+    contra a credencial antes de chegarem ao motor. O motor e o mesmo de
+    `/risk/analyze` — este e um contrato novo para a mesma politica, nao uma
+    politica nova.
+    """
+    error, _warnings, caller = authorize_technical_request(request, payload.project_id)
+    if error is not None:
+        return error
+    assert caller is not None
+    producer_error = validate_producer(caller, payload.producer)
+    if producer_error is not None:
+        return producer_error
+
+    validation = validate_risk_contract(
+        payload.contract,
+        authenticated_project_id=payload.project_id,
+        authenticated_producer_id=payload.producer,
+    )
+    if not validation.accepted:
+        code = validation.error_code or RISK_CONTRACT_AUTHORITY_VIOLATION
+        return JSONResponse(
+            status_code=_RISK_CONTRACT_STATUS.get(code, 422),
+            content={
+                "status": "blocked",
+                "error_code": code,
+                "blocked_reason": validation.reason,
+                "warning_codes": [code],
+                "authority_violations": validation.authority_violations,
+            },
+        )
+
+    contract: RiskRequestContractV1 = validation.contract
+    adapted = RiskRequest.model_validate(
+        contract.to_risk_request_payload(
+            producer=payload.producer, project_id=payload.project_id
+        )
+    )
+    try:
+        analysis = pre_execution_risk_service.analyze(adapted)
+    except ReportMemoryRepositoryError:
+        return operational_persistence_error(codes.OPERATIONAL_MEMORY_PERSISTENCE_UNAVAILABLE)
+    return RiskContractAnalysisResponse(analysis=analysis)
 
 
 @router.post("/risk/contracts", response_model=ContractIssueResponse)

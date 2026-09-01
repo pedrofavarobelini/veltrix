@@ -46,6 +46,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.modules.risk_engine.pre_execution_schemas import PreExecutionRiskAnalysis
+
 RISK_REQUEST_CONTRACT_V1 = "pedrocore-risk-request/v1"
 
 ShortText = Annotated[str, Field(min_length=1, max_length=128)]
@@ -275,3 +277,50 @@ def validate_risk_contract(
         )
 
     return RiskContractValidation(accepted=True, contract=contract)
+
+
+# ---------------------------------------------------------------------------
+# Porta operacional (Stage R4 — fechamento)
+# ---------------------------------------------------------------------------
+#
+# O contrato existia validado e testado, mas sem rota: nenhum consumidor
+# externo conseguia usa-lo. Um contrato sem porta e uma promessa que so vale
+# dentro da suite de testes.
+
+
+class RiskContractSubmission(BaseModel):
+    """Envelope de submissao do contrato universal de risco.
+
+    `contract` viaja como objeto CRU de proposito. Se fosse tipado como
+    `RiskRequestContractV1`, o `extra="forbid"` do modelo recusaria um campo
+    `gate` como erro de FORMA — e o integrador corrigiria o tipo sem nunca
+    descobrir que o problema era ter tentado decidir o proprio veredito. A
+    varredura de autoridade precisa enxergar o payload como ele chegou.
+
+    `producer` e `project_id` ficam no envelope, e nao dentro do contrato,
+    pelo mesmo motivo dos demais contratos universais: identidade e conferida
+    contra a credencial autenticada, nunca aceita como declaracao.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    producer: str = Field(..., min_length=3, max_length=64)
+    project_id: str = Field(..., min_length=1, max_length=128)
+    contract: dict[str, object]
+
+
+class RiskContractAnalysisResponse(BaseModel):
+    """Resposta da submissao: o contrato foi aceito e a analise correu.
+
+    `accepted` diz que o contrato era valido e a autoridade foi respeitada.
+    Ele NAO e um gate: o veredito esta na analise, e continua sendo produzido
+    pela politica.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["ok"] = "ok"
+    accepted: Literal[True] = True
+    contract_version: Literal["pedrocore-risk-request/v1"] = RISK_REQUEST_CONTRACT_V1
+    gate_decided_by_consumer: Literal[False] = False
+    analysis: PreExecutionRiskAnalysis

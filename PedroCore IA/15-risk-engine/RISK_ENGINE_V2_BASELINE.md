@@ -4,6 +4,7 @@ Mapa da frente: [[MOC_ARQUITETURA]].
 Contratos V1: [[10-contratos/CONTRATO_RISK_ENGINE_FOUNDATION]],
 [[10-contratos/CONTRATO_PRE_EXECUTION_RISK_V1]],
 [[10-contratos/CONTRATO_HISTORICAL_RISK]].
+Guia de uso do console: [[RISK_CONSOLE]].
 Documentação V1: [[RISK_ENGINE_FOUNDATION]], [[PRE_EXECUTION_RISK_V1]],
 [[EXECUTION_CONTRACT_RISK_GATES]], [[POST_EXECUTION_QA]],
 [[HISTORICAL_RISK_INTELLIGENCE]].
@@ -574,3 +575,71 @@ migrations   0009 (R2) · 0010 (R3), ambas aditivas
 contratos    5 fingerprints V1 intactos + 1 novo congelado
 OpenAPI      39 paths · 2 schemas estendidos, só campos opcionais
 ```
+
+## 21. Fechamento de produto — console, CLI e porta HTTP
+
+O motor estava fechado (R0–R5) e mesmo assim não era usável por um humano:
+para analisar um prompt era preciso subir `uvicorn`, montar um JSON e falar
+HTTP. Esta etapa fecha essa distância, sem tocar no motor.
+
+### Risk Console
+
+TUI em Textual, no mesmo processo do core — guia completo em [[RISK_CONSOLE]].
+
+Textual foi escolhido sobre as alternativas por motivos concretos: Electron
+traria um runtime inteiro para desenhar painéis de texto; uma segunda SPA React
+duplicaria um front que já existe e está congelado; um servidor web separado
+acrescentaria porta, credencial e um modo de falha novo entre o usuário e uma
+análise que roda em milissegundos.
+
+O console **não decide**. Não há nele nenhuma regra que produza gate,
+severidade ou aprovação:
+
+```text
+Console -> Risk Service -> Policy/Gate -> resultado -> Console
+```
+
+Em `BLOCK`, `EMITIR CONTRATO` e `COPIAR PROMPT APROVADO` ficam indisponíveis —
+e a recusa está no **serviço**, não no botão. Provado por mutação: removida a
+guarda em `issue_contract`, o teste correspondente reprova.
+
+O vínculo prompt↔análise usa a mesma assinatura que sela o contrato,
+normalizada quanto ao `request_id`. Editar qualquer campo invalida a aprovação
+anterior até uma nova análise.
+
+### CLI
+
+`argparse`, da biblioteca padrão. `click` até já estava instalado, de carona no
+uvicorn — mas depender de dependência transitiva é depender de um acidente.
+
+`BLOCK` tem código de saída próprio (`4`) para que um pipeline reaja a
+"bloqueado" sem interpretar texto.
+
+Um defeito real foi encontrado e corrigido aqui: `--json` redirecionado saía no
+codepage do console (cp1252 no Windows) e produzia bytes que não eram UTF-8
+válidos. A saída passou a ser forçada para UTF-8.
+
+### R4 — porta operacional
+
+`POST /api/risk/universal/analyze` fecha a dívida registrada no fechamento
+anterior: o contrato universal existia validado e testado, mas sem rota — uma
+promessa que só valia dentro da suíte.
+
+O `contract` viaja como objeto **cru** de propósito. Tipado, o `extra="forbid"`
+recusaria um campo `gate` como erro de FORMA, e o integrador corrigiria o tipo
+sem descobrir que o problema era ter tentado decidir o próprio veredito.
+
+Autoridade e capability respondem `403`; versão e forma respondem `422`.
+Misturar os dois faria alguém procurar erro de digitação onde havia falta de
+permissão.
+
+### Fronteiras respeitadas
+
+A UI React principal **não foi alterada**. O motor **não mudou**. O rename
+global continua fora desta frente — a marca ficou centralizada em
+`app/modules/risk_console/branding.py`.
+
+`risk_console` foi declarado no **Runtime Plane**, e não como Consumer
+Capability: ele não pertence a nenhum consumidor, atende qualquer projeto que
+declare `risk_analysis`. O teste de fronteira arquitetural pegou o módulo novo
+sem plano declarado — que é exatamente para isso que ele existe.

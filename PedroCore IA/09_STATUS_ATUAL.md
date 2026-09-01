@@ -2,6 +2,21 @@
 
 Atualizado em: 01/09/2026
 
+## RISK ENGINE V2 — ENCERRADO (motor + produto)
+
+O motor foi fechado em R0–R5 e, no fechamento de produto, ganhou interface
+propria: Risk Console (TUI), CLI (`pedrocore risk`) e a porta HTTP do contrato
+universal (`POST /api/risk/universal/analyze`). Guia de uso em
+[[15-risk-engine/RISK_CONSOLE]].
+
+Os 22 casos de persistencia antes `skip` foram executados contra PostgreSQL
+descartavel real: migrations 0009 e 0010, insert/read, durabilidade,
+idempotencia, conflito, isolamento de projeto, historico e metrica de blast.
+
+A UI React principal NAO foi alterada. O rename PedroCore -> Veltrix continua
+fora desta frente; a marca do console esta centralizada em
+`app/modules/risk_console/branding.py`.
+
 ## RISK ENGINE V2 — R0 a R5 — READY
 
 Motor de risco encerrado como V2. Os cinco problemas objetivos do baseline
