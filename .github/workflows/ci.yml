@@ -92,6 +92,17 @@ jobs:
         # coisa que vulnerabilidade no que vai para o navegador.
         run: npm audit --omit=dev --audit-level=high
 
+      # A suite de frontend chegou com a frente de UX V1 (117 testes). Sem este
+      # passo a CI diria "typecheck e build" e deixaria de fora a unica camada
+      # que verifica comportamento de interface.
+      - name: Typecheck
+        working-directory: apps/web
+        run: npm run typecheck
+
+      - name: Testes de frontend
+        working-directory: apps/web
+        run: npm test
+
       - name: Build
         working-directory: apps/web
         run: npm run build
