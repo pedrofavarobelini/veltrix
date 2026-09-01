@@ -33,27 +33,37 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Instalar dependências
+      # O projeto declara as dependencias de desenvolvimento em
+      # `[dependency-groups]` (PEP 735) e mantem `uv.lock` — nao ha
+      # `[project.optional-dependencies]`. `pip install -e ".[dev]"` procurava um
+      # extra que nao existe, avisava `does not provide the extra 'dev'` e seguia
+      # sem instalar ruff nem pytest; o job entao falhava no lint e nunca chegava
+      # aos testes. `uv sync` instala a partir do lock, que e a mesma fonte que o
+      # Dependabot atualiza — uma fonte de verdade, nao duas.
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Instalar dependências (a partir do uv.lock)
         working-directory: apps/api
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+        run: uv sync --frozen
 
       - name: Ruff
         working-directory: apps/api
-        run: python -m ruff check .
+        run: uv run --frozen python -m ruff check .
 
       - name: Suíte de testes
         working-directory: apps/api
         # Os 21 skips são esperados: 13 exigem PostgreSQL de teste e 8 são
         # opt-in de recurso real. `-rs` os lista para que um skip NOVO fique
         # visível no log em vez de passar despercebido.
-        run: python -m pytest -q -rs
+        run: uv run --frozen python -m pytest -q -rs
 
       - name: Grafo documental
         working-directory: apps/api
         run: |
-          python -c "
+          uv run --frozen python -c "
           from app.modules.docs_graph.service import build_graph
           report = build_graph()
           print(report.render())

@@ -8,9 +8,20 @@ documento existe para que isso não seja surpresa.
 
 ```bash
 cd apps/api
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install -e ".[dev]"   # Windows
-# .venv/bin/python -m pip install -e ".[dev]"          # Linux/macOS
+uv sync            # cria .venv e instala a partir do uv.lock
+```
+
+O projeto usa [uv](https://docs.astral.sh/uv/) e declara as dependências de
+desenvolvimento em `[dependency-groups]` (PEP 735). **Não use
+`pip install -e ".[dev]"`**: esse extra não existe, o pip apenas avisa
+`does not provide the extra 'dev'` e segue sem instalar `pytest` nem `ruff`.
+Era exatamente esse comando que a CI executava, e por isso ela falhava no lint
+antes de chegar aos testes.
+
+Para rodar qualquer comando dentro do ambiente:
+
+```bash
+uv run python -m pytest -q
 ```
 
 Frontend:
@@ -26,8 +37,8 @@ Rode isto antes de abrir um PR. São os mesmos comandos da CI:
 
 ```bash
 cd apps/api
-.venv/Scripts/python.exe -m pytest -q          # 1273 passed, 21 skipped
-.venv/Scripts/python.exe -m ruff check .       # All checks passed!
+uv run python -m pytest -q          # 1340 passed, 21 skipped
+uv run python -m ruff check .       # All checks passed!
 
 cd ../web
 npm run build                                  # tsc -b && vite build
