@@ -2,7 +2,7 @@
 
 Antes desta frente o adapter Gemini chamava `generate_content` sem nenhuma
 configuração de geração: o limite de saída ficava inteiramente sob o default do
-modelo, fora do controle do PedroCore. Este módulo passa a decidir o teto:
+modelo, fora do controle do Veltrix. Este módulo passa a decidir o teto:
 
     effective_output_budget = min(global_cap, model_cap, task_cap)
 

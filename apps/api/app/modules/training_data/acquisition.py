@@ -250,7 +250,7 @@ class TrainingCandidateAcquisitionService:
         Espelha `select()` em tudo o que importa — pre-screen de elegibilidade,
         scanner de privacidade, mesmo Candidate Store, mesmo lifecycle — e difere
         apenas na origem do material: aqui a proposta chega na request, ja
-        minimizada, porque o PedroCore nao alcanca a base do consumer.
+        minimizada, porque o Veltrix nao alcanca a base do consumer.
 
         **Nao autoriza nada.** O candidato nasce `PROPOSED` e continua exigindo o
         ato administrativo de autorizacao, exatamente como qualquer outro.

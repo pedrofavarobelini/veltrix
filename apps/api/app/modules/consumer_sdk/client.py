@@ -1,4 +1,4 @@
-"""E1 — Consumer SDK oficial do PedroCore.
+"""E1 — Consumer SDK oficial do Veltrix.
 
 O problema
 ----------
@@ -52,10 +52,12 @@ from app.modules.consumer_sdk.version import SDK_VERSION
 
 DEFAULT_TIMEOUT_SECONDS = 15.0
 DEFAULT_MAX_ATTEMPTS = 3
-API_KEY_HEADER = "X-PedroCore-Api-Key"
-CORRELATION_HEADER = "X-PedroCore-Correlation-Id"
-SDK_HEADER = "X-PedroCore-SDK"
-IDEMPOTENCY_HEADER = "X-PedroCore-Idempotency-Key"
+# O SDK envia o cabecalho canonico. O servidor aceita o legado para nao
+# quebrar consumidores que ainda nao atualizaram o cliente.
+API_KEY_HEADER = "X-Veltrix-Api-Key"
+CORRELATION_HEADER = "X-Veltrix-Correlation-Id"
+SDK_HEADER = "X-Veltrix-SDK"
+IDEMPOTENCY_HEADER = "X-Veltrix-Idempotency-Key"
 
 # Repetir so onde repetir pode dar certo. 4xx e o servidor dizendo que o
 # PEDIDO esta errado; insistir nao conserta o pedido.
@@ -214,7 +216,7 @@ class PedroCoreClient:
     def _headers(self, correlation_id: str | None, body: dict[str, Any] | None) -> dict[str, str]:
         headers = {
             API_KEY_HEADER: self._config.api_key,
-            SDK_HEADER: f"pedrocore-python/{SDK_VERSION}",
+            SDK_HEADER: f"veltrix-python/{SDK_VERSION}",
         }
         if correlation_id:
             headers[CORRELATION_HEADER] = correlation_id
@@ -241,7 +243,7 @@ class PedroCoreClient:
                 ultimo = error
                 if tentativa >= self._config.max_attempts:
                     raise PedroCoreError(
-                        "Falha de transporte ao chamar o PedroCore "
+                        "Falha de transporte ao chamar o Veltrix "
                         f"({type(error).__name__}) após {tentativa} tentativa(s)."
                     ) from error
                 self._sleep(self._config.backoff_seconds * tentativa)
@@ -271,7 +273,7 @@ class PedroCoreClient:
         """
         codigo = response.payload.get("error_code")
         motivo = response.payload.get("blocked_reason")
-        mensagem = f"PedroCore respondeu {response.status}"
+        mensagem = f"Veltrix respondeu {response.status}"
         if codigo:
             mensagem += f" [{codigo}]"
         if motivo and len(str(motivo)) <= 300:

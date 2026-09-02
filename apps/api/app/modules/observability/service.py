@@ -271,7 +271,7 @@ class ObservabilityService:
             error=error,
             # Constante por construção, não por omissão: não existe retry no
             # adapter, na orquestração nem no SDK (o default do google-genai é
-            # `stop_after_attempt(1)` e o PedroCore nunca passa
+            # `stop_after_attempt(1)` e o Veltrix nunca passa
             # `HttpRetryOptions`). Uma chamada lógica = no máximo um dispatch.
             retry={"attempted": False, "count": 0},
             timeline=timeline,

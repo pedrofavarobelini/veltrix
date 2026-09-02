@@ -141,7 +141,7 @@ RULES: tuple[PolicyRule, ...] = (
         effect=PolicyEffect.DENY,
         reason_code=EXECUTION_IS_NEVER_DELEGATED,
         explanation=(
-            "O PedroCore analisa e governa; ele não executa comando, não "
+            "O Veltrix analisa e governa; ele não executa comando, não "
             "escreve e não deleta em nome do consumidor."
         ),
         matches=lambda request: _flag(request, "requests_target_execution"),

@@ -1,1 +1,1 @@
-"""Consumer SDK oficial do PedroCore (E1)."""
+"""Consumer SDK oficial do Veltrix (E1)."""

@@ -13,8 +13,8 @@ from fastapi import APIRouter, Request
 from app.modules.caller_identity.schemas import SHARED_OR_UNKNOWN_PROJECT_ID
 from app.modules.caller_identity.service import caller_identity_service
 from app.modules.caller_identity.technical_api import (
-    API_KEY_HEADER,
     authorize_technical_request,
+    read_api_key,
 )
 from app.modules.compatibility.schemas import CompatibilityAnswer, CompatibilityQuery
 from app.modules.compatibility.service import compatibility_service
@@ -38,7 +38,7 @@ def _authorize_server_scope(request: Request):
     resolvido da credencial. A autorizacao continua sendo a mesma de sempre:
     quem nao se autentica nao passa, e a decisao segue fail-closed.
     """
-    resolucao = caller_identity_service.resolve(request.headers.get(API_KEY_HEADER))
+    resolucao = caller_identity_service.resolve(read_api_key(request))
     escopo = SHARED_OR_UNKNOWN_PROJECT_ID
     if resolucao.context is not None and resolucao.context.project_id:
         escopo = resolucao.context.project_id

@@ -73,7 +73,7 @@ class StoreDescriptor(BaseModel):
     depends_on: tuple[str, ...] = Field(default_factory=tuple)
 
 
-# Mapa dos stores criticos do PedroCore. Ordem pensada: identidade e politica
+# Mapa dos stores criticos do Veltrix. Ordem pensada: identidade e politica
 # antes de tudo, porque o resto e interpretado a luz delas; outbox por ultimo,
 # porque reentregar antes de o destino existir duplicaria efeito.
 CRITICAL_STORES: tuple[StoreDescriptor, ...] = (
@@ -84,62 +84,95 @@ CRITICAL_STORES: tuple[StoreDescriptor, ...] = (
         restore_order=0,
     ),
     StoreDescriptor(
-        store_id="policy_assets",
-        description="Assets governados: prompts e configurações versionadas.",
+        store_id="postgresql",
+        description="Persistência operacional, memória e retrieval.",
         criticality=StoreCriticality.CRITICAL,
         restore_order=1,
         depends_on=("caller_identity",),
     ),
     StoreDescriptor(
-        store_id="postgresql",
-        description="Persistência operacional, memória e histórico de risco.",
+        store_id="pedrocore_asset_versions",
+        description="Assets governados versionados (prompts e configurações).",
         criticality=StoreCriticality.CRITICAL,
         restore_order=2,
-        depends_on=("caller_identity",),
+        depends_on=("postgresql",),
     ),
     StoreDescriptor(
-        store_id="risk_history",
-        description="Análises e outcomes do Risk Engine.",
+        store_id="pedrocore_evaluation_records",
+        description="Evidência de avaliação que autoriza promoção.",
         criticality=StoreCriticality.CRITICAL,
         restore_order=3,
         depends_on=("postgresql",),
     ),
     StoreDescriptor(
-        store_id="model_registry",
-        description="Modelos registrados, estado e evidência de promoção.",
-        criticality=StoreCriticality.IMPORTANT,
+        store_id="pedrocore_model_entries",
+        description="Modelos registrados e estado do ciclo de vida.",
+        criticality=StoreCriticality.CRITICAL,
+        # Depois da evidencia de proposito: um modelo PROMOTED cuja avaliacao
+        # ainda nao voltou seria um estado que o proprio banco recusa.
         restore_order=4,
-        depends_on=("policy_assets",),
+        depends_on=("pedrocore_evaluation_records",),
+    ),
+    StoreDescriptor(
+        store_id="pedrocore_model_transitions",
+        description="História auditável das mudanças de estado de modelo.",
+        criticality=StoreCriticality.IMPORTANT,
+        restore_order=5,
+        depends_on=("pedrocore_model_entries",),
+    ),
+    StoreDescriptor(
+        store_id="risk_history",
+        description="Análises e outcomes do Risk Engine.",
+        criticality=StoreCriticality.CRITICAL,
+        restore_order=6,
+        depends_on=("postgresql",),
     ),
     StoreDescriptor(
         store_id="dataset_registry",
         description="Metadados de dataset e prontidão declarada.",
         criticality=StoreCriticality.IMPORTANT,
-        restore_order=5,
+        restore_order=7,
         depends_on=("postgresql",),
     ),
     StoreDescriptor(
         store_id="evidence_records",
         description="Evidência verificável produzida por consumidores.",
         criticality=StoreCriticality.CRITICAL,
-        restore_order=6,
-        depends_on=("postgresql",),
-    ),
-    StoreDescriptor(
-        store_id="audit_metadata",
-        description="Metadados de auditoria e correlação.",
-        criticality=StoreCriticality.IMPORTANT,
-        restore_order=7,
+        restore_order=8,
         depends_on=("postgresql",),
     ),
     StoreDescriptor(
         store_id="outbox",
         description="Entregas pendentes. Restaurado por último de propósito.",
         criticality=StoreCriticality.CRITICAL,
-        restore_order=8,
+        restore_order=9,
         depends_on=("postgresql", "evidence_records"),
     ),
 )
+
+# Estado que NAO entra no plano de recuperacao, e por que.
+#
+# Nao e esquecimento: e a resposta honesta a pergunta "isto precisa voltar?".
+# Restaurar observacao viva de antes do desastre descreveria um processo que
+# nao existe mais, e daria a impressao de continuidade onde houve corte.
+EPHEMERAL_BY_DESIGN: dict[str, str] = {
+    "correlation_trail": (
+        "Trilha de correlação: aponta para evidência que já é durável. "
+        "Restaurá-la reconstruiria o caminho de requisições que não existem mais."
+    ),
+    "shadow_comparisons": (
+        "Comparações de shadow: observação repetível. O que precisa durar vira "
+        "registro de avaliação, que é durável."
+    ),
+    "slo_samples": (
+        "Janela de SLI: descreve o processo em execução. Uma janela de antes do "
+        "restart mediria um processo que já morreu."
+    ),
+    "policy_evaluations": (
+        "Avaliações de política: determinísticas e reproduzíveis a partir dos "
+        "mesmos atributos. Guardá-las seria guardar o que se recalcula."
+    ),
+}
 
 
 class BackupManifest(BaseModel):

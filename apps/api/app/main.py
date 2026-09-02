@@ -1,8 +1,9 @@
-import os
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.core.env_compat import resolve
 from fastapi.responses import JSONResponse
 
 from app.modules.chat.router import router as chat_router
@@ -19,15 +20,27 @@ from app.modules.orchestration.router import router as orchestration_router
 from app.modules.report_memory.router import router as report_memory_router
 
 app = FastAPI(
-    title="PedroCore IA",
+    title="Veltrix",
     version="0.2.0",
     description="API multi-provider de IA para testar respostas, contexto e qualidade.",
 )
 
+# Origens permitidas. Default restrito ao front local: uma lista aberta por
+# omissao seria a forma mais silenciosa de expor a API.
+#
+# Lido pelo alias canonico/legado: `VELTRIX_CORS_ORIGINS` vale, e
+# `PEDROCORE_CORS_ORIGINS` continua funcionando. As duas com valores
+# diferentes recusam a configuracao — CORS e decisao de seguranca, e escolher
+# uma em silencio poderia abrir uma origem que o operador achou que tinha
+# removido.
 cors_origins = [
     item.strip().rstrip("/")
     for item in (
-        os.environ.get("PEDROCORE_CORS_ORIGINS") or "http://localhost:5173,http://127.0.0.1:5173"
+        resolve(
+            "VELTRIX_CORS_ORIGINS",
+            default="http://localhost:5173,http://127.0.0.1:5173",
+        )
+        or ""
     ).split(",")
     if item.strip()
 ]
@@ -63,7 +76,7 @@ async def sanitized_validation_error(_request: Request, exc: RequestValidationEr
 def root():
     return {
         "status": "ok",
-        "service": "PedroCore IA",
+        "service": "Veltrix",
         "version": "0.2.0",
         "message": "API multi-provider online.",
     }
@@ -73,7 +86,7 @@ def root():
 def health_check():
     return {
         "status": "ok",
-        "service": "PedroCore IA",
+        "service": "Veltrix",
         "version": "0.2.0",
     }
 

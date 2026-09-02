@@ -30,6 +30,27 @@ class EvaluationPlaneService:
 
     def __init__(self) -> None:
         self._records: dict[tuple[str, str], EvaluationRecord] = {}
+        self._repository = None
+        self._loaded = False
+
+    def set_repository(self, repository) -> None:
+        """Liga um store duravel. `None` volta ao modo apenas-memoria."""
+        self._repository = repository
+        self._loaded = False
+
+    def _ensure_loaded(self) -> None:
+        """Reidrata as avaliacoes do store na primeira leitura apos restart.
+
+        Importa porque a promocao de modelo EXIGE evidencia: sem reidratar, um
+        restart faria o Model Registry recusar promocoes legitimas por nao
+        encontrar a avaliacao que ele mesmo registrou ontem.
+        """
+        if self._loaded or self._repository is None:
+            return
+        self._loaded = True
+        for registro in self._repository.load_evaluations():
+            chave = (registro.project_id, registro.evaluation_id)
+            self._records.setdefault(chave, registro)
 
     def record(
         self,
@@ -76,12 +97,16 @@ class EvaluationPlaneService:
             evaluated_at=now or datetime.now(timezone.utc),
         )
         self._records[(projeto, registro.evaluation_id)] = registro
+        if self._repository is not None:
+            self._repository.save_evaluation(registro)
         return registro
 
     def get(self, project_id: str, evaluation_id: str) -> EvaluationRecord | None:
+        self._ensure_loaded()
         return self._records.get((project_id.strip().lower(), evaluation_id))
 
     def for_subject(self, project_id: str, subject_id: str) -> list[EvaluationRecord]:
+        self._ensure_loaded()
         projeto = project_id.strip().lower()
         return [
             item
@@ -99,6 +124,7 @@ class EvaluationPlaneService:
 
     def reset(self) -> None:
         self._records.clear()
+        self._loaded = False
 
     @staticmethod
     def _evaluation_id(subject, suite, project_id, dataset_id) -> str:

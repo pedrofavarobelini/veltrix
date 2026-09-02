@@ -36,7 +36,7 @@ function persistSettings(settings: Record<string, unknown>) {
 }
 
 function composer() {
-  return screen.getByLabelText("Mensagem para o PedroCore IA");
+  return screen.getByLabelText("Mensagem para o Veltrix");
 }
 
 describe("ChatPage — seleção de IA e autorização", () => {

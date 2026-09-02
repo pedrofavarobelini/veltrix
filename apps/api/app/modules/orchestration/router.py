@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.modules.caller_identity.service import caller_identity_service
 from app.modules.caller_identity.technical_api import (
-    API_KEY_HEADER,
+    read_api_key,
     AUTH_INVALID_REASON,
     AUTH_MISSING_REASON,
     AUTH_NOT_CONFIGURED_WARNING,
@@ -43,7 +43,7 @@ def _auth_error(
 @router.post("/orchestrate", response_model=OrchestrateResponse)
 async def orchestrate(payload: ChatRequest, request: Request):
     configured_key = (os.environ.get(API_KEY_ENV_VAR) or "").strip()
-    provided_key = request.headers.get(API_KEY_HEADER)
+    provided_key = read_api_key(request)
     auth_warnings = []
 
     if configured_key:
@@ -69,7 +69,7 @@ async def orchestrate(payload: ChatRequest, request: Request):
     if resolution.rejected:
         return _auth_error(
             resolution.error_code or codes.CALLER_CREDENTIAL_UNKNOWN,
-            resolution.reason or "Credencial não reconhecida pelo PedroCore.",
+            resolution.reason or "Credencial não reconhecida pelo Veltrix.",
             payload.correlation_id,
         )
 

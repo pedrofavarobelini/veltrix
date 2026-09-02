@@ -3,7 +3,7 @@
 O problema
 ----------
 
-As regras de policy do PedroCore existiam, funcionavam e estavam espalhadas:
+As regras de policy do Veltrix existiam, funcionavam e estavam espalhadas:
 regex em `policy_enforcement`, checagem de capability em `universal_contracts`,
 gate em `risk_engine`, autorizacao de provider em `provider_authorization`.
 Cada uma decidia bem o seu pedaco, e nenhuma sabia dizer, sozinha, "sob qual

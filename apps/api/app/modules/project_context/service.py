@@ -41,7 +41,7 @@ _FINGUARD_ALLOWED_TASKS = [
 
 _FINGUARD_NOTES = (
     "Projeto externo; QA Automation pertence ao FinGuard; "
-    "o PedroCore recebe apenas artefatos por payload (contrato fake nesta fase), "
+    "o Veltrix recebe apenas artefatos por payload (contrato fake nesta fase), "
     "sem leitura direta de repositório, sem execução de comandos e sem escrita."
 )
 
@@ -66,7 +66,7 @@ _STRUCTA_NOTES = (
 
 _ELYRA_NOTES = (
     "Plataforma externa read-only de acompanhamento emocional, autoconhecimento, "
-    "hábitos, relatórios e acompanhamento profissional autorizado. O PedroCore "
+    "hábitos, relatórios e acompanhamento profissional autorizado. O Veltrix "
     "recebe somente snapshot determinístico explicitamente preparado; não acessa "
     "banco/Storage Elyra, não diagnostica, não prescreve, não afirma condição "
     "clínica, não trata emoção facial como fato e não converte associação em causa. "
@@ -78,7 +78,7 @@ _ELYRA_NOTES = (
 
 _PROJECTS: dict[str, dict[str, object]] = {
     "pedrocore": {
-        "display_name": "PedroCore IA",
+        "display_name": "Veltrix",
         "allowed_tasks": [
             "general_chat",
             "technical_explanation",
@@ -105,7 +105,7 @@ _PROJECTS: dict[str, dict[str, object]] = {
             "local_model_chat",
             "evaluation_run",
         ],
-        "notes": "Sistema local/default do próprio PedroCore.",
+        "notes": "Sistema local/default do próprio Veltrix.",
     },
     "finguard": {
         "display_name": "FinGuard",

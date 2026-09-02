@@ -2,7 +2,7 @@
 
 Provider e modelo deixam de ser dois campos independentes e passam a ser
 selecionados e validados como UMA unidade coerente. O adapter só recebe uma
-combinação já validada pelo PedroCore — nunca decide sozinho se aceita ou
+combinação já validada pelo Veltrix — nunca decide sozinho se aceita ou
 corrige silenciosamente o modelo enviado no payload.
 """
 

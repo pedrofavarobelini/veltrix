@@ -69,7 +69,7 @@ class GraphReport:
 
     def render(self) -> str:
         lines = [
-            "=== PEDROCORE DOCS GRAPH ===",
+            "=== VELTRIX DOCS GRAPH ===",
             f"raiz: {self.root}",
             f"documentos: {self.total_documents}",
             f"links resolvidos: {self.total_links}",

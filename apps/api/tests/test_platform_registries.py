@@ -466,15 +466,15 @@ def test_the_sdk_never_reads_configuration_from_the_environment(monkeypatch):
     transporte = _Transport(Response(200, {"status": "ok"}))
     cliente = _client(transporte)
     cliente.health()
-    assert transporte.chamadas[0][2]["X-PedroCore-Api-Key"] == "chave-sintetica-de-teste"
+    assert transporte.chamadas[0][2]["X-Veltrix-Api-Key"] == "chave-sintetica-de-teste"
 
 
 def test_every_request_carries_identity_and_sdk_version():
     transporte = _Transport(Response(200, {}))
     _client(transporte).health()
     _, _, headers, _ = transporte.chamadas[0]
-    assert headers["X-PedroCore-Api-Key"]
-    assert SDK_VERSION in headers["X-PedroCore-SDK"]
+    assert headers["X-Veltrix-Api-Key"]
+    assert SDK_VERSION in headers["X-Veltrix-SDK"]
 
 
 def test_a_write_carries_a_content_derived_idempotency_key():
@@ -484,8 +484,8 @@ def test_a_write_carries_a_content_derived_idempotency_key():
     payload = {"contract_version": "pedrocore-risk-request/v1", "request_id": "a"}
     cliente.analyze_risk(payload)
     cliente.analyze_risk(payload)
-    primeira = transporte.chamadas[0][2]["X-PedroCore-Idempotency-Key"]
-    segunda = transporte.chamadas[1][2]["X-PedroCore-Idempotency-Key"]
+    primeira = transporte.chamadas[0][2]["X-Veltrix-Idempotency-Key"]
+    segunda = transporte.chamadas[1][2]["X-Veltrix-Idempotency-Key"]
     assert primeira == segunda
 
 

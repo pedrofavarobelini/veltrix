@@ -38,7 +38,7 @@ FINISH_REASON_MAX_TOKENS = "MAX_TOKENS"
 _NORMAL_FINISH_REASONS = {FINISH_REASON_STOP, FINISH_REASON_UNSPECIFIED}
 
 TRUNCATED_MESSAGE = (
-    "Resposta do provider interrompida pelo orçamento de saída do PedroCore; "
+    "Resposta do provider interrompida pelo orçamento de saída do Veltrix; "
     "conteúdo parcial não é publicado como resposta completa."
 )
 ABNORMAL_FINISH_MESSAGE = (
@@ -197,7 +197,7 @@ class GeminiProvider(BaseAIProvider):
     # ------------------------------------------------------------------
     @staticmethod
     def _validated_budget(output_budget: int | None) -> int:
-        """O adapter nunca executa sem orçamento explícito do PedroCore."""
+        """O adapter nunca executa sem orçamento explícito do Veltrix."""
         if (
             isinstance(output_budget, bool)
             or not isinstance(output_budget, int)
@@ -205,7 +205,7 @@ class GeminiProvider(BaseAIProvider):
         ):
             raise ProviderExecutionError(
                 "Adapter não pode executar sem orçamento de saída válido "
-                "resolvido pelo PedroCore."
+                "resolvido pelo Veltrix."
             )
         return output_budget
 
@@ -219,7 +219,7 @@ class GeminiProvider(BaseAIProvider):
         ):
             raise ProviderExecutionError(
                 "Adapter não pode executar sem timeout de transporte válido "
-                "resolvido pelo PedroCore."
+                "resolvido pelo Veltrix."
             )
         return transport_timeout_ms
 

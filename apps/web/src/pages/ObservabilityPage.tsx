@@ -154,9 +154,9 @@ export function ObservabilityPage() {
     <main className="observability-shell">
       <header className="obs-brandbar">
         <div className="obs-brand">
-          <img src={pedrocoreLogo} alt="Logo PedroCore IA" />
+          <img src={pedrocoreLogo} alt="Logo Veltrix" />
           <div>
-            <strong>PedroCore <span>IA</span></strong>
+            <strong>Veltrix <span>IA</span></strong>
             <small>Observabilidade técnica</small>
           </div>
         </div>

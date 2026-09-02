@@ -1,4 +1,4 @@
-# Política de Segurança — PedroCore IA
+# Política de Segurança — Veltrix
 
 ## Reportar uma vulnerabilidade
 
@@ -87,7 +87,7 @@ acidental, mas não a torna aceitável.
 
 ## Postura de segurança do projeto
 
-O PedroCore é **fail-closed por padrão**. Tudo o que pode causar dano, custo ou
+O Veltrix é **fail-closed por padrão**. Tudo o que pode causar dano, custo ou
 vazamento está desligado até alguém ligar explicitamente:
 
 | Recurso | Default |
@@ -109,7 +109,7 @@ código-fonte e passar por revisão, e não existe variável de ambiente, payloa
 ou configuração capaz de contorná-los:
 
 - **`automatic_collection` é `Literal[False]`.** O validador *recusa* o valor
-  `True`. O PedroCore nunca varre fontes por conta própria em busca de dados de
+  `True`. O Veltrix nunca varre fontes por conta própria em busca de dados de
   treino; toda seleção é um ato explícito de um administrador.
 - **`derived_content_only` é `Literal[True]`** no contrato de fonte de
   aprendizado. Conteúdo bruto — transcrição, diário, mídia, log integral — não
@@ -130,7 +130,7 @@ ou configuração capaz de contorná-los:
   erro e no relatório de auditoria.
 - Mensagens de erro de contrato **não ecoam o payload recusado**.
 - Mensagens de bloqueio não nomeiam consumidores específicos: um aviso que
-  nomeia um sistema revela a terceiros quais o PedroCore conhece.
+  nomeia um sistema revela a terceiros quais o Veltrix conhece.
 
 
 ## Isolamento entre projetos
@@ -156,6 +156,6 @@ não são vulnerabilidades não divulgadas.
 
 ## Referências
 
-- `PedroCore IA/20-ux-v1/MODELO_DE_AMEACA.md` — cenários A/B/C/D em detalhe.
-- `PedroCore IA/MOC_SEGURANCA.md` — mapa dos controles de segurança.
+- `Veltrix/20-ux-v1/MODELO_DE_AMEACA.md` — cenários A/B/C/D em detalhe.
+- `Veltrix/MOC_SEGURANCA.md` — mapa dos controles de segurança.
 - `apps/api/.env.example` — todas as variáveis e seus defaults seguros.

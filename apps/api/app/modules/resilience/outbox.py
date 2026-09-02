@@ -3,14 +3,14 @@
 O problema que isto resolve
 ---------------------------
 
-Se um consumidor chama o PedroCore de dentro do seu fluxo principal, o PedroCore
-vira Single Point of Failure dele: PedroCore fora do ar, funcionalidade do
+Se um consumidor chama o Veltrix de dentro do seu fluxo principal, o Veltrix
+vira Single Point of Failure dele: Veltrix fora do ar, funcionalidade do
 consumidor fora do ar. Isso e inaceitavel, e nenhuma quantidade de uptime
 resolve — o acoplamento e de desenho, nao de disponibilidade.
 
 O outbox quebra esse acoplamento. O consumidor GRAVA localmente o que quer
 enviar (operacao rapida, local, sob a transacao dele) e um processo separado
-entrega depois. Se o PedroCore estiver fora, a entrega espera; o fluxo do
+entrega depois. Se o Veltrix estiver fora, a entrega espera; o fluxo do
 consumidor ja terminou.
 
 Por que aqui e nao um broker
@@ -23,7 +23,7 @@ pequenos e idempotentes — sem nenhum desses custos. Era a resposta certa antes
 de ser a mais barata.
 
 Esta implementacao e uma REFERENCIA, sem dependencia de rede: o transporte e
-injetado. O PedroCore a usa para os proprios envios e a documenta para que
+injetado. O Veltrix a usa para os proprios envios e a documenta para que
 consumidores nao precisem inventar a deles — cada um inventando a sua e como se
 tem cinco bugs de duplicacao diferentes.
 

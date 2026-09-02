@@ -1,4 +1,4 @@
-"""Ingestao de evidencia — a porta de entrada universal do PedroCore.
+"""Ingestao de evidencia — a porta de entrada universal do Veltrix.
 
 Ordem do pipeline
 -----------------

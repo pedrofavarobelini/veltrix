@@ -56,7 +56,7 @@ class ProviderResponse:
     # True somente com evidência explícita do provider, nunca por heurística
     # de tamanho próximo ao orçamento.
     truncated: bool = False
-    # Orçamento efetivo aplicado pelo PedroCore nesta chamada.
+    # Orçamento efetivo aplicado pelo Veltrix nesta chamada.
     output_budget: int | None = None
     # Timeout de transporte efetivamente configurado no cliente.
     transport_timeout_ms: int | None = None
@@ -159,7 +159,7 @@ class BaseAIProvider(ABC):
         system_prompt: str | None = None,
     ) -> str:
         base_prompt = system_prompt or (
-            "Você é o PedroCore IA, um assistente pessoal técnico, claro, direto e útil."
+            "Você é o Veltrix, um assistente pessoal técnico, claro, direto e útil."
         )
 
         mode_instruction = {

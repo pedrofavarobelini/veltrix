@@ -48,8 +48,8 @@ from app.modules.docs_graph.schemas import (
 # apps/api/app/modules/docs_graph/service.py -> repositório
 REPO_ROOT = Path(__file__).resolve().parents[5]
 
-DOCS_DIR = "PedroCore IA"
-ROOT_MOC = "PedroCore IA/MOC_PEDROCORE_IA.md"
+DOCS_DIR = "Veltrix"
+ROOT_MOC = "Veltrix/MOC_VELTRIX.md"
 
 # Diretórios de configuração do Obsidian: não são documentos do vault.
 IGNORED_PARTS = {".obsidian", ".git", "node_modules", "__pycache__", ".venv"}

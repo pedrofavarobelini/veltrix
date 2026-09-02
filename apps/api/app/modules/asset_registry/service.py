@@ -29,6 +29,34 @@ class AssetRegistryService:
 
     def __init__(self) -> None:
         self._records: dict[str, AssetRecord] = {}
+        self._repository = None
+        self._loaded = False
+
+    def set_repository(self, repository) -> None:
+        """Liga um store duravel. `None` volta ao modo apenas-memoria."""
+        self._repository = repository
+        self._loaded = False
+
+    def _ensure_loaded(self) -> None:
+        """Reidrata as versoes do store na primeira leitura apos restart."""
+        if self._loaded or self._repository is None:
+            return
+        self._loaded = True
+        for versao in self._repository.load_asset_versions():
+            registro = self._records.get(versao.asset_id)
+            if registro is None:
+                registro = AssetRecord(asset_id=versao.asset_id, kind=versao.kind)
+                self._records[versao.asset_id] = registro
+            if not any(i.version == versao.version for i in registro.versions):
+                registro.versions.append(versao)
+        for registro in self._records.values():
+            registro.versions.sort(key=lambda item: item.version)
+
+    def _persist(self, *versions: AssetVersion) -> None:
+        if self._repository is None:
+            return
+        for versao in versions:
+            self._repository.save_asset_version(versao)
 
     # --- escrita ----------------------------------------------------------
 
@@ -51,6 +79,7 @@ class AssetRegistryService:
         decisoes diferentes, e juntar as duas faria toda escrita virar um
         deploy.
         """
+        self._ensure_loaded()
         chave = asset_id.strip()
         registro = self._records.get(chave)
         if registro is None:
@@ -87,6 +116,7 @@ class AssetRegistryService:
             compatible_contract_versions=compatible_contract_versions,
         )
         registro.versions.append(versao)
+        self._persist(versao)
         return versao
 
     def activate(self, asset_id: str, version: int) -> AssetVersion:
@@ -110,6 +140,7 @@ class AssetRegistryService:
             else:
                 novas.append(item)
         registro.versions = novas
+        self._persist(*novas)
         return self._version(registro, version)
 
     def rollback(self, asset_id: str, to_version: int) -> AssetVersion:
@@ -126,6 +157,7 @@ class AssetRegistryService:
             else:
                 novas.append(item)
         registro.versions = novas
+        self._persist(*novas)
         return self._version(registro, to_version)
 
     def deprecate(self, asset_id: str, version: int) -> AssetVersion:
@@ -140,11 +172,13 @@ class AssetRegistryService:
             else item
             for item in registro.versions
         ]
+        self._persist(*registro.versions)
         return self._version(registro, version)
 
     # --- leitura ----------------------------------------------------------
 
     def record(self, asset_id: str) -> AssetRecord | None:
+        self._ensure_loaded()
         return self._records.get(asset_id.strip())
 
     def active_for(self, asset_id: str) -> AssetVersion | None:
@@ -152,6 +186,7 @@ class AssetRegistryService:
         return registro.active if registro else None
 
     def list_assets(self, kind: AssetKind | None = None) -> list[AssetRecord]:
+        self._ensure_loaded()
         itens = sorted(self._records.values(), key=lambda item: item.asset_id)
         return [item for item in itens if kind is None or item.kind is kind]
 
@@ -170,10 +205,12 @@ class AssetRegistryService:
 
     def reset(self) -> None:
         self._records.clear()
+        self._loaded = False
 
     # --- apoio ------------------------------------------------------------
 
     def _locate(self, asset_id: str, version: int) -> tuple[AssetRecord, AssetVersion]:
+        self._ensure_loaded()
         registro = self._records.get(asset_id.strip())
         if registro is None:
             raise AssetRegistryError(f"Asset não registrado: {asset_id}")

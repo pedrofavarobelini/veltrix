@@ -32,6 +32,26 @@ queda.
 
 from __future__ import annotations
 
+# ---------------------------------------------------------------------------
+# IDENTIFICADORES CONGELADOS E O RENAME PARA VELTRIX
+# ---------------------------------------------------------------------------
+#
+# O produto se chama Veltrix. Os identificadores de contrato continuam com o
+# prefixo `pedrocore-` — `pedrocore-integration/v1`, `pedrocore-risk-request/v1`
+# e os demais — e isso e deliberado.
+#
+# Trocar o identificador mudaria o fingerprint congelado e quebraria todo
+# consumidor que ja envia o nome antigo. Identificador de protocolo nao e
+# marca: e contrato publicado, e contrato publicado nao se renomeia porque a
+# empresa mudou de nome.
+#
+# O mesmo vale para as DOCSTRINGS dos modelos deste pacote: elas viram
+# `description` no `model_json_schema()` e entram no fingerprint. Durante o
+# rename, um replace de prosa as alterou e derrubou os seis fingerprints de uma
+# vez. Foram revertidas.
+#
+# Identificador novo so com VERSAO nova e caminho de migracao.
+
 from enum import Enum
 from types import MappingProxyType
 

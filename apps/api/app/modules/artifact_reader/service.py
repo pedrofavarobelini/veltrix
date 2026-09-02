@@ -8,7 +8,7 @@ from app.modules.project_context.manifests import protected_resource_markers
 
 # Artifact Reader real controlado por allowlist (Bloco 9).
 #
-# Este é o ÚNICO módulo do PedroCore autorizado a ler arquivos do disco, e
+# Este é o ÚNICO módulo do Veltrix autorizado a ler arquivos do disco, e
 # somente sob todas as condições abaixo:
 #   - PEDROCORE_ARTIFACT_READER_ENABLED=true (desabilitado por padrão);
 #   - caminho resolvido dentro de PEDROCORE_ARTIFACT_ALLOWED_DIRS;
@@ -38,7 +38,7 @@ READER_PATH_NOT_ALLOWED_WARNING = (
     "Caminho fora da allowlist do Artifact Reader; leitura bloqueada."
 )
 # Nome de projeto sai tambem da MENSAGEM: um aviso que nomeia um consumidor
-# especifico revela a terceiros quais sistemas o PedroCore conhece.
+# especifico revela a terceiros quais sistemas o Veltrix conhece.
 READER_PROTECTED_BLOCKED_WARNING = (
     "Leitura de caminhos de recurso protegido de consumidor não é permitida; "
     "leitura bloqueada."

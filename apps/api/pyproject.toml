@@ -1,7 +1,7 @@
 [project]
-name = "pedrocore-ia-api"
+name = "veltrix-api"
 version = "0.2.0"
-description = "API multi-provider do PedroCore IA"
+description = "Veltrix — AI Runtime & Learning Control Plane"
 license = "Apache-2.0"
 requires-python = ">=3.11,<3.15"
 dependencies = [
@@ -30,13 +30,14 @@ console = [
 dev = [
     "pytest>=8.3.0",
     "ruff>=0.8.0",
-    "pedrocore-ia-api[console]",
+    "veltrix-api[console]",
 ]
 
-# Ponto de entrada unico do produto. O nome do comando esta centralizado em
-# `app.modules.risk_console.branding` para que o rename PedroCore -> Veltrix
-# adicione um alias sem cacar strings pelo codigo.
+# `veltrix` e o comando canonico; `pedrocore` continua existindo como alias
+# legado para nao quebrar script, atalho e documentacao de quem ja usava. Os
+# dois apontam para o mesmo ponto de entrada — nao ha duas implementacoes.
 [project.scripts]
+veltrix = "app.modules.risk_console.cli:main"
 pedrocore = "app.modules.risk_console.cli:main"
 
 # Descoberta explicita de pacotes.

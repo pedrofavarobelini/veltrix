@@ -1,1 +1,1 @@
-"""Health state e circuit breaker local do PedroCore."""
+"""Health state e circuit breaker local do Veltrix."""

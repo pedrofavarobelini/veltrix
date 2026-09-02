@@ -45,11 +45,11 @@ export function ChatSidebar({
     .reverse();
 
   return (
-    <aside className="chat-sidebar" aria-label="Navegação e histórico local do PedroCore IA">
+    <aside className="chat-sidebar" aria-label="Navegação e histórico local do Veltrix">
       <div className="sidebar-brand">
-        <img className="sidebar-logo brand-logo-image" src={pedrocoreLogo} alt="Logo oficial do PedroCore IA" />
+        <img className="sidebar-logo brand-logo-image" src={pedrocoreLogo} alt="Logo oficial do Veltrix" />
         <div>
-          <strong>PedroCore <span>IA</span></strong>
+          <strong>Veltrix <span>IA</span></strong>
           <small>{versionLabel}</small>
         </div>
       </div>

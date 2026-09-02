@@ -39,7 +39,7 @@ class StrictContractModel(BaseModel):
 
 
 class EligibilityDeclarationV1(StrictContractModel):
-    """A Elyra decide elegibilidade; o PedroCore exige a decisao explicita.
+    """A Elyra decide elegibilidade; o Veltrix exige a decisao explicita.
 
     `eligible` e `Literal[True]`: uma submissao inelegivel nao chega com
     `false` — ela simplesmente nao e submetida. Se chegar, e recusada.
@@ -144,7 +144,7 @@ class SanitizedLearningPayloadV1(StrictContractModel):
     """O candidato em si. **Somente numeros e enums fechados.**
 
     Nao existe campo de texto neste modelo. Diario, transcricao, nome, conversa e
-    saida do PedroCore nao tem onde caber — nao por politica, por **tipo**.
+    saida do Veltrix nao tem onde caber — nao por politica, por **tipo**.
     """
 
     days_in_window: Literal[28, 56, 90] = Field(alias="daysInWindow")

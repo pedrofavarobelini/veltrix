@@ -10,7 +10,7 @@ def test_resolves_pedrocore():
     project = project_context_resolver.resolve("pedrocore")
 
     assert project.project_id == "pedrocore"
-    assert project.display_name == "PedroCore IA"
+    assert project.display_name == "Veltrix"
     assert project.read_only is True
     assert project.can_execute_commands is False
     assert project.can_write_files is False
@@ -80,7 +80,7 @@ def test_resolver_only_returns_data():
         "warnings": [],
         "notes": (
             "Projeto externo; QA Automation pertence ao FinGuard; "
-            "o PedroCore recebe apenas artefatos por payload (contrato fake nesta fase), "
+            "o Veltrix recebe apenas artefatos por payload (contrato fake nesta fase), "
             "sem leitura direta de repositório, sem execução de comandos e sem escrita."
         ),
     }

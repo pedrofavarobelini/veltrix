@@ -5,7 +5,7 @@ class ExplorationPlan(BaseModel):
     """Plano exploratório assistido (Bloco 11).
 
     Modo plano/manual: o agente apenas sugere passos para um humano executar.
-    can_execute_actions é sempre False — o PedroCore não abre navegador,
+    can_execute_actions é sempre False — o Veltrix não abre navegador,
     não clica, não digita, não executa Playwright e não roda comandos.
     """
 

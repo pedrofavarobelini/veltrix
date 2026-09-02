@@ -13,9 +13,34 @@ from app.modules.caller_identity.service import caller_identity_service
 from app.modules.contracts import codes
 from app.modules.contracts.codes import WarningItem, make_warning
 
-API_KEY_HEADER = "X-PedroCore-Api-Key"
-AUTH_MISSING_REASON = "Autenticação interna configurada e header X-PedroCore-Api-Key ausente."
-AUTH_INVALID_REASON = "Autenticação interna configurada e header X-PedroCore-Api-Key inválido."
+# Cabecalho canonico do produto renomeado, e o legado que os consumidores ja
+# enviam. Trocar sem alias quebraria FinGuard, Structa, Elyra, RIVVO e
+# OrlaByte de uma vez — e o erro apareceria como 401, que parece problema de
+# credencial e nao de rename.
+API_KEY_HEADER = "X-Veltrix-Api-Key"
+LEGACY_API_KEY_HEADER = "X-PedroCore-Api-Key"
+
+
+def read_api_key(request: Request) -> str | None:
+    """Le a credencial aceitando o cabecalho canonico e o legado.
+
+    O canonico tem precedencia. Se os dois vierem com valores diferentes, a
+    requisicao e recusada em vez de escolhida: preferir um deles em silencio
+    faria uma credencial revogada continuar valendo por vir no outro nome.
+    """
+    canonico = request.headers.get(API_KEY_HEADER)
+    legado = request.headers.get(LEGACY_API_KEY_HEADER)
+    if canonico and legado and canonico != legado:
+        return None
+    return canonico or legado
+AUTH_MISSING_REASON = (
+    "Autenticação interna configurada e credencial ausente; envie o header "
+    "X-Veltrix-Api-Key (ou o legado X-PedroCore-Api-Key)."
+)
+AUTH_INVALID_REASON = (
+    "Autenticação interna configurada e credencial inválida no header "
+    "X-Veltrix-Api-Key (ou no legado X-PedroCore-Api-Key)."
+)
 AUTH_NOT_CONFIGURED_WARNING = (
     "PEDROCORE_INTERNAL_API_KEY não configurada; API operando "
     "em modo dev/local sem autenticação interna."
@@ -86,14 +111,14 @@ def authorize_technical_request(
     AuthenticatedCallerContext | None,
 ]:
     """Resolve caller e autoriza exatamente um projeto, sempre fail-closed."""
-    provided = request.headers.get(API_KEY_HEADER)
+    provided = read_api_key(request)
     registry_configured = caller_identity_service.registry_configured()
     shared_key_configured = caller_identity_service.shared_key_configured()
     resolution = caller_identity_service.resolve(provided)
 
     if resolution.rejected:
         error_code = resolution.error_code or codes.CALLER_CREDENTIAL_UNKNOWN
-        reason = resolution.reason or "Credencial não reconhecida pelo PedroCore."
+        reason = resolution.reason or "Credencial não reconhecida pelo Veltrix."
         if shared_key_configured and not registry_configured:
             if provided is None:
                 error_code, reason = codes.INTERNAL_AUTH_MISSING, AUTH_MISSING_REASON

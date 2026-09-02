@@ -69,13 +69,13 @@ _SOURCE_DEFINITIONS = (
         required_provenance=["feedback_id", "explicitly_provided", "policy_version", "outcome"],
         target_basis="explicit human preference or acceptance decision",
     ),
-    # Stage 13 da Elyra: submetida DE FORA. O PedroCore nao acessa o banco nem o
+    # Stage 13 da Elyra: submetida DE FORA. O Veltrix nao acessa o banco nem o
     # Storage da Elyra, entao nao existe — e nao deve existir — adapter interno
     # capaz de coletar esta origem sozinho. O conteudo chega ja minimizado,
     # sanitizado, com proveniencia e fingerprint, pela capability
     # `governed_learning_candidate_submission`.
     # Era 5: evidencia registrada pela Evidence Platform. Coletavel por adapter
-    # interno porque o registro e DO PedroCore — nao exige alcancar a base de
+    # interno porque o registro e DO Veltrix — nao exige alcancar a base de
     # nenhum consumidor. Ainda assim, a selecao continua manual.
     TrainingSourceDefinition(
         source_type=TrainingSourceType.EVIDENCE_RECORD,
@@ -111,7 +111,7 @@ _SOURCE_DEFINITIONS = (
 
 # Origens que NUNCA sao coletadas por adapter interno: elas so existem quando um
 # consumer externo autorizado as submete explicitamente. A distincao e de
-# seguranca — um adapter interno para estas origens exigiria que o PedroCore
+# seguranca — um adapter interno para estas origens exigiria que o Veltrix
 # alcancasse a base do consumer, que e exatamente o que a fronteira proibe.
 EXTERNALLY_SUBMITTED_SOURCE_TYPES = frozenset(
     {TrainingSourceType.ELYRA_REPORT_SNAPSHOT}

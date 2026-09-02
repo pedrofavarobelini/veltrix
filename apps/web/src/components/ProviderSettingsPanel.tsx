@@ -123,7 +123,7 @@ export function ProviderSettingsPanel({
       <section className="dock-section">
         <span className="dock-label">Provedores de IA</span>
         <p className="provider-grid-copy">
-          IAs externas conhecidas pelo PedroCore. Uma IA sem credencial no backend
+          IAs externas conhecidas pelo Veltrix. Uma IA sem credencial no backend
           continua listada, com o estado real — some da tela seria esconder que ela
           existe. Para habilitar, configure a chave no <code>.env</code> do backend:
           a interface reage sozinha.

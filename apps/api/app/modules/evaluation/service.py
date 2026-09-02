@@ -7,7 +7,7 @@ from app.modules.report_intelligence.schemas import ReportSignal
 # Evaluation Foundation (PEDROCORE-MODEL-FOUNDATION-01).
 #
 # Avaliação determinística de planos e sinais: mede segurança, coerência e
-# compatibilidade com as políticas do PedroCore. Não chama IA externa, não
+# compatibilidade com as políticas do Veltrix. Não chama IA externa, não
 # faz benchmark de LLM e não substitui revisão humana em fluxo crítico.
 
 _AUTO_TRAINING_PATTERNS = [

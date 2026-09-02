@@ -29,6 +29,41 @@ class ModelRegistryService:
     def __init__(self) -> None:
         self._entries: dict[str, ModelEntry] = {}
         self._history: list[ModelTransition] = []
+        self._repository = None
+        self._loaded = False
+
+    def set_repository(self, repository) -> None:
+        """Liga um store duravel. `None` volta ao modo apenas-memoria."""
+        self._repository = repository
+        self._loaded = False
+
+    def _ensure_loaded(self) -> None:
+        """Reidrata do store na primeira leitura apos um restart.
+
+        Preguicoso de proposito: quem roda sem persistencia nao paga nada, e
+        quem roda com ela paga uma vez.
+        """
+        if self._loaded or self._repository is None:
+            return
+        # Marcado ANTES de carregar: um erro aqui nao pode virar laco de
+        # tentativa a cada chamada.
+        self._loaded = True
+        for entrada in self._repository.load_models():
+            self._entries.setdefault(entrada.model_key, entrada)
+        conhecidas = {
+            (i.model_key, i.to_status, i.occurred_at) for i in self._history
+        }
+        for transicao in self._repository.load_transitions():
+            chave = (transicao.model_key, transicao.to_status, transicao.occurred_at)
+            if chave not in conhecidas:
+                self._history.append(transicao)
+
+    def _persist(self, entry: ModelEntry, transition: ModelTransition | None = None) -> None:
+        if self._repository is None:
+            return
+        self._repository.save_model(entry)
+        if transition is not None:
+            self._repository.save_transition(transition)
 
     # --- registro ---------------------------------------------------------
 
@@ -43,6 +78,7 @@ class ModelRegistryService:
         now: datetime | None = None,
     ) -> ModelEntry:
         """Registra um modelo. Ele nasce REGISTERED, nunca em producao."""
+        self._ensure_loaded()
         chave = self.model_key(provider, model_name, model_version)
         if chave in self._entries:
             raise ModelRegistryError(f"Modelo já registrado: {chave}")
@@ -57,6 +93,7 @@ class ModelRegistryService:
             notes=notes,
         )
         self._entries[chave] = entrada
+        self._persist(entrada)
         return entrada
 
     @staticmethod
@@ -64,9 +101,11 @@ class ModelRegistryService:
         return f"{provider.strip().lower()}:{model_name.strip()}:{model_version.strip()}"
 
     def find(self, model_key: str) -> ModelEntry | None:
+        self._ensure_loaded()
         return self._entries.get(model_key.strip())
 
     def list(self, status: ModelStatus | None = None) -> list[ModelEntry]:
+        self._ensure_loaded()
         itens = sorted(self._entries.values(), key=lambda item: item.model_key)
         return [item for item in itens if status is None or item.status is status]
 
@@ -74,6 +113,7 @@ class ModelRegistryService:
         return self.list(ModelStatus.PROMOTED)
 
     def history(self, model_key: str) -> list[ModelTransition]:
+        self._ensure_loaded()
         return [item for item in self._history if item.model_key == model_key]
 
     # --- ciclo de vida ----------------------------------------------------
@@ -96,6 +136,7 @@ class ModelRegistryService:
         2. estado que exige evidencia sem `evaluation_id`;
         3. modelo inexistente.
         """
+        self._ensure_loaded()
         entrada = self._entries.get(model_key.strip())
         if entrada is None:
             raise ModelRegistryError(f"Modelo não registrado: {model_key}")
@@ -135,17 +176,17 @@ class ModelRegistryService:
         nova = ModelEntry.model_validate(nova.model_dump())
         self._entries[nova.model_key] = nova
 
-        self._history.append(
-            ModelTransition(
+        registro = ModelTransition(
                 model_key=nova.model_key,
                 from_status=anterior,
                 to_status=target,
                 reason=reason,
                 evaluation_id=evaluation_id,
-                actor=actor,
-                occurred_at=instante,
-            )
+            actor=actor,
+            occurred_at=instante,
         )
+        self._history.append(registro)
+        self._persist(nova, registro)
         return nova
 
     def rollback(
@@ -163,6 +204,7 @@ class ModelRegistryService:
     def reset(self) -> None:
         self._entries.clear()
         self._history.clear()
+        self._loaded = False
 
 
 model_registry_service = ModelRegistryService()

@@ -5,7 +5,7 @@ from app.modules.prompt_builder.schemas import PromptBuildInput, PromptBuildResu
 from app.modules.universal_contracts.capability_manifest import ProducerTrait
 
 DEFAULT_SYSTEM_PROMPT = (
-    "Você é o PedroCore IA, um assistente pessoal técnico, claro, direto e útil."
+    "Você é o Veltrix, um assistente pessoal técnico, claro, direto e útil."
 )
 
 # ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01: a regra e derivada do trait

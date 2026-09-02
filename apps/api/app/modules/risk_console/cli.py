@@ -164,7 +164,7 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser.add_argument("--json", action="store_true", help="Saída em JSON.")
 
     control = subparsers.add_parser(
-        "control-center", help="Retrato operacional do PedroCore (somente leitura)."
+        "control-center", help="Retrato operacional do Veltrix (somente leitura)."
     )
     control.add_argument("--json", action="store_true", help="Saída em JSON.")
 

@@ -42,7 +42,7 @@ DANGEROUS_PAYLOAD_KEYS = {
 
 DANGEROUS_TASK_REASON = (
     "task_type com semântica de execução/escrita/deleção é bloqueado por policy; "
-    "o PedroCore não executa comandos, não escreve e não deleta."
+    "o Veltrix não executa comandos, não escreve e não deleta."
 )
 
 DANGEROUS_PAYLOAD_REASON = (
@@ -82,7 +82,7 @@ class PolicyEnforcementService:
             reason = DANGEROUS_TASK_REASON
             if project.project_id in FINGUARD_ORIGIN_SYSTEMS:
                 reason = (
-                    "FinGuard é read-only no PedroCore: " + DANGEROUS_TASK_REASON
+                    "FinGuard é read-only no Veltrix: " + DANGEROUS_TASK_REASON
                 )
             return PolicyEnforcementResult(
                 blocked=True,
