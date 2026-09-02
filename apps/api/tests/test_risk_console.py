@@ -644,9 +644,13 @@ def test_the_console_titles_are_in_portuguese():
     async def check(app, _pilot):
         from textual.widgets import Label
 
+        # Titulo e subtitulo passaram a ser um bloco so: separados em cantos
+        # opostos, liam como dois elementos sem relacao.
+        cabecalho = str(app.query_one("#cabecalho").content)
+        assert PRODUCT_NAME in cabecalho
+        assert "Console de Risco Pré-Execução" in cabecalho
+
         titles = [str(item.content) for item in app.query(Label)]
-        assert PRODUCT_NAME in titles
-        assert "Console de Risco Pré-Execução" in titles
         assert "Projeto" in titles
         assert "Ambiente" in titles
         assert "Executor" in titles
@@ -892,10 +896,15 @@ def test_advanced_settings_have_portuguese_help_text():
         from textual.widgets import Label
 
         textos = [str(item.content) for item in app.query(Label)]
+        # Os campos estao agrupados por pergunta, e a ajuda e curta: uma linha
+        # que cabe ao lado do campo, e nao um paragrafo permanente na tela.
+        for grupo in ("AUTORIZAÇÃO", "EXECUÇÃO", "VALIDAÇÃO", "DEPENDÊNCIAS"):
+            assert grupo in textos
         assert "Operação — opcional" in textos
-        assert "Se não informar, o Veltrix identifica pelo prompt." in textos
-        assert "Declare apenas as capacidades que o executor poderá usar." in textos
-        assert "Onde o agente poderá realizar alterações." in textos
+        assert "Se vazio, o Veltrix identifica pelo prompt." in textos
+        assert "Capacidades que o executor poderá usar." in textos
+        assert "Onde o agente poderá alterar." in textos
+        assert "Áreas que nunca poderão mudar." in textos
         return True
 
     assert _drive(None, check)
@@ -1065,7 +1074,9 @@ def test_the_action_bar_is_docked_and_complete():
             "EXPORTAR",
             "SAIR",
         }
-        assert app.query_one("#acoes").styles.dock == "bottom"
+        # Quem ancora e o rodape; status e acoes vivem dentro dele para
+        # que nao disputem a mesma ultima linha da tela.
+        assert app.query_one("#rodape").styles.dock == "bottom"
         assert isinstance(app.query_one("#acao-sair", Button), Button)
         return True
 
@@ -1190,6 +1201,239 @@ def test_the_header_stays_on_one_line():
 
     async def check(app, _pilot):
         assert app.query_one("#cabecalho").styles.height.value == 1
+        return True
+
+    assert _drive(None, check)
+
+
+# --- proporcao, espacamento e acabamento ----------------------------------
+#
+# A rodada anterior organizou a tela; esta mede se ela USA a tela. Sobra
+# horizontal, faixa de status colada no botao e titulo truncado sao coisas que
+# ninguem percebe num teste funcional e todo mundo percebe ao abrir.
+
+
+def test_the_header_is_a_single_coherent_block():
+    """Título num canto e subtítulo no oposto liam como dois elementos."""
+
+    async def check(app, _pilot):
+        cabecalho = app.query_one("#cabecalho")
+        texto = str(cabecalho.content)
+        assert PRODUCT_NAME in texto and "Console de Risco" in texto
+        assert cabecalho.styles.height.value == 1
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_analysis_column_takes_most_of_the_width():
+    """A saída mais importante do produto não pode ser o painel menor."""
+
+    async def check(app, _pilot):
+        entrada = app.query_one("#coluna-entrada").size.width
+        analise = app.query_one("#coluna-analise").size.width
+        assert analise > entrada
+        proporcao = analise / (entrada + analise)
+        assert 0.55 <= proporcao <= 0.68, f"análise ocupa {proporcao:.0%}"
+        return True
+
+    assert _drive(None, check, size=(140, 45))
+
+
+def test_the_analysis_panels_use_the_full_column():
+    """Empilhados, e não lado a lado: cada painel usa os 62% inteiros."""
+
+    async def check(app, _pilot):
+        coluna = app.query_one("#coluna-analise").size.width
+        for selector in ("#painel-resumo", "#painel-alcance"):
+            largura = app.query_one(selector).size.width
+            assert largura >= coluna * 0.9, f"{selector} usa {largura} de {coluna}"
+        return True
+
+    assert _drive(_review(), check, size=(140, 45))
+
+
+def test_wide_terminals_spread_the_dimensions_across_one_row():
+    """Faixa compacta é faixa: seis colunas quando há largura para seis."""
+
+    async def check(app, _pilot):
+        faixa = str(app.query_one("#painel-dimensoes").content)
+        # Uma linha de nomes e uma de severidades — nada de lista vertical.
+        linhas = [item for item in faixa.split("\n") if item.strip()]
+        assert len(linhas) == 2, f"faixa com {len(linhas)} linhas"
+        assert "Escopo" in linhas[0] and "Operacional" in linhas[0]
+        return True
+
+    assert _drive(_review(), check, size=(140, 45))
+
+
+def test_narrow_terminals_wrap_the_dimensions_instead_of_truncating():
+    async def check(app, _pilot):
+        faixa = str(app.query_one("#painel-dimensoes").content)
+        linhas = [item for item in faixa.split("\n") if item.strip()]
+        assert len(linhas) > 2, "em terminal estreito a faixa precisa quebrar"
+        for rotulo in ("Escopo", "Regressão", "Operacional"):
+            assert rotulo in faixa, f"{rotulo} sumiu ao estreitar"
+        return True
+
+    assert _drive(_review(), check, size=(78, 40))
+
+
+def test_the_impact_panel_uses_two_columns_when_wide():
+    """Doze linhas curtas empilhadas gastavam vinte linhas de altura."""
+
+    async def check(app, _pilot):
+        texto = str(app.query_one("#painel-alcance").content)
+        primeira = texto.split("\n")[0]
+        # Contagem crua e métrica derivada convivem na mesma linha.
+        assert "Arquivos" in primeira and "Amplitude" in primeira
+        return True
+
+    assert _drive(_review(), check, size=(140, 45))
+
+
+def test_the_impact_panel_stacks_when_narrow():
+    async def check(app, _pilot):
+        texto = str(app.query_one("#painel-alcance").content)
+        primeira = texto.split("\n")[0]
+        assert "Arquivos" in primeira and "Amplitude" not in primeira
+        assert "Magnitude" in texto
+        return True
+
+    assert _drive(_review(), check, size=(78, 40))
+
+
+def test_the_advanced_settings_are_grouped_by_question():
+    """Onze campos em lista são uma lista; agrupados são quatro perguntas."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Label
+
+        textos = [str(item.content) for item in app.query(Label)]
+        for grupo in ("AUTORIZAÇÃO", "EXECUÇÃO", "VALIDAÇÃO", "DEPENDÊNCIAS"):
+            assert grupo in textos
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_advanced_settings_use_two_columns_when_wide():
+    async def check(app, pilot):
+        _collapsible(app, "#avancadas").collapsed = False
+        await pilot.pause()
+        colunas = app.query(".grupo-coluna")
+        assert len(colunas) == 2
+        assert all(item.size.width > 0 for item in colunas)
+        # Lado a lado: mesma linha de topo.
+        assert colunas[0].region.y == colunas[1].region.y
+        return True
+
+    assert _drive(None, check, size=(140, 45))
+
+
+def test_every_advanced_field_survived_the_grouping():
+    """Reorganizar não é remover."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Checkbox, Input, Select
+
+        for selector in (
+            "#permissoes",
+            "#escopo-permitido",
+            "#escopo-proibido",
+            "#alvos",
+            "#restricoes",
+            "#criterios",
+            "#testes",
+            "#integracoes",
+            "#banco",
+        ):
+            assert app.query_one(selector, Input)
+        assert app.query_one("#operacao", Select)
+        assert app.query_one("#rollback", Checkbox)
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_scenario_titles_are_aligned_with_leaders():
+    """A severidade é o que se percorre com o olho; ela precisa alinhar."""
+
+    async def check(app, _pilot):
+        titulos = [str(item.title) for item in app.query(".cenario")]
+        assert titulos
+        assert all("." in item for item in titulos), "sem condutor pontilhado"
+        colunas = {item.rfind(" ") for item in titulos}
+        assert len(colunas) == 1, "severidade não cai sempre na mesma coluna"
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_the_exit_action_is_set_apart_from_the_flow():
+    """Sair não é o próximo passo de nenhum fluxo."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Button
+
+        sair = app.query_one("#acao-sair", Button)
+        exportar = app.query_one("#acao-exportar", Button)
+        assert sair.has_class("discreto")
+        # Empurrado para a direita por um espaçador, não encostado no fluxo.
+        assert sair.region.x > exportar.region.right + 10
+        return True
+
+    assert _drive(_review(), check, size=(140, 45))
+
+
+def test_the_status_bar_is_separated_from_the_buttons():
+    """Mensagem colada no botão parece legenda de botão."""
+
+    async def check(app, _pilot):
+        mensagem = app.query_one("#mensagem")
+        acoes = app.query_one("#acoes")
+        assert mensagem.styles.height.value == 2
+        assert mensagem.region.bottom <= acoes.region.y
+        assert "Análise concluída" in str(mensagem.content)
+        return True
+
+    assert _drive(_clean(), check)
+
+
+def test_no_action_falls_outside_a_narrow_screen():
+    """Botão cortado é botão que parece ausente."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Button
+
+        largura = app.size.width
+        for item in app.query("#acoes Button"):
+            assert isinstance(item, Button)
+            assert item.region.right <= largura, f"{item.id} sai da tela"
+        return True
+
+    assert _drive(_review(), check, size=(78, 40))
+
+
+def test_the_primary_action_moves_to_reanalyse_after_an_analysis():
+    """Antes da análise o passo é ANALISAR; depois dela, REANALISAR."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Button
+
+        assert app.query_one("#analisar", Button).variant == "primary"
+        assert app.query_one("#acao-reanalisar", Button).variant == "primary"
+        assert app.query_one("#acao-exportar", Button).variant == "default"
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_the_primary_action_is_not_claimed_before_any_analysis():
+    async def check(app, _pilot):
+        from textual.widgets import Button
+
+        assert app.query_one("#acao-reanalisar", Button).variant == "default"
         return True
 
     assert _drive(None, check)

@@ -69,23 +69,36 @@ Se o comando não for encontrado, o ambiente não foi sincronizado; rode
 Em terminal largo, um painel de duas colunas:
 
 ```text
- VELTRIX RISK ENGINE                    Console de Risco Pré-Execução
-╭─ ENTRADA ──────────────╮ ╭─ ANÁLISE DE RISCO ──╮ ╭─ RAIO DE IMPACTO ─╮
-│ Projeto                │ │ Intenção            │ │ Arquivos          │
-│ Ambiente               │ │ Modifica            │ │ Módulos           │
-│ Executor               │ │ Qualidade           │ │ Amplitude         │
-│ Prompt                 │ │ Ambiguidade         │ │ Extensão          │
-│                        │ │ Confiança           │ │ Magnitude         │
-│ ▶ CONFIGURAÇÕES AVANÇ. │ ╰─────────────────────╯ ╰───────────────────╯
-│    ANALISAR RISCO      │ ╭─ DIMENSÕES DE RISCO ────────────────────╮
-╰────────────────────────╯ ╰─────────────────────────────────────────╯
-┏━ GATE FINAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃                     REVISÃO OBRIGATÓRIA                           ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-╭─ CENÁRIOS ────╮ ╭─ HISTÓRICO ──╮ ╭─ ACHADOS ───╮ ╭─ RECOMENDAÇÕES ─╮
+ VELTRIX RISK ENGINE  ·  Console de Risco Pré-Execução
+╭─ ENTRADA ─────────────╮ ╭─ ANÁLISE DE RISCO ──────────────────────────╮
+│ Projeto               │ │ Intenção · Modifica · Ambiente · Executor   │
+│ Ambiente              │ │ Qualidade · Ambiguidade · Confiança         │
+│ Executor              │ ╰─────────────────────────────────────────────╯
+│ Prompt                │ ╭─ RAIO DE IMPACTO ───────────────────────────╮
+│                       │ │ contagens          │ amplitude · magnitude  │
+│ ▶ CONFIG. AVANÇADAS   │ ╰─────────────────────────────────────────────╯
+│    ANALISAR RISCO     │
+╰───────────────────────╯
+╭─ DIMENSÕES DE RISCO ─────────────────────────────────────────────────╮
+│ Escopo  Dados  Segurança  Migração  Regressão  Operacional           │
+╰──────────────────────────────────────────────────────────────────────╯
+┏━ GATE FINAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                     REVISÃO OBRIGATÓRIA                              ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+╭─ CENÁRIOS ──╮ ╭─ HISTÓRICO ─╮ ╭─ ACHADOS ────╮ ╭─ RECOMENDAÇÕES ────╮
 ▶ DETALHES TÉCNICOS
- EDITAR PROMPT  REANALISAR  EMITIR CONTRATO  COPIAR PROMPT  EXPORTAR  SAIR
+ Análise concluída. Nenhuma operação foi executada.
+ EDITAR  REANALISAR  EMITIR CONTRATO  COPIAR  EXPORTAR          SAIR
 ```
+
+A coluna de análise ocupa ~62% da largura; a de entrada, ~38%. Os painéis de
+análise ficam **empilhados** e não lado a lado, para que cada um use a coluna
+inteira — lado a lado eles usavam metade dela e sobrava uma faixa vazia à
+direita.
+
+`DIMENSÕES DE RISCO` distribui as seis dimensões em uma linha quando há
+largura, três em terminal médio e duas em estreito. `RAIO DE IMPACTO` usa duas
+colunas quando há largura.
 
 O **Gate Final** fica acima dos painéis de detalhe, e não no fim. É a
 resposta que se procura ao abrir a ferramenta; enterrá-la depois de vários
@@ -124,12 +137,17 @@ foi analisado sem você saber.
 
 ### Configurações avançadas
 
-Recolhidas ao abrir. Dentro delas: `Operação` (opcional — o Veltrix identifica
-pelo prompt se você não informar), `Permissões`, `Escopo permitido`, `Escopo
-proibido`, `Alvos`, `Restrições`, `Critérios de aceitação`, `Testes exigidos`,
-`Integrações externas`, `Banco de dados` e `Plano de rollback`.
+Recolhidas ao abrir, e organizadas por pergunta em vez de por ordem de campo:
 
-Cada campo traz uma linha de ajuda em português explicando o que declarar.
+| grupo | campos |
+|---|---|
+| `AUTORIZAÇÃO` | Permissões · Escopo permitido · Escopo proibido |
+| `EXECUÇÃO` | Operação (opcional) · Alvos · Restrições |
+| `VALIDAÇÃO` | Critérios de aceitação · Testes exigidos · Plano de rollback |
+| `DEPENDÊNCIAS` | Integrações externas · Banco de dados |
+
+Em terminal largo os grupos ficam em duas colunas; em estreito, empilham. Cada
+campo traz uma linha de ajuda curta em português.
 
 Eles são opcionais **e mudam o resultado de verdade**. Vale entender o
 principal: sem `Permissões` declaradas, a política responde `BLOQUEADO` por
@@ -158,6 +176,10 @@ fica onde serve de auditoria e não de leitura.
 | `Ctrl+D` | abrir/fechar configurações avançadas |
 | `Ctrl+Q` | sair |
 | `Tab` | navegar entre campos |
+
+A barra de ações separa o fluxo do encerramento: `REANALISAR` ganha destaque
+depois da primeira análise, `SAIR` fica discreto e afastado à direita, e a
+faixa de status ocupa uma linha própria acima dos botões.
 
 Mouse funciona; teclado é suficiente. Severidade e gate sempre trazem o rótulo
 textual (`BAIXO`, `ALTO`, `BLOQUEADO`) além da cor — a tela continua legível em

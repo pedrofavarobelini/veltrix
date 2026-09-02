@@ -133,39 +133,68 @@ def render_summary_panel(result: ConsoleAnalysis) -> str:
     return "\n".join(lines)
 
 
-def render_blast_panel(result: ConsoleAnalysis) -> str:
-    """Alcance. Numeros crus em cima, metrica comparavel embaixo."""
+def render_blast_panel(result: ConsoleAnalysis, columns: int = 2) -> str:
+    """Alcance. Numeros crus, depois a metrica comparavel.
+
+    Em duas colunas quando ha largura: sao doze linhas curtas, e empilha-las
+    numa coluna so gastava vinte linhas de altura para mostrar dois digitos
+    por linha, deixando dois tercos do painel em branco.
+    """
     radius = result.analysis.blast_radius
-    width = 24
-    lines = [
-        _row("Arquivos", str(len(radius.files)), None, width),
-        _row("Módulos", str(len(radius.modules)), None, width),
-        _row("Banco de dados", str(len(radius.database)), None, width),
-        _row("Usuários", str(len(radius.users)), None, width),
-        _row("Permissões", str(len(radius.permissions)), None, width),
-        _row("Ambientes", str(len(radius.environments)), None, width),
-        _row("Integrações", str(len(radius.external_integrations)), None, width),
-        _row("Fronteiras de segurança", str(len(radius.security_boundaries)), None, width),
-        "",
-    ]
     metric = radius.metric
+    width = 26
+
+    brutos = [
+        ("Arquivos", str(len(radius.files)), None),
+        ("Módulos", str(len(radius.modules)), None),
+        ("Banco de dados", str(len(radius.database)), None),
+        ("Usuários", str(len(radius.users)), None),
+        ("Permissões", str(len(radius.permissions)), None),
+        ("Ambientes", str(len(radius.environments)), None),
+        ("Integrações externas", str(len(radius.external_integrations)), None),
+        ("Fronteiras de segurança", str(len(radius.security_boundaries)), None),
+    ]
     if metric is not None:
-        lines.append(_row("Amplitude de fronteiras", str(metric.boundary_breadth), None, width))
-        lines.append(_row("Extensão de itens", str(metric.item_extent), None, width))
+        derivados = [
+            ("Amplitude de fronteiras", str(metric.boundary_breadth), None),
+            ("Extensão de itens", str(metric.item_extent), None),
+        ]
     else:
         # Analise anterior ao Stage R3. Dizer isso e melhor que mostrar zero,
         # que seria indistinguivel de "nada foi atingido".
-        lines.append(_row("Amplitude de fronteiras", "não medida", COLOR_MUTED, width))
-        lines.append(_row("Extensão de itens", "não medida", COLOR_MUTED, width))
-    lines.append(
-        _row(
-            "Magnitude",
-            severity_label(radius.magnitude),
-            severity_color(radius.magnitude),
-            width,
-        )
+        derivados = [
+            ("Amplitude de fronteiras", "não medida", COLOR_MUTED),
+            ("Extensão de itens", "não medida", COLOR_MUTED),
+        ]
+    derivados.append(
+        ("Magnitude", severity_label(radius.magnitude), severity_color(radius.magnitude))
     )
-    return "\n".join(lines)
+
+    if columns < 2:
+        linhas = [_row(*item, width) for item in brutos + [("", "", None)] + derivados]
+        return "\n".join(line for line in linhas if line.strip())
+
+    # Duas colunas: contagens a esquerda, metrica derivada a direita.
+    esquerda = [_row(*item, width) for item in brutos]
+    direita = [_row(*item, width) for item in derivados]
+    altura = max(len(esquerda), len(direita))
+    esquerda += [""] * (altura - len(esquerda))
+    direita += [""] * (altura - len(direita))
+
+    cell = 42
+    linhas = []
+    for a, b in zip(esquerda, direita):
+        visivel = _visible_length(a)
+        preenchimento = " " * max(1, cell - visivel)
+        linhas.append(f"{a}{preenchimento}{b}" if b.strip() else a)
+    return "\n".join(linhas)
+
+
+def _visible_length(markup: str) -> int:
+    """Comprimento sem as tags de cor, para alinhar colunas."""
+    import re
+
+    return len(re.sub(r"\[/?[^\]]*\]", "", markup))
 
 
 def render_dimensions_band(result: ConsoleAnalysis, columns: int = 3) -> str:
@@ -179,7 +208,7 @@ def render_dimensions_band(result: ConsoleAnalysis, columns: int = 3) -> str:
     if not items:
         return _muted("  Nenhuma dimensão avaliada.")
 
-    cell = 16
+    cell = 18
     lines: list[str] = []
     for start in range(0, len(items), columns):
         chunk = items[start : start + columns]
@@ -206,6 +235,17 @@ def render_scenarios_summary(result: ConsoleAnalysis) -> str:
     """
     total = len(result.analysis.simulations)
     return _muted(f"  {total} cenário(s) — simulação analítica, nada é executado.")
+
+
+def scenario_title(item, width: int = 26) -> str:
+    """Titulo do cenario com condutor, no mesmo estilo do resto do laudo.
+
+    Nome e severidade na mesma linha, alinhados — a severidade e o que se
+    percorre com o olho, e ela precisa cair sempre na mesma coluna.
+    """
+    label = scenario_label(item.scenario)
+    dots = "." * max(3, width - len(label))
+    return f"{label} {dots} {severity_label(item.severity)}"
 
 
 def render_scenario_detail(item) -> str:

@@ -98,7 +98,7 @@ from app.modules.risk_console.domain import (
     split_list,
 )
 from app.modules.risk_console.export import as_json
-from app.modules.risk_console.presentation import scenario_label, severity_label
+
 from app.modules.risk_console.render import (
     render_blast_panel,
     render_dimensions_band,
@@ -109,6 +109,7 @@ from app.modules.risk_console.render import (
     render_scenario_detail,
     render_scenarios_summary,
     render_summary_panel,
+    scenario_title,
     render_technical_details,
 )
 from app.modules.risk_engine.execution_contract_schemas import RiskGate
@@ -143,24 +144,33 @@ class RiskConsoleApp(App):
         dock: top;
         height: 1;
         background: {COLOR_BACKGROUND};
-        padding: 0 1;
-        layout: horizontal;
+        padding: 0 2;
+        color: {COLOR_TEXT};
     }}
-    #titulo {{ color: {COLOR_ACCENT}; text-style: bold; width: auto; }}
-    #subtitulo {{ color: {COLOR_MUTED}; width: 1fr; text-align: right; }}
 
     /* --- barra de acoes fixa no rodape --------------------------------- */
-    #acoes {{
+    #rodape {{
         dock: bottom;
-        height: 3;
-        padding: 0 1;
+        height: 5;
         background: {COLOR_BACKGROUND};
     }}
+    #acoes {{
+        height: 3;
+        padding: 0 2;
+    }}
     #acoes Button {{
-        margin: 0 1 0 0;
+        margin: 0 2 0 0;
         min-width: 10;
         height: 3;
     }}
+    /* Hierarquia: a acao seguinte do fluxo tem peso, as de saida nao, e SAIR
+       e apenas alcancavel. Nenhum comportamento muda com isso. */
+    #acoes Button.discreto {{
+        color: {COLOR_MUTED};
+        margin: 0;
+    }}
+    #espacador {{ width: 1fr; height: 1; }}
+    Screen.-estreito #espacador {{ display: none; }}
     /* Em 76 colunas os seis botoes nao cabem numa fileira, e SAIR ficava
        fora da tela. Uma grade de 3x2 mantem todos alcancaveis pelo mouse —
        pelo teclado eles ja eram, mas botao cortado e botao que parece
@@ -172,10 +182,11 @@ class RiskConsoleApp(App):
         height: 6;
     }}
     Screen.-estreito #acoes Button {{ width: 100%; margin: 0; }}
+    /* Faixa de status: separada dos botoes por uma linha propria, para que a
+       mensagem nao pareca legenda de botao. */
     #mensagem {{
-        dock: bottom;
-        height: 1;
-        padding: 0 2;
+        height: 2;
+        padding: 1 2 0 2;
     }}
     .erro {{ color: {COLOR_DANGER}; text-style: bold; }}
     .aviso {{ color: {COLOR_WARN}; }}
@@ -189,9 +200,6 @@ class RiskConsoleApp(App):
     Screen.-estreito #topo {{ layout: vertical; height: auto; }}
     Screen.-estreito #coluna-entrada,
     Screen.-estreito #coluna-analise {{ width: 100%; height: auto; }}
-    Screen.-estreito #linha-analise {{ layout: vertical; height: auto; }}
-    Screen.-estreito #painel-resumo,
-    Screen.-estreito #painel-alcance {{ width: 100%; }}
     Screen.-estreito #linha-detalhe {{ layout: vertical; height: auto; }}
     Screen.-estreito #linha-detalhe > Vertical {{ width: 100%; height: auto; }}
 
@@ -208,9 +216,6 @@ class RiskConsoleApp(App):
     .painel:focus-within {{ border: round {COLOR_ACCENT}; }}
 
     #painel-entrada {{ height: auto; }}
-    #linha-analise {{ layout: horizontal; height: auto; }}
-    #painel-resumo {{ width: 55%; }}
-    #painel-alcance {{ width: 45%; }}
 
     #linha-detalhe {{ layout: horizontal; height: auto; }}
     /* Quatro colunas iguais truncavam o titulo do cenario no meio da
@@ -224,8 +229,8 @@ class RiskConsoleApp(App):
     #linha-detalhe > Vertical {{ height: auto; }}
     #painel-cenarios {{ width: 3fr; }}
     #painel-historico {{ width: 2fr; }}
-    #painel-achados {{ width: 2fr; }}
-    #painel-recomendacoes {{ width: 2fr; }}
+    #painel-achados {{ width: 3fr; }}
+    #painel-recomendacoes {{ width: 3fr; }}
 
     /* --- gate: o veredito tem peso proprio ----------------------------- */
     #painel-gate {{
@@ -252,8 +257,23 @@ class RiskConsoleApp(App):
         color: {COLOR_MUTED};
     }}
     .linha-campo Select {{ width: 1fr; }}
-    .rotulo {{ color: {COLOR_MUTED}; height: 1; }}
-    .ajuda {{ color: {COLOR_MUTED}; text-style: italic; height: auto; }}
+    /* `Label` nasce com largura automatica e por isso CORTA em vez de
+       quebrar. Dentro das duas colunas das avancadas isso truncava a ajuda no
+       meio da frase ("Capacidades que o exe"). Largura da coluna + altura
+       automatica fazem o texto quebrar em duas linhas. */
+    .rotulo {{ color: {COLOR_MUTED}; width: 100%; height: auto; }}
+    .grupo {{
+        color: {COLOR_ACCENT};
+        text-style: bold;
+        width: 100%;
+        height: 1;
+        margin: 1 0 0 0;
+    }}
+    #avancadas-colunas {{ layout: horizontal; height: auto; }}
+    .grupo-coluna {{ width: 1fr; height: auto; padding: 0 1 0 0; }}
+    Screen.-estreito #avancadas-colunas {{ layout: vertical; height: auto; }}
+    Screen.-estreito .grupo-coluna {{ width: 100%; }}
+    .ajuda {{ color: {COLOR_MUTED}; text-style: italic; width: 100%; height: auto; }}
     #prompt {{ height: 9; border: round {COLOR_BORDER}; }}
     #prompt:focus {{ border: round {COLOR_ACCENT}; }}
     #analisar {{ width: 100%; height: 3; }}
@@ -280,25 +300,33 @@ class RiskConsoleApp(App):
     # --- composicao -------------------------------------------------------
 
     def compose(self) -> ComposeResult:
-        with Horizontal(id="cabecalho"):
-            yield Label(PRODUCT_NAME, id="titulo")
-            yield Label(PRODUCT_SUBTITLE, id="subtitulo")
+        # Titulo num canto e subtitulo no extremo oposto liam como dois
+        # elementos sem relacao. Um bloco so, a esquerda, numa linha.
+        yield Static(
+            f"[bold {COLOR_ACCENT}]{PRODUCT_NAME}[/]"
+            f"  [{COLOR_MUTED}]·  {PRODUCT_SUBTITLE}[/]",
+            id="cabecalho",
+        )
 
-        with Horizontal(id="acoes"):
-            yield Button("EDITAR PROMPT", id="acao-editar")
-            yield Button("REANALISAR", id="acao-reanalisar")
-            yield Button("EMITIR CONTRATO", id="acao-contrato")
-            yield Button("COPIAR PROMPT", id="acao-copiar")
-            yield Button("EXPORTAR", id="acao-exportar")
-            yield Button("SAIR", id="acao-sair")
-
-        yield Static("", id="mensagem")
+        with Vertical(id="rodape"):
+            yield Static("", id="mensagem")
+            with Horizontal(id="acoes"):
+                yield Button("EDITAR PROMPT", id="acao-editar")
+                yield Button("REANALISAR", id="acao-reanalisar")
+                yield Button("EMITIR CONTRATO", id="acao-contrato")
+                yield Button("COPIAR PROMPT", id="acao-copiar")
+                yield Button("EXPORTAR", id="acao-exportar")
+                # Empurra SAIR para a direita: sair nao e o proximo passo de
+                # nenhum fluxo, e nao deveria estar encostado no que e.
+                yield Static("", id="espacador")
+                yield Button("SAIR", id="acao-sair", classes="discreto")
 
         with VerticalScroll(id="corpo"):
             with Horizontal(id="topo"):
                 yield from self._compose_entrada()
                 yield from self._compose_analise()
 
+            yield Static("", classes="painel", id="painel-dimensoes")
             yield Static("", id="painel-gate")
 
             with Horizontal(id="linha-detalhe"):
@@ -360,58 +388,68 @@ class RiskConsoleApp(App):
                 yield Button("ANALISAR RISCO", id="analisar", variant="primary")
 
     def _compose_avancadas(self) -> ComposeResult:
-        yield Label("Operação — opcional", classes="rotulo")
-        yield Label(
-            "Se não informar, o Veltrix identifica pelo prompt.", classes="ajuda"
-        )
-        yield Select(
-            [(label, label) for label, _ in OPERATIONS],
-            id="operacao",
-            prompt="Identificar pelo prompt",
-            allow_blank=True,
-        )
+        """Onze campos agrupados por PERGUNTA, nao por ordem de implementacao.
 
-        yield Label("Permissões", classes="rotulo")
-        yield Label(
-            "Declare apenas as capacidades que o executor poderá usar.",
-            classes="ajuda",
-        )
-        yield Input(placeholder="write:billing", id="permissoes")
+        Uma coluna unica de onze campos e uma lista; agrupada em autorizacao,
+        execucao, validacao e dependencias, vira quatro perguntas curtas — e
+        quem so precisa declarar permissao encontra a permissao sem ler o
+        resto.
+        """
+        with Horizontal(id="avancadas-colunas"):
+            with Vertical(classes="grupo-coluna"):
+                yield Label("AUTORIZAÇÃO", classes="grupo")
+                yield Label("Permissões", classes="rotulo")
+                yield Label("Capacidades que o executor poderá usar.", classes="ajuda")
+                yield Input(placeholder="write:billing", id="permissoes")
 
-        yield Label("Escopo permitido", classes="rotulo")
-        yield Label("Onde o agente poderá realizar alterações.", classes="ajuda")
-        yield Input(placeholder="module:billing", id="escopo-permitido")
+                yield Label("Escopo permitido", classes="rotulo")
+                yield Label("Onde o agente poderá alterar.", classes="ajuda")
+                yield Input(placeholder="module:billing", id="escopo-permitido")
 
-        yield Label("Escopo proibido", classes="rotulo")
-        yield Label("Onde ele não pode tocar, em nenhuma hipótese.", classes="ajuda")
-        yield Input(placeholder="module:auth", id="escopo-proibido")
+                yield Label("Escopo proibido", classes="rotulo")
+                yield Label("Áreas que nunca poderão mudar.", classes="ajuda")
+                yield Input(placeholder="module:auth", id="escopo-proibido")
 
-        yield Label("Alvos da operação", classes="rotulo")
-        yield Input(placeholder="module:billing", id="alvos")
+                yield Label("VALIDAÇÃO", classes="grupo")
+                yield Label("Critérios de aceitação", classes="rotulo")
+                yield Input(placeholder="suíte de billing passa", id="criterios")
 
-        yield Label("Restrições", classes="rotulo")
-        yield Input(placeholder="somente local", id="restricoes")
+                yield Label("Testes exigidos", classes="rotulo")
+                yield Input(placeholder="billing", id="testes")
 
-        yield Label("Critérios de aceitação", classes="rotulo")
-        yield Input(placeholder="suíte de billing passa", id="criterios")
+                yield Checkbox("Plano de rollback declarado", id="rollback")
 
-        yield Label("Testes exigidos", classes="rotulo")
-        yield Input(placeholder="billing", id="testes")
+            with Vertical(classes="grupo-coluna"):
+                yield Label("EXECUÇÃO", classes="grupo")
+                yield Label("Operação — opcional", classes="rotulo")
+                yield Label("Se vazio, o Veltrix identifica pelo prompt.", classes="ajuda")
+                yield Select(
+                    [(label, label) for label, _ in OPERATIONS],
+                    id="operacao",
+                    prompt="Identificar pelo prompt",
+                    allow_blank=True,
+                )
 
-        yield Label("Integrações externas", classes="rotulo")
-        yield Input(placeholder="stripe", id="integracoes")
+                yield Label("Alvos da operação", classes="rotulo")
+                yield Input(placeholder="module:billing", id="alvos")
 
-        yield Label("Banco de dados", classes="rotulo")
-        yield Input(placeholder="pedrocore", id="banco")
+                yield Label("Restrições", classes="rotulo")
+                yield Input(placeholder="somente local", id="restricoes")
 
-        yield Checkbox("Plano de rollback declarado", id="rollback")
+                yield Label("DEPENDÊNCIAS", classes="grupo")
+                yield Label("Integrações externas", classes="rotulo")
+                yield Input(placeholder="stripe", id="integracoes")
+
+                yield Label("Banco de dados", classes="rotulo")
+                yield Input(placeholder="pedrocore", id="banco")
 
     def _compose_analise(self) -> ComposeResult:
+        # Empilhados, e nao lado a lado: assim cada painel ocupa os 62% da
+        # coluna em vez de metade deles, e a altura somada acompanha a da
+        # ENTRADA — que era de onde vinha o vazio a direita.
         with Vertical(id="coluna-analise"):
-            with Horizontal(id="linha-analise"):
-                yield Static(_EMPTY_STATE, classes="painel", id="painel-resumo")
-                yield Static("", classes="painel", id="painel-alcance")
-            yield Static("", classes="painel", id="painel-dimensoes")
+            yield Static(_EMPTY_STATE, classes="painel", id="painel-resumo")
+            yield Static("", classes="painel", id="painel-alcance")
 
     def on_mount(self) -> None:
         for selector, title in (
@@ -473,6 +511,10 @@ class RiskConsoleApp(App):
         """
         for selector in ("#acao-editar", "#acao-reanalisar", "#acao-exportar"):
             self.query_one(selector, Button).disabled = False
+
+        # Com uma analise na tela, o proximo passo do fluxo deixa de ser
+        # ANALISAR e passa a ser REANALISAR. O peso visual acompanha.
+        self.query_one("#acao-reanalisar", Button).variant = "primary"
 
         blocked = result.gate is RiskGate.BLOCK
         for selector in _APPROVAL_ACTIONS:
@@ -536,11 +578,18 @@ class RiskConsoleApp(App):
 
     async def _paint(self, result: ConsoleAnalysis) -> None:
         self.query_one("#painel-resumo", Static).update(render_summary_panel(result))
-        self.query_one("#painel-alcance", Static).update(render_blast_panel(result))
 
-        columns = 2 if self.screen.has_class("-estreito") else 3
+        # A faixa acompanha a largura real: seis dimensoes numa linha so em
+        # terminal largo, tres em medio, duas em estreito. Fixar em tres
+        # deixava dois tercos da faixa em branco depois que ela passou a
+        # ocupar a largura inteira.
+        largura = self.size.width
+        colunas = 6 if largura >= 128 else (3 if largura >= _NARROW_WIDTH else 2)
         self.query_one("#painel-dimensoes", Static).update(
-            render_dimensions_band(result, columns=columns)
+            render_dimensions_band(result, columns=colunas)
+        )
+        self.query_one("#painel-alcance", Static).update(
+            render_blast_panel(result, columns=1 if largura < _NARROW_WIDTH else 2)
         )
 
         gate = self.query_one("#painel-gate", Static)
@@ -568,7 +617,7 @@ class RiskConsoleApp(App):
         container = self.query_one("#cenarios-detalhe", Vertical)
         await container.remove_children()
         for index, item in enumerate(result.analysis.simulations):
-            title = f"{scenario_label(item.scenario)} · {severity_label(item.severity)}"
+            title = scenario_title(item)
             await container.mount(
                 Collapsible(
                     Static(render_scenario_detail(item), classes="cenario-detalhe"),
