@@ -1,4 +1,4 @@
-# PedroCore IA — Comandos PowerShell
+# Veltrix — Comandos PowerShell
 
 Versão atual do pacote: V5.1.9 — Remoção definitiva dos ícones do topo interno
 

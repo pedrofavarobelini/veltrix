@@ -90,7 +90,7 @@ describe("composer — textarea e envio", () => {
   it("Enter envia a mensagem", () => {
     const props = renderComposer({ value: "olá" });
 
-    fireEvent.keyDown(screen.getByLabelText("Mensagem para o PedroCore IA"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Mensagem para o Veltrix"), { key: "Enter" });
 
     expect(props.onSend).toHaveBeenCalledTimes(1);
   });
@@ -98,7 +98,7 @@ describe("composer — textarea e envio", () => {
   it("Shift+Enter quebra a linha em vez de enviar", () => {
     const props = renderComposer({ value: "olá" });
 
-    fireEvent.keyDown(screen.getByLabelText("Mensagem para o PedroCore IA"), {
+    fireEvent.keyDown(screen.getByLabelText("Mensagem para o Veltrix"), {
       key: "Enter",
       shiftKey: true,
     });
@@ -109,7 +109,7 @@ describe("composer — textarea e envio", () => {
   it("não envia com o textarea vazio, nem por Enter nem pelo botão", () => {
     const props = renderComposer({ value: "   " });
 
-    fireEvent.keyDown(screen.getByLabelText("Mensagem para o PedroCore IA"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Mensagem para o Veltrix"), { key: "Enter" });
 
     expect(props.onSend).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Enviar" })).toBeDisabled();
@@ -125,7 +125,7 @@ describe("composer — textarea e envio", () => {
     renderComposer({ value: "olá", loading: true, canSend: false });
 
     expect(screen.getByRole("button", { name: "Enviando..." })).toBeDisabled();
-    expect(screen.getByLabelText("Mensagem para o PedroCore IA")).toBeDisabled();
+    expect(screen.getByLabelText("Mensagem para o Veltrix")).toBeDisabled();
   });
 
   it("permite enviar só com anexo, sem texto digitado", () => {

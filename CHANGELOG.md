@@ -1,9 +1,9 @@
 # Changelog
 
-Mudanças relevantes do PedroCore IA.
+Mudanças relevantes do Veltrix.
 
 O histórico detalhado por versão de produto (V1 a V5.1.9) está em
-`PedroCore IA/08_CHANGELOG.md` e permanece a fonte para aquele período.
+`Veltrix/08_CHANGELOG.md` e permanece a fonte para aquele período.
 Este arquivo começa no programa **AI Runtime & Learning Control Plane**.
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
@@ -12,10 +12,56 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 
 
+
+## Veltrix — fechamento final
+
+O produto passou a se chamar **Veltrix**. Estado completo em
+`Veltrix/17-veltrix/VELTRIX_FINAL_STATE.md`; o que mudou de nome e o que foi
+preservado em `Veltrix/17-veltrix/MIGRACAO_PEDROCORE_VELTRIX.md`.
+
+### Durabilidade fechada
+
+Model Registry, Asset Registry e Evaluation Plane ganharam persistência real
+(migration `0011`, aditiva). Motivo concreto: promoção de modelo exige
+evidência de avaliação — se a avaliação some no restart, o registry recusa
+promoção legítima, ou alguém promove de novo sem saber que já promoveu.
+
+Duas invariantes foram para o **banco**, além do Pydantic: modelo
+`APPROVED`/`PROMOTED` sem evidência (`CHECK`) e duas versões `ACTIVE` do mesmo
+asset (índice único parcial).
+
+Trilha de correlação, comparações de shadow, janela de SLI e avaliações de
+política ficam em memória **por escolha**, com o motivo declarado em
+`EPHEMERAL_BY_DESIGN`.
+
+### Disaster Recovery provado contra banco real
+
+O ensaio real encontrou uma falha silenciosa: o runner de migrations é
+idempotente, então tabelas destruídas com o livro-razão intacto **não são
+recriadas** — o operador vê "aplicadas: 0" e conclui que está tudo certo.
+Virou procedimento explícito em `disaster_recovery/postgres.py`.
+
+### Rename
+
+- Comando canônico `veltrix`; `pedrocore` continua como alias.
+- Cabeçalhos `X-Veltrix-*`; `X-PedroCore-*` continua aceito.
+- Variáveis `VELTRIX_*`; `PEDROCORE_*` continua aceito. As duas com valores
+  diferentes **recusam** a configuração em vez de escolher em silêncio.
+- Pacotes `veltrix-api` e `veltrix-web`; pasta de docs `Veltrix/`.
+
+**Preservados de propósito:** identificadores de contrato (`pedrocore-*/v1`),
+docstrings dos modelos de contrato (viram `description` no JSON Schema e entram
+no fingerprint), tabelas `pedrocore_*`, `project_id="pedrocore"` e a chave de
+armazenamento do navegador.
+
+Verificação: 1789 testes com PostgreSQL real, 1750 em paridade com a CI, ruff
+limpo, frontend 117 verde, grafo 175/1022/0, 6 fingerprints V1 intactos,
+`npm audit` 0 vulnerabilidades.
+
 ## Platform Evolution — 12 evoluções de plataforma
 
-Doze evoluções implementadas sobre o PedroCore existente, sem reconstruí-lo.
-Detalhe por evolução em `PedroCore IA/16-plataforma/PLATFORM_EVOLUTION_FINAL_STATE.md`.
+Doze evoluções implementadas sobre o Veltrix existente, sem reconstruí-lo.
+Detalhe por evolução em `Veltrix/16-plataforma/PLATFORM_EVOLUTION_FINAL_STATE.md`.
 
 - **Consumer SDK** — cliente oficial tipado, neutro em relação ao projeto,
   com retry só onde repetir é seguro, idempotência derivada do conteúdo e
@@ -70,7 +116,7 @@ schema ou contrato público existente foi removido ou alterado.
 
 ### Adicionado
 
-- **Risk Engine V2 — R0 a R5** (`PedroCore IA/15-risk-engine/RISK_ENGINE_V2_BASELINE.md`).
+- **Risk Engine V2 — R0 a R5** (`Veltrix/15-risk-engine/RISK_ENGINE_V2_BASELINE.md`).
   Persistência própria do domínio Risk (migrations `0009` e `0010`), Historical
   Risk consumindo esse store, métrica quantitativa de blast radius, contrato
   universal `pedrocore-risk-request/v1` e Scenario Simulation V2 com cenários
@@ -158,7 +204,7 @@ schema ou contrato público existente foi removido ou alterado.
   modelo por trait corrigiu o caso, junto de `structa` e `elyra`, que também
   são externos e read-only.
 - Mensagens de bloqueio deixaram de nomear consumidores específicos: um aviso
-  que nomeia um sistema revela a terceiros quais o PedroCore conhece.
+  que nomeia um sistema revela a terceiros quais o Veltrix conhece.
 - `postcss` atualizado de 8.5.15 para 8.5.26 (duas vulnerabilidades altas,
   transitivas via `vite`, apenas em tempo de build). Saída do build inalterada.
 - **`pip install -e .` falhava** com "Multiple top-level packages discovered in

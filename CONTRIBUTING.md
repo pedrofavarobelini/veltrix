@@ -1,4 +1,4 @@
-# Contribuindo com o PedroCore IA
+# Contribuindo com o Veltrix
 
 Este projeto tem algumas invariantes que **não são preferências de estilo**.
 Elas são verificadas por teste, e um PR que as viole quebra o build. Este
@@ -53,7 +53,7 @@ skip novo, investigue — não normalize.
 
 ### 1. Todo módulo declara seu plano
 
-O PedroCore é um **modular monolith** com dois planos declarados:
+O Veltrix é um **modular monolith** com dois planos declarados:
 
 ```text
 Runtime Plane  ──── evidência / contratos ────►  Learning Plane
@@ -108,7 +108,7 @@ terceiro, e a falha aparece na produção *dele*.
 
 ### 4. O consumidor não emite julgamento
 
-O PedroCore recebe **fato observado** e produz **julgamento**. Um payload que
+O Veltrix recebe **fato observado** e produz **julgamento**. Um payload que
 traga `eligibility`, `authorized`, `training_candidate`, `quality_score`,
 `readiness` ou `automatic_collection` é recusado inteiro.
 
@@ -150,7 +150,7 @@ mais caro do que o bug que ele pegaria.
 
 ## Documentação
 
-O vault em `PedroCore IA/` é validado por
+O vault em `Veltrix/` é validado por
 `app/modules/docs_graph` e a validação é **estrutural**: todo documento precisa
 ser alcançável a partir do MOC raiz, ter ao menos um backlink e ao menos um
 link de saída. Basename duplicado e link quebrado também falham.

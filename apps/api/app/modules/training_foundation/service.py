@@ -1,6 +1,6 @@
 """Orquestracao de avaliacao, treino e promocao (Era 8).
 
-O PedroCore decide; ele nao computa. Este modulo aplica politica e mantem
+O Veltrix decide; ele nao computa. Este modulo aplica politica e mantem
 estado — iniciar um treino de verdade e trabalho de um `TrainingBackend`, e
 nenhum backend real e chamado nesta Era.
 
@@ -184,7 +184,7 @@ class TrainingFoundationService:
         )
         if match is None:
             # Sem versao materializada nao existe o que treinar. Este e o
-            # caminho real do PedroCore hoje.
+            # caminho real do Veltrix hoje.
             blockers.add("DATASET_VERSION_NOT_MATERIALIZED")
         elif match.content_fingerprint != run.dataset_fingerprint:
             # Fingerprint divergente significa que o dataset mudou desde o

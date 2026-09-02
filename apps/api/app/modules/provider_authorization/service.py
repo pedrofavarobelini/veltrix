@@ -55,7 +55,7 @@ DENIED_NOT_HOMOLOGATED_REASON = (
     "Provider não homologado; execução real negada até homologação explícita."
 )
 DENIED_UNKNOWN_PROVIDER_REASON = (
-    "Provider fora do catálogo do PedroCore; execução real negada."
+    "Provider fora do catálogo do Veltrix; execução real negada."
 )
 ALLOWED_REASON = "Combinação registrada na matriz de autorização de providers."
 NOT_APPLICABLE_REASON = (
@@ -150,7 +150,7 @@ _RULES: tuple[AuthorizationRule, ...] = (
         environments=NON_PRODUCTION_ENVIRONMENTS,
         providers=frozenset({"gemini"}),
         notes=(
-            "Uso técnico do próprio PedroCore (inclui o operador local sem "
+            "Uso técnico do próprio Veltrix (inclui o operador local sem "
             "autenticação configurada); produção não registrada de propósito."
         ),
     ),

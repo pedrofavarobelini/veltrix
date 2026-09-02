@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    app_name: str = "PedroCore IA"
+    app_name: str = "Veltrix"
     app_env: str = "development"
     api_port: int = 3333
 

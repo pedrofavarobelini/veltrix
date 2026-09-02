@@ -9,10 +9,10 @@ funciona". Um treino executado sem readiness produziria um modelo a partir de
 populacao que a governanca recusou, e o Gate teria sido comprado com
 exatamente o que ele existe para impedir.
 
-PedroCore como orquestrador
+Veltrix como orquestrador
 ---------------------------
 
-O PedroCore decide O QUE treinar, com QUAL dataset, sob QUAL politica, e o que
+O Veltrix decide O QUE treinar, com QUAL dataset, sob QUAL politica, e o que
 fazer com o resultado. Ele nao precisa ser quem roda a GPU. Por isso o backend
 e um `Protocol`: local, Hugging Face, nuvem com GPU ou qualquer outro entram
 implementando a interface, e nenhum deles aparece no dominio.
@@ -230,7 +230,7 @@ class TrainingBackend(Protocol):
     """Executor de treino — local, Hugging Face, nuvem, o que for.
 
     O dominio conhece esta interface e nada alem dela. Nenhum nome de provider
-    aparece no PedroCore: trocar de backend nao pode virar refatoracao de
+    aparece no Veltrix: trocar de backend nao pode virar refatoracao de
     dominio, que e o mesmo erro de acoplamento que a Era 3 removeu do runtime.
     """
 

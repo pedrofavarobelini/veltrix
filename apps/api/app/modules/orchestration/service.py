@@ -249,10 +249,10 @@ SELECTION_MODE_LOCAL = "local_deterministic"
 
 # Etapa 3: combinação provider+modelo incoerente é bloqueada antes do adapter.
 BINDING_BLOCKED_ANSWER_PREFIX = (
-    "Solicitação bloqueada pelo controle de provider e modelo do PedroCore."
+    "Solicitação bloqueada pelo controle de provider e modelo do Veltrix."
 )
 IDENTITY_BLOCKED_ANSWER_PREFIX = (
-    "Solicitação bloqueada pelo controle de identidade do PedroCore."
+    "Solicitação bloqueada pelo controle de identidade do Veltrix."
 )
 
 # Resposta segura e conservadora usada por _mock_fallback(). Nunca deve conter
@@ -1351,7 +1351,7 @@ class OrchestrationService:
         """Seleciona provider real disponivel para provider=auto.
 
         Nesta frente, a politica real autorizada comeca por Gemini. Outros
-        providers reais continuam registrados para o chat do PedroCore, mas nao
+        providers reais continuam registrados para o chat do Veltrix, mas nao
         entram na decisao auto do contrato FinGuard ate frente propria.
 
         A lista de candidatos permanece congelada; a autorização por projeto
@@ -1832,7 +1832,7 @@ class OrchestrationService:
                 if fallback_candidate
                 else "Fallback real não se aplica a esta seleção."
             ),
-            # Orçamento e tempo decididos pelo PedroCore para esta tentativa.
+            # Orçamento e tempo decididos pelo Veltrix para esta tentativa.
             "output_budget": budget.effective_budget if budget is not None else None,
             "budget_source": (
                 budget.budget_source.value if budget is not None else None
@@ -2024,13 +2024,13 @@ class OrchestrationService:
         """Executa o adapter com o modelo JÁ VALIDADO pelo binding.
 
         O adapter nunca recebe `payload.model` diretamente: só a combinação
-        provider+modelo aprovada pelo PedroCore chega até aqui. O mesmo vale
+        provider+modelo aprovada pelo Veltrix chega até aqui. O mesmo vale
         para o orçamento de saída e o timeout de transporte, ambos resolvidos
         internamente e nunca influenciados pelo consumidor.
         """
         if not isinstance(model, str) or not model.strip():
             raise ProviderExecutionError(
-                "Adapter não pode executar sem model_id validado pelo PedroCore."
+                "Adapter não pode executar sem model_id validado pelo Veltrix."
             )
 
         orchestration_timeout = self._provider_timeout_seconds()
@@ -2491,7 +2491,7 @@ class OrchestrationService:
             items.append(make_warning(code, message))
 
         answer = (
-            "Solicitação bloqueada por policy do PedroCore. "
+            "Solicitação bloqueada por policy do Veltrix. "
             f"Motivo: {enforcement.blocked_reason}"
         )
 

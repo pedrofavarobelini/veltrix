@@ -41,7 +41,7 @@ def test_includes_task_type_and_origin_system():
     assert "task_type: code_help" in result.enriched_system_prompt
     assert "origin_system: pedrocore" in result.enriched_system_prompt
     assert "project_id: pedrocore" in result.enriched_system_prompt
-    assert "display_name: PedroCore IA" in result.enriched_system_prompt
+    assert "display_name: Veltrix" in result.enriched_system_prompt
 
 
 def test_includes_context_and_metadata_when_sent():

@@ -33,7 +33,7 @@ class MockProvider(BaseAIProvider):
                 "Analise tecnica simulada do MockProvider:\n\n"
                 "```python\n"
                 "def exemplo():\n"
-                "    return 'PedroCore IA funcionando'\n"
+                "    return 'Veltrix funcionando'\n"
                 "```\n\n"
                 "Esse retorno e mockado para testar a interface e o fluxo da API."
             )
@@ -51,7 +51,7 @@ class MockProvider(BaseAIProvider):
 
         else:
             answer = (
-                "Ola, eu sou o PedroCore IA. "
+                "Ola, eu sou o Veltrix. "
                 "Recebi sua mensagem e estou funcionando em modo de teste."
             )
 

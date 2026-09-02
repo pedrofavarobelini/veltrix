@@ -105,7 +105,7 @@ class ElyraLearningValidation:
 def canonical_fingerprint(payload: dict) -> str:
     """SHA-256 do payload canonico sanitizado.
 
-    Chaves ordenadas e separadores fixos para que Elyra e PedroCore cheguem ao
+    Chaves ordenadas e separadores fixos para que Elyra e Veltrix cheguem ao
     mesmo digest a partir do mesmo conteudo — sem isso a idempotencia seria
     sensivel a ordem de serializacao.
 
@@ -322,7 +322,7 @@ class ElyraLearningService:
                 TrainingEvidenceReference(
                     project_id="elyra",
                     source_type=TrainingSourceType.ELYRA_REPORT_SNAPSHOT,
-                    # A evidencia e o fingerprint, nao o snapshot: o PedroCore
+                    # A evidencia e o fingerprint, nao o snapshot: o Veltrix
                     # nao consegue — e nao deve conseguir — resolver isso de volta
                     # para uma pessoa.
                     source_id=submission.fingerprint[:32],

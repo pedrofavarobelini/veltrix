@@ -1,7 +1,7 @@
 """Catálogo tipado de providers (MULTI-PROVIDER-SAFE-EVOLUTION, Etapa 1).
 
 Estrutura PASSIVA de caracterização. Descreve, sem segredos, cada provider
-conhecido pelo PedroCore: adapter associado, categoria, modelos conhecidos,
+conhecido pelo Veltrix: adapter associado, categoria, modelos conhecidos,
 configuração exigida (apenas NOMES de variáveis de ambiente), capacidades,
 tasks compatíveis, prioridade estática e os estados SEPARADOS de registro,
 implementação, configuração, homologação, autorização e saúde.

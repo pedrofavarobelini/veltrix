@@ -3,7 +3,7 @@
 Por que um modulo so para isto
 ------------------------------
 
-O produto sera renomeado de PedroCore para Veltrix numa frente futura. Se as
+O produto foi renomeado de PedroCore para Veltrix. Se as
 strings de marca ficarem espalhadas por telas, mensagens e testes, o rename
 vira uma cacada a `grep` com risco de trocar tambem identificador tecnico —
 que e justamente o que NAO pode mudar (variavel de ambiente, tabela, id de
@@ -27,13 +27,19 @@ from __future__ import annotations
 PRODUCT_NAME = "VELTRIX RISK ENGINE"
 PRODUCT_SUBTITLE = "Console de Risco Pré-Execução"
 
-# Comando que o usuario digita. Continua `pedrocore`: o alias `veltrix` entra
-# na frente de rename, acrescentando uma linha em `[project.scripts]`.
-COMMAND_NAME = "pedrocore"
+# Nome do produto inteiro, usado fora do console.
+PLATFORM_NAME = "Veltrix"
+PLATFORM_TAGLINE = "AI Runtime & Learning Control Plane"
+
+# Comando canonico. `pedrocore` continua funcionando como alias legado para
+# nao quebrar script, atalho e documentacao de quem ja usava.
+COMMAND_NAME = "veltrix"
+LEGACY_COMMAND_NAME = "pedrocore"
 CONSOLE_SUBCOMMAND = "risk"
 
 # Identificador tecnico do console como produtor de analises. Nao e marca: e
-# provenance, e por isso permanece no namespace tecnico atual.
+# PROVENANCE, e mudar provenance quebraria a correspondencia com analises ja
+# gravadas. Preservado de proposito.
 CONSOLE_PRODUCER = "pedrocore-risk-console"
 CONSOLE_AGENT_ID = "risk-console"
 

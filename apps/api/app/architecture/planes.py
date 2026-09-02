@@ -1,11 +1,11 @@
-"""Declaracao das fronteiras internas do PedroCore.
+"""Declaracao das fronteiras internas do Veltrix.
 
 ADR-PEDROCORE-CONTROL-PLANE-01.
 
 Por que este modulo existe
 --------------------------
 
-O PedroCore acumulou duas responsabilidades de natureza diferente: responder
+O Veltrix acumulou duas responsabilidades de natureza diferente: responder
 agora (Runtime Plane) e aprender depois (Learning Plane). As duas existem e as
 duas funcionam. O que faltava era a FRONTEIRA — nada no codigo dizia a que
 plano um modulo pertence, e nada impedia que a dependencia apontasse para o
@@ -16,7 +16,7 @@ um documento de arquitetura listando 8 endpoints quando o codigo expoe 37.
 Por isso a fronteira aqui e DADO, lido por teste, e nao prosa: um modulo novo
 sem plano declarado quebra o build, e um import na direcao errada tambem.
 
-O PedroCore continua sendo um modular monolith: um processo, um `pyproject`,
+O Veltrix continua sendo um modular monolith: um processo, um `pyproject`,
 um `app.main`. A separacao e logica e verificada, nao fisica e distribuida.
 Nenhum arquivo foi movido para produzir estas fronteiras — mudanca fisica so
 se justifica quando melhora dependencia, clareza, manutencao ou teste, e
@@ -120,6 +120,9 @@ _RUNTIME_MODULES = frozenset(
         "slo",
         "control_center",
         "disaster_recovery",
+        # Durabilidade das registries de plataforma. Runtime: guarda o
+        # estado que o runtime produz, e nao governa aprendizado.
+        "platform_persistence",
         # Safe Reuse
         "safe_reuse",
         # QA e avaliacao operacional do runtime
@@ -169,7 +172,7 @@ _LEARNING_MODULES = frozenset(
     {
         "training_data",
         # Dataset Control Plane (Era 7). Learning Plane porque o Dataset
-        # Ownership e do PedroCore: definir escopo, versionar, registrar
+        # Ownership e do Veltrix: definir escopo, versionar, registrar
         # linhagem e decidir split sao decisoes de aprendizado, nao de runtime.
         "dataset_registry",
         # Evaluation & Training Foundation (Era 8). Learning Plane: decide o

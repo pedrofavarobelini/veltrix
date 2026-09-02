@@ -32,10 +32,10 @@ import type { TextAttachment } from "../utils/attachments";
 
 const UI = {
   welcome:
-    "Olá, eu sou o PedroCore IA. Configure seu provider, escolha um modo de resposta e envie uma pergunta para testar a nova interface.",
+    "Olá, eu sou o Veltrix. Configure seu provider, escolha um modo de resposta e envie uma pergunta para testar a nova interface.",
   defaultPrompt:
-    "Você é o PedroCore IA, um assistente pessoal técnico, claro, direto e útil.",
-  assistantName: "PedroCore IA",
+    "Você é o Veltrix, um assistente pessoal técnico, claro, direto e útil.",
+  assistantName: "Veltrix",
   subtitle: "Assistente inteligente multi-provider",
   // Linha de produto 5.x; minor porque esta frente acrescenta recursos de UX
   // (composer, drawer, voz, anexos) sem quebrar contrato de API.
@@ -463,11 +463,11 @@ export function ChatPage() {
     <main className="app-shell v51-redesign">
       {toast && <div className="toast">{toast}</div>}
 
-      <header className="reference-brandbar" aria-label="Marca PedroCore IA">
+      <header className="reference-brandbar" aria-label="Marca Veltrix">
         <div className="reference-brand">
-          <img src={pedrocoreLogo} alt="Logo oficial do PedroCore IA" />
+          <img src={pedrocoreLogo} alt="Logo oficial do Veltrix" />
           <div>
-            <strong>PedroCore <span>IA</span></strong>
+            <strong>Veltrix <span>IA</span></strong>
           </div>
         </div>
       </header>
@@ -490,7 +490,7 @@ export function ChatPage() {
             <header className="chat-topbar">
               <div>
                 <span>{formatCurrentDate()}</span>
-                <h1>Chat com PedroCore <span>IA</span></h1>
+                <h1>Chat com Veltrix <span>IA</span></h1>
                 <p>{UI.subtitle}</p>
               </div>
               <button

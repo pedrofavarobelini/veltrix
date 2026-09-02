@@ -59,7 +59,7 @@ CREDENTIAL_MISSING_REASON = (
     "Registro de callers configurado e credencial ausente na requisição."
 )
 CREDENTIAL_UNKNOWN_REASON = (
-    "Credencial não registrada no PedroCore; nenhuma identidade pôde ser derivada."
+    "Credencial não registrada no Veltrix; nenhuma identidade pôde ser derivada."
 )
 REGISTRY_INVALID_REASON = (
     "Registro de callers inválido; nenhuma identidade pode ser derivada com "
@@ -71,7 +71,7 @@ ORIGIN_MISMATCH_REASON = (
 )
 PROVIDER_SELECTION_REASON = (
     "Consumidor comum não seleciona provider: use provider=auto e deixe a "
-    "escolha com o PedroCore."
+    "escolha com o Veltrix."
 )
 MODEL_SELECTION_REASON = (
     "Consumidor comum não define modelo: seleção de modelo não é canal de "
@@ -237,7 +237,7 @@ class CallerIdentityService:
 
         Com registro de callers configurado, o default é fail-closed:
         identidade ambígua, menor privilégio, nenhum provider real. Sem
-        autenticação interna configurada, o PedroCore está em modo dev/local
+        autenticação interna configurada, o Veltrix está em modo dev/local
         e o caller é o operador local (identidade `local_trusted`), que a
         matriz só autoriza para o próprio projeto `pedrocore` fora de
         produção.

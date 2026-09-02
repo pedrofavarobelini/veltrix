@@ -47,7 +47,7 @@ OUTPUT_INVALID_REASON = (
     "Resposta incompatível com elyra-textual-output/v1; conteúdo parcial não foi publicado."
 )
 PROVIDER_MISMATCH_REASON = (
-    "Provider ou modelo respondente divergiu do binding selecionado pelo PedroCore; "
+    "Provider ou modelo respondente divergiu do binding selecionado pelo Veltrix; "
     "resposta recusada sem fallback."
 )
 IDEMPOTENCY_CONFLICT_REASON = (

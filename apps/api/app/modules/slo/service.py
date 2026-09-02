@@ -4,7 +4,7 @@ O que ja existia
 ----------------
 
 `observability` guarda execucoes. `provider_health` abre e fecha circuito. As
-duas respondem perguntas locais; nenhuma responde "o PedroCore esta saudavel".
+duas respondem perguntas locais; nenhuma responde "o Veltrix esta saudavel".
 
 O que esta camada acrescenta
 ----------------------------

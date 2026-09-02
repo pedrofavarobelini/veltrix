@@ -14,7 +14,7 @@ EXPLORATION_TASK_TYPES = {
 }
 
 ASSISTED_ONLY_WARNING = (
-    "Exploração em modo assistido: o PedroCore apenas sugere passos manuais; "
+    "Exploração em modo assistido: o Veltrix apenas sugere passos manuais; "
     "nenhuma ação é executada automaticamente."
 )
 

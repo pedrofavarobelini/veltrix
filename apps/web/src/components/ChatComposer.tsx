@@ -19,7 +19,7 @@ const MIC_LABELS = {
 };
 
 const MIC_HINT =
-  "Ouvindo. A transcrição é feita pelo navegador e pode ser processada por um serviço do fornecedor dele; o áudio não é gravado nem enviado ao PedroCore.";
+  "Ouvindo. A transcrição é feita pelo navegador e pode ser processada por um serviço do fornecedor dele; o áudio não é gravado nem enviado ao Veltrix.";
 
 type ChatComposerProps = {
   value: string;
@@ -152,7 +152,7 @@ export function ChatComposer({
       )}
 
       <label className="sr-only" htmlFor="composer-message">
-        Mensagem para o PedroCore IA
+        Mensagem para o Veltrix
       </label>
       <textarea
         id="composer-message"

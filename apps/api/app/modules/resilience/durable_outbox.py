@@ -4,7 +4,7 @@ Por que o outbox em memória não bastava
 ---------------------------------------
 
 A Era 6 entregou retry, backoff e dead-letter, e provou a propriedade
-"PedroCore fora do ar não derruba o consumidor". Mas provou só metade dela.
+"Veltrix fora do ar não derruba o consumidor". Mas provou só metade dela.
 
 O outbox em memória protege contra o SERVIDOR cair. Ele não protege contra o
 CONSUMIDOR cair — e é justamente aí que o dado se perde: o processo grava a
@@ -21,7 +21,7 @@ terceiro jeito de configurar armazenamento:
 
 - `DurableOutboxStore` — um arquivo JSON no disco. Simples, sem dependência,
   e o que torna o teste de restart executável em qualquer ambiente.
-- `PostgreSQLOutboxStore` — mesmo banco do resto do PedroCore, para produção.
+- `PostgreSQLOutboxStore` — mesmo banco do resto do Veltrix, para produção.
 
 Nenhum broker. Nenhum Redis, Kafka ou RabbitMQ. A entrega eventual de eventos
 pequenos e idempotentes não precisa de fila distribuída — precisa de um lugar

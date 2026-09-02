@@ -363,7 +363,7 @@ def _evidence_outcome(record: EvidenceRecord) -> SourceOutcome:
     """Desfecho derivado do payload — nunca um campo que o produtor batizou.
 
     O contrato universal ja separou fato de julgamento: `outcome`, `result` e
-    `producer_asserted_outcome` sao observacoes. Traduzi-las aqui e o PedroCore
+    `producer_asserted_outcome` sao observacoes. Traduzi-las aqui e o Veltrix
     formando a SUA opiniao a partir delas.
     """
     payload = record.payload or {}

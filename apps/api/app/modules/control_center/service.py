@@ -1,4 +1,4 @@
-"""E3 — Control Center: visao administrativa e operacional do PedroCore.
+"""E3 — Control Center: visao administrativa e operacional do Veltrix.
 
 O que ele e
 -----------

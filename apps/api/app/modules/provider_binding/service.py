@@ -30,7 +30,7 @@ from app.modules.provider_catalog.service import provider_catalog_service
 SELECTION_MODE_AUTO = "auto"
 
 MODEL_UNKNOWN_REASON = (
-    "Modelo não reconhecido pelo catálogo do PedroCore; combinação rejeitada."
+    "Modelo não reconhecido pelo catálogo do Veltrix; combinação rejeitada."
 )
 MODEL_PROVIDER_MISMATCH_REASON = (
     "Modelo não pertence ao provider solicitado; provider e modelo são uma "
@@ -44,7 +44,7 @@ MODEL_TASK_INCOMPATIBLE_REASON = (
     "Modelo não é compatível com a task solicitada; combinação rejeitada."
 )
 MODEL_NOT_ALLOWED_FOR_CALLER_REASON = (
-    "Consumidor comum não define modelo: a seleção pertence ao PedroCore."
+    "Consumidor comum não define modelo: a seleção pertence ao Veltrix."
 )
 MODEL_NOT_ALLOWED_IN_AUTO_REASON = (
     "Modelo não é aceito em provider=auto: o modelo nunca seleciona provider "
@@ -52,7 +52,7 @@ MODEL_NOT_ALLOWED_IN_AUTO_REASON = (
 )
 MODEL_DEFAULT_UNAVAILABLE_REASON = (
     "Provider sem modelo default válido no catálogo; nenhum modelo foi "
-    "selecionado pelo PedroCore nesta requisição."
+    "selecionado pelo Veltrix nesta requisição."
 )
 
 

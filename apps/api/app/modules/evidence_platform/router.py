@@ -121,7 +121,7 @@ def list_evidence(
 @router.post(
     "/evidence/{project_id}/reconcile",
     response_model=ReconciliationReport,
-    summary="Informa quais idempotency_keys o PedroCore já possui",
+    summary="Informa quais idempotency_keys o Veltrix já possui",
 )
 def reconcile_evidence(project_id: str, payload: ReconciliationRequest, request: Request):
     """Consulta de LEITURA — perguntar nunca faz o servidor passar a ter."""

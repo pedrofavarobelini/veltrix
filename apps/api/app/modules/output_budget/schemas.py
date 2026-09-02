@@ -1,6 +1,6 @@
 """Tipos do orçamento de saída do provider (OUTPUT-BUDGET-CANCELLATION-01).
 
-O orçamento é decidido exclusivamente pelo PedroCore. O consumidor não envia,
+O orçamento é decidido exclusivamente pelo Veltrix. O consumidor não envia,
 não sugere e não sobrescreve nenhum destes valores: `ChatRequest` continua sem
 qualquer campo de tokens.
 """

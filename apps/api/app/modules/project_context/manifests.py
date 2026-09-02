@@ -6,7 +6,7 @@ Por que os nomes de projeto vivem AQUI e nao no core
 A Era 1 encontrou o motor decidindo por nome: `project_id == "elyra"` dentro da
 orquestracao, `project_id == "finguard"` dentro do prompt builder. A regra da
 Era 3 nao e "nome de projeto e proibido no repositorio" — seria impossivel, o
-PedroCore precisa saber quem sao seus consumidores. A regra e que o nome pode
+Veltrix precisa saber quem sao seus consumidores. A regra e que o nome pode
 aparecer no REGISTRO e nunca no MOTOR.
 
 Este arquivo e o registro. Ele e uma tabela de dados, revisavel de uma vez,
@@ -49,11 +49,11 @@ def _declare(
     return CapabilityDeclaration(capability=capability, contract_versions=tuple(versions))
 
 
-# O PedroCore como consumidor de si mesmo. Nao e externo e nao tem recurso
+# O Veltrix como consumidor de si mesmo. Nao e externo e nao tem recurso
 # protegido contra si proprio.
 _PEDROCORE_MANIFEST = ProjectCapabilityManifestV1(
     project_id="pedrocore",
-    display_name="PedroCore IA",
+    display_name="Veltrix",
     producer_id="pedrocore",
     capabilities=(
         _declare(ProjectCapability.ASSISTANT),
@@ -65,10 +65,10 @@ _PEDROCORE_MANIFEST = ProjectCapabilityManifestV1(
         _declare(ProjectCapability.ARTIFACT_REFERENCE),
     ),
     traits=frozenset(),
-    notes="Sistema local/default do proprio PedroCore.",
+    notes="Sistema local/default do proprio Veltrix.",
 )
 
-# FinGuard: sistema externo cujo repositorio o PedroCore nunca deve alcancar.
+# FinGuard: sistema externo cujo repositorio o Veltrix nunca deve alcancar.
 # `protected_resource_markers` e o que substitui o `if "finguard" in path` que
 # existia no leitor de artefatos e no adaptador Playwright.
 _FINGUARD_CAPABILITIES = (
@@ -168,7 +168,7 @@ def protected_resource_markers() -> frozenset[str]:
     "este caminho pertence ao chamador?", e sim "este caminho pertence a ALGUM
     consumidor registrado?". Um consumidor nunca deve alcancar o recurso de
     outro, e o proprio recurso do chamador tambem permanece fora de alcance —
-    o PedroCore recebe artefato por payload, nunca por leitura.
+    o Veltrix recebe artefato por payload, nunca por leitura.
     """
     markers: set[str] = set()
     for manifest in _MANIFESTS.values():

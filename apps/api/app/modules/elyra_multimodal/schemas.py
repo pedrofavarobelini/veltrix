@@ -1,6 +1,6 @@
 """Contrato `elyra-multimodal/v1`.
 
-Capability PROPRIA do consumer Elyra, separada de `elyra-textual/v1`. O PedroCore
+Capability PROPRIA do consumer Elyra, separada de `elyra-textual/v1`. O Veltrix
 nunca recebe midia bruta, caminho de Storage, credencial ou identificador de
 pessoa usuaria: a fronteira aceita apenas transcricao consentida, sinais
 observaveis ja calculados pela Elyra e metadados minimizados.

@@ -55,7 +55,7 @@ OUTPUT_INVALID_REASON = (
     "foi publicado."
 )
 PROVIDER_MISMATCH_REASON = (
-    "Provider ou modelo respondente divergiu do binding selecionado pelo PedroCore; "
+    "Provider ou modelo respondente divergiu do binding selecionado pelo Veltrix; "
     "resposta multimodal recusada sem fallback."
 )
 IDEMPOTENCY_CONFLICT_REASON = (

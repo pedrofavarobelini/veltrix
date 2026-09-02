@@ -4,7 +4,7 @@ O que entra, e o que nunca entra
 --------------------------------
 
 Entra ASSET GOVERNADO: system prompt, template, configuracao de routing, de
-avaliacao, de risco. Coisas que o PedroCore escreve, versiona e responde por.
+avaliacao, de risco. Coisas que o Veltrix escreve, versiona e responde por.
 
 Nao entra prompt de usuario. Guardar indiscriminadamente o que consumidores
 enviam transformaria um registry de configuracao num repositorio de dados

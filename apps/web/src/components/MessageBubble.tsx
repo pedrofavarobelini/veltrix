@@ -41,7 +41,7 @@ export function MessageBubble({
   return (
     <article className={`message-row ${isUser ? "from-user" : "from-assistant"}`}>
       {!isUser && (
-        <img className="message-avatar brand-logo-image" src={pedrocoreLogo} alt="PedroCore IA" />
+        <img className="message-avatar brand-logo-image" src={pedrocoreLogo} alt="Veltrix" />
       )}
 
       <div className="message-bubble">

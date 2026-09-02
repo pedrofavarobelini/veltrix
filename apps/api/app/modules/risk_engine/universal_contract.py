@@ -241,7 +241,7 @@ def validate_risk_contract(
             accepted=False,
             error_code=RISK_CONTRACT_AUTHORITY_VIOLATION,
             reason=(
-                "Contrato tenta decidir o que pertence ao PedroCore: "
+                "Contrato tenta decidir o que pertence ao Veltrix: "
                 + ", ".join(sorted(item.path for item in violations))
             ),
             authority_violations=sorted(item.path for item in violations),

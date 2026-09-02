@@ -1,4 +1,4 @@
-# PedroCore IA — Versionamento
+# Veltrix — Versionamento
 
 Atualizado em: 30/08/2026
 
@@ -19,7 +19,7 @@ Candidate Acquisition Foundation está implementada; candidatos reais
 autorizados permanecem em zero e o resultado é `DATASET_NOT_READY`. Canonical
 Dataset, splits, Hugging Face, fine-tuning, modelo próprio e Local Provider
 treinado não foram entregues. Ver
-`PedroCore IA/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md`.
+`Veltrix/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md`.
 
 ## As três numerações — leia isto antes de comparar números
 
@@ -65,7 +65,7 @@ não houve breaking change em contrato público.
 - Outbox e Dataset Registry duráveis, construídos por factory em produção.
 - Corrupção degrada e preserva o arquivo; nunca vira store vazio.
 - OpenAPI 37 → 39 paths, 156 → 163 schemas, zero breaking change.
-- Estado final: [[PedroCore IA/20-control-plane/PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
+- Estado final: [[Veltrix/20-control-plane/PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
 
 ## Frente anterior — Universal Contracts V1 (Era 3)
 
@@ -78,7 +78,7 @@ não houve mudança de contrato público.
 - Quatro acoplamentos por nome de projeto migrados para capability/trait declarativos.
 - `1152 passed, 21 skipped, 0 failed` (+55 contract tests); Ruff PASS.
 - OpenAPI idêntico byte a byte (37 paths, 156 schemas); grafo 160 documentos/850 links.
-- Documento: [[PedroCore IA/20-control-plane/ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]].
+- Documento: [[Veltrix/20-control-plane/ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]].
 
 ## Frente anterior — Control Plane (Eras 1 e 2)
 
@@ -88,11 +88,11 @@ não houve mudança de contrato público.
 - Runtime Plane e Learning Plane declarados em `apps/api/app/architecture/planes.py`.
 - Fronteira cobrada por 12 testes em `tests/test_control_plane_boundaries.py`.
 - `orchestration` passou a importar a maquinaria do Learning Plane de forma tardia.
-- Dataset Foundation permanece exclusiva do PedroCore; `automatic_collection` `Literal[False]`.
+- Dataset Foundation permanece exclusiva do Veltrix; `automatic_collection` `Literal[False]`.
 - Baseline `1085 passed, 21 skipped` → pós-migração `1097 passed, 21 skipped, 0 failed`.
 - Ruff integral PASS; OpenAPI idêntico byte a byte (37 paths); grafo 158 documentos/841 links.
 - Zero alteração de banco, migrations, contratos públicos ou frontend.
-- Documentos: [[PedroCore IA/20-control-plane/ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]].
+- Documentos: [[Veltrix/20-control-plane/ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]].
 
 ## Frente anterior — Elyra Onboarding V1 Textual
 
@@ -108,11 +108,11 @@ não houve mudança de contrato público.
 - Validação offline: `959 passed, 21 skipped, 2 warnings`; Ruff integral PASS;
   eval `14/14`, `risk_level=none`; grafo 155 documentos/822 links; zero
   chamadas externas.
-- Gate: [[PedroCore IA/17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
+- Gate: [[Veltrix/17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
 ## Frente atual — PEDROCORE-V1-FINAL-CLOSURE
 
-Fechamento da interface pública da V1. Mapa: `PedroCore IA/MOC_UX_V1.md`.
-Relatório: `PedroCore IA/20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01.md`.
+Fechamento da interface pública da V1. Mapa: `Veltrix/MOC_UX_V1.md`.
+Relatório: `Veltrix/20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01.md`.
 
 - Composer único com seletor de IA, anexos e microfone; Configurações em drawer
   acessível; sem cards de provider no topo.
@@ -138,7 +138,7 @@ Relatório: `PedroCore IA/20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01.md`.
   explícito; demais providers negados.
 - `allow_real_provider=false` e fallback real false permanecem defaults.
 - Validação offline: `751 passed, 7 skipped, 2 warnings`; zero inferências.
-- Gate: [[PedroCore IA/17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]].
+- Gate: [[Veltrix/17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]].
 
 ## Frente anterior — ENCERRAMENTO FINAL
 
@@ -154,31 +154,31 @@ PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO
 - Nova capacidade de QA documental: `apps/api/app/modules/docs_graph/` + `tests/test_docs_graph.py`.
 - Nenhuma implementação obrigatória restante.
 
-Documento canônico: `PedroCore IA/19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01.md`.
+Documento canônico: `Veltrix/19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01.md`.
 
-Vault canônico desde 2026-08-02: `PedroCore IA/`. A reorganização preservou
+Vault canônico desde 2026-08-02: `Veltrix/`. A reorganização preservou
 127/127 documentos anteriores; ver
-`PedroCore IA/MANIFESTO_REORGANIZACAO_20260802.md`.
+`Veltrix/MANIFESTO_REORGANIZACAO_20260802.md`.
 
 ## Frente anterior (HISTÓRICO)
 
 `PEDROCORE-MULTI-PROVIDER-DOCS-CONSOLIDATION-01`: fechamento documental das Etapas 1–7 da evolução multi-provider segura, tomando `e389b2c` como último commit de implementação. Catálogo, identidade/autorização, binding, shadow, enforced, health/circuit breaker e fallback pre-dispatch concluídos. Naquele momento a validação integral era `570 passed, 7 skipped, 2 warnings`. A arquitetura multi-provider está concluída; multi-provider automático operacional ainda não, pois somente `gemini + gemini-3.5-flash` está homologado e elegível.
 
-Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
+Projeto **finalizado localmente**: `PEDROCORE-IMPLEMENT-05` (05A–05F, integrações reais controladas) e `PEDROCORE-FINALIZE-06` (06A enforcement final + 06B fechamento) concluídas. Tag final local: `v7.0.0`. Ver `Veltrix/13-fechamento/FECHAMENTO_PEDROCORE_FINAL.md`.
 
-DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `PedroCore IA/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
+DOCFIX anterior: saneamento documental/Obsidian, sem alteração de código de produção, testes, tags, merge ou push. Mapeamento central: `Veltrix/00_MAPEAMENTO_GERAL_PEDROCORE.md`.
 
-Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `PedroCore IA/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
+Frente anterior: `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria, commitada em `689e50a`. Testes na época: `257 passed, 6 skipped, 2 warnings`. Ver `Veltrix/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md`.
 
-Checkpoint histórico: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento QA/safety commitado em `d6106b7`. Naquele checkpoint: Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `PedroCore IA/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
+Checkpoint histórico: `PEDROCORE-QA-SAFETY-HARDENING-01` — endurecimento QA/safety commitado em `d6106b7`. Naquele checkpoint: Pytest `341 passed, 6 skipped, 2 warnings`; eval harness `14/14 passed`, `risk_level="none"`. Ver `Veltrix/16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01.md`.
 
 Frente documental anterior: `PEDROCORE-DOCS-GRAPH-LINKING-01` — linkagem Markdown/Obsidian em documentação, sem alteração de código.
 
-O histórico de `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` permanece registrado no changelog; o contrato comum atual do consumidor é `provider=auto` sem modelo, com decisão final no PedroCore.
+O histórico de `FINGUARD-PEDROCORE-ASSISTANT-REAL-PROVIDER-QA-01` permanece registrado no changelog; o contrato comum atual do consumidor é `provider=auto` sem modelo, com decisão final no Veltrix.
 
 ## Status atual
 
-`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental. `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `01C–01H` commitada em `95cbfab`; `PEDROCORE-IMPLEMENT-02` commitada em `e115672`. `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7) commitada em `6ed4c41`: QA textual real por heurística local determinística, release gate conservador com `blocked_reason`, endpoint `POST /api/orchestrate` (pipeline centralizado, também usado por `/api/chat`), safe mode com `allow_real_provider=false` por padrão, autenticação interna opcional para `/api/orchestrate`, contrato padronizado de warnings/errors e audit não persistente completo. `PEDROCORE-FINALIZE-04` foi consolidada em `ee2ac68`, commit para o qual aponta a tag anotada `v6.0.0` com a mensagem `v6.0.0 - MVP backend PedroCore IA`. Testes backend passando (`125 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.
+`PEDROCORE-REPLAN-01` (01A a 01E) concluída no escopo documental. `PEDROCORE-IMPLEMENT-01A/01B` commitada em `577bc88`; `01C–01H` commitada em `95cbfab`; `PEDROCORE-IMPLEMENT-02` commitada em `e115672`. `PEDROCORE-IMPLEMENT-03` (MVP backend Blocos 1–7) commitada em `6ed4c41`: QA textual real por heurística local determinística, release gate conservador com `blocked_reason`, endpoint `POST /api/orchestrate` (pipeline centralizado, também usado por `/api/chat`), safe mode com `allow_real_provider=false` por padrão, autenticação interna opcional para `/api/orchestrate`, contrato padronizado de warnings/errors e audit não persistente completo. `PEDROCORE-FINALIZE-04` foi consolidada em `ee2ac68`, commit para o qual aponta a tag anotada `v6.0.0` com a mensagem `v6.0.0 - MVP backend Veltrix`. Testes backend passando (`125 passed, 2 warnings`). Sem alterações de frontend, design, providers reais ou `.env`.
 
 ## Tags atuais
 
@@ -212,13 +212,13 @@ produto passou de `V5.1.9` para `V5.2.0` apenas em `PEDROCORE-V1-FINAL-CLOSURE`.
 ### Antes de expor a API na internet
 
 - Autenticação obrigatória no `/api/chat`, rate limiting, teto de payload e TLS.
-  Ver `PedroCore IA/20-ux-v1/MODELO_DE_AMEACA.md`.
+  Ver `Veltrix/20-ux-v1/MODELO_DE_AMEACA.md`.
 
 ### Opcionais, pós-fechamento
 
-- V2 — Multimodal (imagem/PDF/DOCX): `PedroCore IA/20-ux-v1/V2_MULTIMODAL.md`.
+- V2 — Multimodal (imagem/PDF/DOCX): `Veltrix/20-ux-v1/V2_MULTIMODAL.md`.
 - Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI mediante decisão explícita.
 - Execução real de OCR/Playwright somente com flags, dependências instaladas manualmente e revisão humana.
 - Transport real do `local_model`; persistência da observabilidade.
-- Saneamento adicional de documentos históricos duplicados dentro de `PedroCore IA/`, se o usuário quiser reduzir ruído do vault.
+- Saneamento adicional de documentos históricos duplicados dentro de `Veltrix/`, se o usuário quiser reduzir ruído do vault.
 - Bloco 12 (dashboard/logs/admin): cancelado por decisão de produto — não é pendência.

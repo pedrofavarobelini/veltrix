@@ -106,7 +106,7 @@ class ExecutionRecord(BaseModel):
     provider_selected: str | None = None
     provider_effective: str | None = None
     provider_attempts: list[ProviderAttempt] = Field(default_factory=list)
-    # Orçamento de saída e tempos decididos pelo PedroCore (OUTPUT-BUDGET-01).
+    # Orçamento de saída e tempos decididos pelo Veltrix (OUTPUT-BUDGET-01).
     generation_budget: dict[str, Any] | None = None
     fallback: bool = False
     fallback_reason: str | None = None

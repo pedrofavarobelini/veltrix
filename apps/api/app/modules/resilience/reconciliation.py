@@ -10,7 +10,7 @@ perguntar, ele so tem duas saidas ruins — reenviar tudo (caro) ou nao reenviar
 nada (perde dado).
 
 A reconciliacao e a terceira saida: o consumidor manda as chaves de
-idempotencia que acha que enviou e o PedroCore responde quais ja possui. O que
+idempotencia que acha que enviou e o Veltrix responde quais ja possui. O que
 faltar, ele reenvia; o que existir, ele marca como entregue.
 
 Isto e uma consulta de LEITURA. Ela nao registra, nao promove e nao altera

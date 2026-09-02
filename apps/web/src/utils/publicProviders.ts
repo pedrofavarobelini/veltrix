@@ -5,7 +5,7 @@
  *
  * TRÊS ESTADOS DISTINTOS, que não devem ser confundidos:
  *
- *   VISÍVEL       é uma IA pública conhecida pelo PedroCore. Aparece nas
+ *   VISÍVEL       é uma IA pública conhecida pelo Veltrix. Aparece nas
  *                 Configurações e no seletor do composer, mesmo sem chave.
  *
  *   CONFIGURADO   o backend tem credencial/configuração para ela. Vem de
@@ -27,7 +27,7 @@
 import type { ProviderInfo } from "../services/api";
 
 /**
- * IAs externas públicas que o PedroCore conhece. Sempre VISÍVEIS, com ou sem
+ * IAs externas públicas que o Veltrix conhece. Sempre VISÍVEIS, com ou sem
  * chave configurada — espelha o `_MODEL_CATALOG`/`provider_catalog` do backend.
  */
 export const PUBLIC_AI_PROVIDER_IDS = [

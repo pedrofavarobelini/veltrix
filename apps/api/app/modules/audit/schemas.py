@@ -39,7 +39,7 @@ class AuditMetadata(BaseModel):
     origin_validation: str | None = None
     provider_selection_mode: str | None = None
     provider_selected: str | None = None
-    # Etapa 3: modelo solicitado != modelo selecionado pelo PedroCore.
+    # Etapa 3: modelo solicitado != modelo selecionado pelo Veltrix.
     model_requested: str | None = None
     model_selected: str | None = None
     model_source: str | None = None
@@ -76,7 +76,7 @@ class AuditMetadata(BaseModel):
     authorization_result: str | None = None
     authorization_reason_code: str | None = None
     # PROVIDER-OUTPUT-BUDGET-CANCELLATION-01 (aditivo, retrocompatível):
-    # orçamento de saída decidido pelo PedroCore, tempos aplicados e metadados
+    # orçamento de saída decidido pelo Veltrix, tempos aplicados e metadados
     # de término. Nada aqui é sensível: são números e rótulos, nunca prompt,
     # resposta, contexto financeiro ou credencial.
     output_budget_effective: int | None = None

@@ -159,7 +159,7 @@ def scan_for_reserved_authority(
                         path=child_path,
                         field=key,
                         reason=(
-                            "campo reservado ao PedroCore; o consumidor pode "
+                            "campo reservado ao Veltrix; o consumidor pode "
                             "relatar fato observado, nao emitir julgamento"
                         ),
                     )

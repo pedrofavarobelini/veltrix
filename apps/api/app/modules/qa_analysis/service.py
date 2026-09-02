@@ -107,7 +107,7 @@ QA_ANALYSIS_NO_EVIDENCE_WARNING = (
 
 QA_LOCAL_HEURISTIC_WARNING = (
     "Análise QA textual local e determinística (heurística); "
-    "não substitui validação humana e não houve execução de testes pelo PedroCore."
+    "não substitui validação humana e não houve execução de testes pelo Veltrix."
 )
 
 SAFE_COMMANDS_BASE = [

@@ -5,7 +5,7 @@
  *
  *   - não grava áudio;
  *   - não guarda áudio em memória, `localStorage` ou qualquer lugar;
- *   - não envia áudio ao backend do PedroCore;
+ *   - não envia áudio ao backend do Veltrix;
  *   - não envia áudio a nenhum provider;
  *   - não registra áudio em log.
  *
