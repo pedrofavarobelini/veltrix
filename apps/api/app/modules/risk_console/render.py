@@ -263,6 +263,16 @@ def render_context_panel(result: ConsoleAnalysis) -> str:
         linhas.append(
             _row(rotulo, PROVENANCE_LABELS[origem], cores[origem], 14)
         )
+    # Proibicoes detectadas no proprio prompt. Aparecem como RESTRICAO, e nao
+    # como alvo afetado: "nao altere migrations" cita migrations e nao pede
+    # migrations. Some-las seria esconder o que o pedido disse.
+    proibidas = result.analysis.foundation.intent.forbidden_mentions
+    if proibidas:
+        linhas.append("")
+        linhas.append(_muted("  Proibido pelo prompt:"))
+        for termo in proibidas:
+            linhas.append(f"    [{COLOR_MUTED}]· {escape(termo)}[/]")
+
     declarados = sum(1 for o in proveniencia.values() if o is Provenance.DECLARED)
     linhas.append("")
     linhas.append(

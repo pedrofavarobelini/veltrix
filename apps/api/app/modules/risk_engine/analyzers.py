@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.modules.risk_engine.polarity import affirmative_text, forbidden_terms
 from app.modules.risk_engine.schemas import (
     AmbiguityAnalysis,
     ExecutionIntent,
@@ -10,14 +11,43 @@ from app.modules.risk_engine.schemas import (
     ScopeAnalysis,
 )
 
+# Termos por operacao. A ordem importa: o primeiro casamento vence, e ela vai
+# da operacao mais perigosa para a menos.
+#
+# As formas IMPERATIVAS foram acrescentadas ao fechar o bug de negacao. Um
+# prompt de instrucao escreve "altere o modulo" e "apenas leia", nao "alterar"
+# e "ler" — e a tabela so tinha o infinitivo. O efeito era silencioso: a
+# operacao real nao era detectada, e antes da correcao de polaridade uma
+# palavra negada em outra frase preenchia a lacuna com a operacao errada.
+#
+# Isto FORTALECE a deteccao positiva; nenhum termo foi removido.
 _OPERATION_TERMS: tuple[tuple[OperationKind, tuple[str, ...]], ...] = (
-    (OperationKind.DELETE, ("delete", "remove", "drop", "excluir", "apagar")),
-    (OperationKind.MIGRATE, ("migrate", "migration", "migrar", "migração")),
-    (OperationKind.DEPLOY, ("deploy", "release", "publicar", "produção")),
-    (OperationKind.CONFIGURE, ("configure", "config", ".env", "configurar")),
-    (OperationKind.WRITE, ("write", "change", "edit", "alterar", "modificar")),
-    (OperationKind.EXECUTE, ("execute", "run", "executar", "rodar")),
-    (OperationKind.READ, ("read", "inspect", "audit", "ler", "auditar")),
+    (
+        OperationKind.DELETE,
+        ("delete", "remove", "drop", "excluir", "apagar", "remova", "apague", "exclua"),
+    ),
+    (OperationKind.MIGRATE, ("migrate", "migration", "migrar", "migração", "migre")),
+    (
+        OperationKind.DEPLOY,
+        ("deploy", "release", "publicar", "produção", "publique"),
+    ),
+    (
+        OperationKind.CONFIGURE,
+        ("configure", "config", ".env", "configurar"),
+    ),
+    (
+        OperationKind.WRITE,
+        (
+            "write", "change", "edit", "alterar", "modificar",
+            "altere", "modifique", "edite", "ajuste", "atualize",
+            "escreva", "refatore", "corrija",
+        ),
+    ),
+    (OperationKind.EXECUTE, ("execute", "run", "executar", "rodar", "rode")),
+    (
+        OperationKind.READ,
+        ("read", "inspect", "audit", "ler", "auditar", "leia", "consulte", "revise"),
+    ),
 )
 _MUTATING = {
     OperationKind.WRITE,
@@ -34,21 +64,37 @@ def _unique(values: list[str]) -> list[str]:
 
 
 def infer_operation_kind(text: str) -> OperationKind:
-    """Infere a operacao a partir do texto livre.
+    """Infere a operacao a partir do que o texto PEDE.
 
-    Extraido de `IntentAnalyzer` sem mudanca de comportamento para que o Risk
-    Console possa PRE-PREENCHER a operacao usando exatamente a mesma tabela de
-    termos que o motor usa. Duas tabelas divergiriam com o tempo, e o console
-    passaria a sugerir uma operacao que o motor nao reconhece.
+    Extraido de `IntentAnalyzer` para que o Risk Console pre-preencha a
+    operacao com exatamente a mesma tabela de termos que o motor usa. Duas
+    tabelas divergiriam, e o console passaria a sugerir operacao que o motor
+    nao reconhece.
+
+    So as oracoes AFIRMATIVAS entram. "Nao execute migration" cita `migration`
+    e nao pede migration — e tratar mencao como intencao foi exatamente o bug
+    que a homologacao encontrou: um pedido que PROIBIA migration voltava com
+    intencao MIGRAR BANCO e risco de dados critico.
 
     O console mostra o resultado como inferido e deixa o humano corrigir: quem
     declara a operacao continua sendo o consumidor, nao o texto.
     """
-    lowered = text.lower()
+    lowered = affirmative_text(text).lower()
     for operation, terms in _OPERATION_TERMS:
         if any(term in lowered for term in terms):
             return operation
     return OperationKind.UNKNOWN
+
+
+def forbidden_operation_terms(text: str) -> tuple[str, ...]:
+    """Termos de operacao citados como PROIBIDOS.
+
+    A proibicao nao some: ela vira restricao visivel. O pedido dizia "nao
+    altere migrations", e o sistema precisa registrar que migrations foi
+    citado, e que foi citado como proibido.
+    """
+    vocabulario = tuple(termo for _, termos in _OPERATION_TERMS for termo in termos)
+    return forbidden_terms(text, vocabulario)
 
 
 class IntentAnalyzer:
@@ -68,6 +114,7 @@ class IntentAnalyzer:
             external_effects=request.requested_operation.external_effects,
             explicit_intent=explicit,
             intent_consistent=consistent,
+            forbidden_mentions=list(forbidden_operation_terms(request.request_text)),
         )
 
 

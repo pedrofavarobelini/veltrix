@@ -89,6 +89,13 @@ class ExecutionIntent(BaseModel):
     external_effects: bool
     explicit_intent: bool
     intent_consistent: bool
+    # Termos de operacao citados como PROIBIDOS no pedido. Aditivo e opcional.
+    #
+    # Existe para que a proibicao vire restricao VISIVEL em vez de sumir. Um
+    # pedido que diz "nao altere migrations" precisa registrar que migrations
+    # foi citado e que foi citado como proibido — sem que isso vire intencao,
+    # alvo afetado ou cenario, que era exatamente o defeito anterior.
+    forbidden_mentions: list[str] = Field(default_factory=list)
 
 
 class ResolvedContext(BaseModel):

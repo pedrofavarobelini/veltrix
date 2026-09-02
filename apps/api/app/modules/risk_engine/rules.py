@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.modules.risk_engine.polarity import affirmative_text
 from app.modules.risk_engine.pre_execution_schemas import DeterministicRuleMatch
 from app.modules.risk_engine.schemas import OperationKind, RiskRequest, RiskSeverity
 
@@ -34,9 +35,13 @@ _RULES = (
 
 
 def evaluate_deterministic_rules(request: RiskRequest) -> list[DeterministicRuleMatch]:
+    # `request_text` e PROSA e passa pelo filtro de polaridade: mencao negada
+    # nao pode acionar regra. Os demais campos sao DECLARACAO estruturada do
+    # consumidor — alvo, comando, mudanca esperada e ambiente sao afirmacoes
+    # por construcao, e negacao nao se aplica a eles.
     haystack = " ".join(
         (
-            request.request_text,
+            affirmative_text(request.request_text),
             " ".join(request.requested_operation.targets),
             " ".join(request.requested_operation.expected_changes),
             " ".join(request.requested_operation.commands),
