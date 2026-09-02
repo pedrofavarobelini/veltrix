@@ -5,10 +5,30 @@ Escolha de tecnologia
 
 Textual, em Python, no mesmo processo do core. As alternativas foram
 descartadas por razoes concretas, nao por gosto: Electron traria um runtime
-inteiro para desenhar oito paineis de texto; uma segunda SPA React duplicaria
-o front que ja existe e esta congelado; um servidor web separado acrescentaria
+inteiro para desenhar paineis de texto; uma segunda SPA React duplicaria o
+front que ja existe e esta congelado; um servidor web separado acrescentaria
 porta, credencial e um modo de falha novo entre o usuario e uma analise que
 roda em milissegundos.
+
+Como a tela esta organizada, e por que
+--------------------------------------
+
+O usuario chega aqui com seis perguntas e pouco tempo: o que este prompt faz,
+qual o alcance, qual o risco principal, por que o Veltrix decidiu assim, posso
+executar, e o que preciso corrigir.
+
+A primeira versao respondia todas — em sequencia, numa pagina longa. Funcionava
+e cansava: o veredito, que e a resposta procurada, ficava depois de varias
+telas de cenario.
+
+Agora a tela e um painel. Entrada a esquerda, analise a direita, gate com
+destaque proprio e uma barra de acoes fixa no rodape. O que e detalhe —
+cenario aberto, codigo interno, score — fica recolhido, disponivel a um toque
+e sem disputar espaco com a decisao.
+
+Onze campos de contexto viraram uma secao recolhida. Eles mudam o resultado de
+verdade e nao foram removidos; so pararam de ser a primeira coisa que alguem
+ve ao abrir a ferramenta.
 
 O que esta tela NAO faz
 -----------------------
@@ -21,6 +41,13 @@ Os botoes desabilitados em BLOCK sao conveniencia de interface. A recusa de
 verdade esta em `analysis.issue_contract` e `analysis.approved_prompt`, que
 recusam do mesmo jeito se alguem chamar a funcao direto. Interface que fosse a
 unica guarda seria uma guarda que se contorna com um clique fora de ordem.
+
+Acessibilidade
+--------------
+
+Cor e sempre REFORCO, nunca o unico portador de significado: severidade e gate
+trazem o rotulo textual junto (BAIXO, ALTO, BLOQUEADO). A tela inteira e
+navegavel por teclado, e o foco tem contorno visivel.
 """
 
 from __future__ import annotations
@@ -30,7 +57,16 @@ from pathlib import Path
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Button, Checkbox, Input, Label, Select, Static, TextArea
+from textual.widgets import (
+    Button,
+    Checkbox,
+    Collapsible,
+    Input,
+    Label,
+    Select,
+    Static,
+    TextArea,
+)
 
 from app.modules.risk_console.analysis import (
     ConsoleAnalysis,
@@ -62,11 +98,32 @@ from app.modules.risk_console.domain import (
     split_list,
 )
 from app.modules.risk_console.export import as_json
-from app.modules.risk_console.render import render_analysis
+from app.modules.risk_console.presentation import scenario_label, severity_label
+from app.modules.risk_console.render import (
+    render_blast_panel,
+    render_dimensions_band,
+    render_findings_panel,
+    render_gate_banner,
+    render_historical_panel,
+    render_recommendations_panel,
+    render_scenario_detail,
+    render_scenarios_summary,
+    render_summary_panel,
+    render_technical_details,
+)
 from app.modules.risk_engine.execution_contract_schemas import RiskGate
 
 # Acoes que so fazem sentido com uma analise aprovada na tela.
 _APPROVAL_ACTIONS = ("#acao-contrato", "#acao-copiar")
+
+# Abaixo desta largura, duas colunas viram uma. 100 colunas e onde o painel de
+# entrada e o de analise deixam de caber lado a lado sem truncar rotulo.
+_NARROW_WIDTH = 100
+
+_EMPTY_STATE = (
+    f"[{COLOR_MUTED}]Preencha o prompt e use ANALISAR RISCO.\n\n"
+    "Nada é executado: a análise é sempre um ensaio.[/]"
+)
 
 
 class RiskConsoleApp(App):
@@ -80,36 +137,137 @@ class RiskConsoleApp(App):
         background: {COLOR_BACKGROUND};
         color: {COLOR_TEXT};
     }}
+
+    /* --- cabecalho compacto: uma linha, sem altura desperdicada -------- */
     #cabecalho {{
-        background: {COLOR_PANEL};
-        border: round {COLOR_ACCENT};
-        padding: 0 2;
-        margin: 0 0 1 0;
-        height: auto;
+        dock: top;
+        height: 1;
+        background: {COLOR_BACKGROUND};
+        padding: 0 1;
+        layout: horizontal;
     }}
-    #titulo {{ color: {COLOR_ACCENT}; text-style: bold; }}
-    #subtitulo {{ color: {COLOR_MUTED}; }}
+    #titulo {{ color: {COLOR_ACCENT}; text-style: bold; width: auto; }}
+    #subtitulo {{ color: {COLOR_MUTED}; width: 1fr; text-align: right; }}
+
+    /* --- barra de acoes fixa no rodape --------------------------------- */
+    #acoes {{
+        dock: bottom;
+        height: 3;
+        padding: 0 1;
+        background: {COLOR_BACKGROUND};
+    }}
+    #acoes Button {{
+        margin: 0 1 0 0;
+        min-width: 10;
+        height: 3;
+    }}
+    /* Em 76 colunas os seis botoes nao cabem numa fileira, e SAIR ficava
+       fora da tela. Uma grade de 3x2 mantem todos alcancaveis pelo mouse —
+       pelo teclado eles ja eram, mas botao cortado e botao que parece
+       ausente. */
+    Screen.-estreito #acoes {{
+        layout: grid;
+        grid-size: 3 2;
+        grid-gutter: 0 1;
+        height: 6;
+    }}
+    Screen.-estreito #acoes Button {{ width: 100%; margin: 0; }}
+    #mensagem {{
+        dock: bottom;
+        height: 1;
+        padding: 0 2;
+    }}
+    .erro {{ color: {COLOR_DANGER}; text-style: bold; }}
+    .aviso {{ color: {COLOR_WARN}; }}
+    .ok {{ color: {COLOR_OK}; }}
+
+    /* --- corpo: duas colunas em terminal largo ------------------------- */
+    #topo {{ layout: horizontal; height: auto; }}
+    #coluna-entrada {{ width: 38%; height: auto; }}
+    #coluna-analise {{ width: 62%; height: auto; }}
+
+    Screen.-estreito #topo {{ layout: vertical; height: auto; }}
+    Screen.-estreito #coluna-entrada,
+    Screen.-estreito #coluna-analise {{ width: 100%; height: auto; }}
+    Screen.-estreito #linha-analise {{ layout: vertical; height: auto; }}
+    Screen.-estreito #painel-resumo,
+    Screen.-estreito #painel-alcance {{ width: 100%; }}
+    Screen.-estreito #linha-detalhe {{ layout: vertical; height: auto; }}
+    Screen.-estreito #linha-detalhe > Vertical {{ width: 100%; height: auto; }}
+
+    /* --- paineis ------------------------------------------------------- */
     .painel {{
         background: {COLOR_PANEL};
         border: round {COLOR_BORDER};
-        padding: 1 2;
-        margin: 0 0 1 0;
+        border-title-color: {COLOR_ACCENT};
+        border-title-style: bold;
+        padding: 0 1;
+        margin: 0 1 1 0;
         height: auto;
     }}
-    .rotulo {{ color: {COLOR_MUTED}; margin: 1 0 0 0; }}
-    .secao {{ color: {COLOR_ACCENT}; text-style: bold; margin: 1 0 0 0; }}
-    #prompt {{ height: 8; border: round {COLOR_BORDER}; }}
-    #acoes {{ height: auto; margin: 0 0 1 0; }}
-    #acoes Button {{ margin: 0 1 0 0; }}
-    #mensagem {{ height: auto; padding: 0 2; }}
-    .erro {{ color: {COLOR_DANGER}; }}
-    .aviso {{ color: {COLOR_WARN}; }}
-    .ok {{ color: {COLOR_OK}; }}
-    #resultado {{ height: auto; }}
+    .painel:focus-within {{ border: round {COLOR_ACCENT}; }}
+
+    #painel-entrada {{ height: auto; }}
+    #linha-analise {{ layout: horizontal; height: auto; }}
+    #painel-resumo {{ width: 55%; }}
+    #painel-alcance {{ width: 45%; }}
+
+    #linha-detalhe {{ layout: horizontal; height: auto; }}
+    /* Quatro colunas iguais truncavam o titulo do cenario no meio da
+       severidade ("... MÉD"), e severidade truncada quebra justamente a regra
+       de nao depender de cor. Cenarios recebe mais largura porque carrega uma
+       lista; os outros tres carregam texto corrido.
+
+       Unidades `fr` e nao porcentagem: porcentagem somava 100% e as margens
+       entre paineis empurravam o ultimo para fora da tela, comendo a borda
+       direita. `fr` divide o que sobra DEPOIS das margens. */
+    #linha-detalhe > Vertical {{ height: auto; }}
+    #painel-cenarios {{ width: 3fr; }}
+    #painel-historico {{ width: 2fr; }}
+    #painel-achados {{ width: 2fr; }}
+    #painel-recomendacoes {{ width: 2fr; }}
+
+    /* --- gate: o veredito tem peso proprio ----------------------------- */
+    #painel-gate {{
+        height: auto;
+        border: heavy {COLOR_BORDER};
+        border-title-color: {COLOR_ACCENT};
+        border-title-style: bold;
+        padding: 0 2;
+        margin: 0 1 1 0;
+        text-align: center;
+        background: {COLOR_PANEL};
+    }}
+    #painel-gate.-aprovado {{ border: heavy {COLOR_OK}; }}
+    #painel-gate.-avisos {{ border: heavy {COLOR_WARN}; }}
+    #painel-gate.-revisao {{ border: heavy {COLOR_WARN}; }}
+    #painel-gate.-bloqueado {{ border: heavy {COLOR_DANGER}; }}
+
+    /* --- entrada compacta ---------------------------------------------- */
+    .linha-campo {{ height: 3; }}
+    .linha-campo Label {{
+        width: 11;
+        content-align: left middle;
+        height: 3;
+        color: {COLOR_MUTED};
+    }}
+    .linha-campo Select {{ width: 1fr; }}
+    .rotulo {{ color: {COLOR_MUTED}; height: 1; }}
+    .ajuda {{ color: {COLOR_MUTED}; text-style: italic; height: auto; }}
+    #prompt {{ height: 9; border: round {COLOR_BORDER}; }}
+    #prompt:focus {{ border: round {COLOR_ACCENT}; }}
+    #analisar {{ width: 100%; height: 3; }}
+
+    Collapsible {{ border: none; background: {COLOR_PANEL}; padding: 0; }}
+    CollapsibleTitle {{ color: {COLOR_ACCENT}; }}
+
+    .conteudo {{ height: auto; }}
     """
 
     BINDINGS = [
         ("ctrl+r", "analisar", "Analisar risco"),
+        ("ctrl+e", "editar", "Editar prompt"),
+        ("ctrl+d", "avancadas", "Configurações avançadas"),
         ("ctrl+q", "sair", "Sair"),
     ]
 
@@ -117,121 +275,194 @@ class RiskConsoleApp(App):
         super().__init__(**kwargs)
         self.result: ConsoleAnalysis | None = None
         self._export_dir = export_dir or Path.cwd()
+        self._contract_id: str | None = None
 
     # --- composicao -------------------------------------------------------
 
     def compose(self) -> ComposeResult:
-        projects = available_projects()
-        with Vertical(id="cabecalho"):
+        with Horizontal(id="cabecalho"):
             yield Label(PRODUCT_NAME, id="titulo")
             yield Label(PRODUCT_SUBTITLE, id="subtitulo")
 
-        with VerticalScroll():
-            with Vertical(classes="painel", id="entrada"):
-                yield Label("ENTRADA", classes="secao")
+        with Horizontal(id="acoes"):
+            yield Button("EDITAR PROMPT", id="acao-editar")
+            yield Button("REANALISAR", id="acao-reanalisar")
+            yield Button("EMITIR CONTRATO", id="acao-contrato")
+            yield Button("COPIAR PROMPT", id="acao-copiar")
+            yield Button("EXPORTAR", id="acao-exportar")
+            yield Button("SAIR", id="acao-sair")
 
-                yield Label("Projeto", classes="rotulo")
-                yield Select(
-                    [(item, item) for item in projects],
-                    id="projeto",
-                    allow_blank=False,
-                    value=projects[0] if projects else Select.BLANK,
-                )
+        yield Static("", id="mensagem")
 
-                yield Label("Ambiente", classes="rotulo")
-                yield Select(
-                    [(label, label) for label, _ in ENVIRONMENTS],
-                    id="ambiente",
-                    allow_blank=False,
-                    value=ENVIRONMENTS[0][0],
-                )
+        with VerticalScroll(id="corpo"):
+            with Horizontal(id="topo"):
+                yield from self._compose_entrada()
+                yield from self._compose_analise()
 
-                yield Label("Executor", classes="rotulo")
-                yield Select(
-                    [(label, label) for label, _ in EXECUTORS],
-                    id="executor",
-                    allow_blank=False,
-                    value=EXECUTORS[0][0],
-                )
+            yield Static("", id="painel-gate")
+
+            with Horizontal(id="linha-detalhe"):
+                with Vertical(classes="painel", id="painel-cenarios"):
+                    yield Static("", id="cenarios-resumo")
+                    yield Vertical(id="cenarios-detalhe", classes="conteudo")
+                with Vertical(classes="painel", id="painel-historico"):
+                    yield Static("", id="historico-texto")
+                with Vertical(classes="painel", id="painel-achados"):
+                    yield Static("", id="achados-texto")
+                with Vertical(classes="painel", id="painel-recomendacoes"):
+                    yield Static("", id="recomendacoes-texto")
+
+            with Collapsible(title="DETALHES TÉCNICOS", collapsed=True, id="tecnicos"):
+                yield Static("", id="tecnicos-texto")
+
+    def _compose_entrada(self) -> ComposeResult:
+        projects = available_projects()
+        with Vertical(id="coluna-entrada"):
+            with Vertical(classes="painel", id="painel-entrada"):
+                with Horizontal(classes="linha-campo"):
+                    yield Label("Projeto")
+                    yield Select(
+                        [(item, item) for item in projects],
+                        id="projeto",
+                        allow_blank=False,
+                        value=projects[0] if projects else Select.BLANK,
+                    )
+                with Horizontal(classes="linha-campo"):
+                    yield Label("Ambiente")
+                    yield Select(
+                        [(label, label) for label, _ in ENVIRONMENTS],
+                        id="ambiente",
+                        allow_blank=False,
+                        value=ENVIRONMENTS[0][0],
+                    )
+                with Horizontal(classes="linha-campo"):
+                    yield Label("Executor")
+                    yield Select(
+                        [(label, label) for label, _ in EXECUTORS],
+                        id="executor",
+                        allow_blank=False,
+                        value=EXECUTORS[0][0],
+                    )
 
                 yield Label("Prompt", classes="rotulo")
                 yield TextArea("", id="prompt")
 
-                # Contexto da operacao. Sem estes campos o motor responde
-                # BLOCK por permissao ausente em praticamente tudo — e o
-                # console existiria para mostrar sempre a mesma tela.
-                yield Label("Operação (vazio = inferida do prompt)", classes="rotulo")
-                yield Select(
-                    [(label, label) for label, _ in OPERATIONS],
-                    id="operacao",
-                    prompt="Inferir do prompt",
-                    allow_blank=True,
-                )
-
-                yield Label("Permissões (separadas por vírgula)", classes="rotulo")
-                yield Input(placeholder="write:billing", id="permissoes")
-
-                yield Label("Escopo permitido", classes="rotulo")
-                yield Input(placeholder="module:billing", id="escopo-permitido")
-
-                yield Label("Escopo proibido", classes="rotulo")
-                yield Input(placeholder="module:auth", id="escopo-proibido")
-
-                yield Label("Alvos da operação", classes="rotulo")
-                yield Input(placeholder="module:billing", id="alvos")
-
-                yield Label("Restrições", classes="rotulo")
-                yield Input(placeholder="somente local", id="restricoes")
-
-                yield Label("Critérios de aceitação", classes="rotulo")
-                yield Input(placeholder="suíte de billing passa", id="criterios")
-
-                yield Label("Testes exigidos", classes="rotulo")
-                yield Input(placeholder="billing", id="testes")
-
-                yield Label("Integrações externas", classes="rotulo")
-                yield Input(placeholder="stripe", id="integracoes")
-
-                yield Label("Banco de dados", classes="rotulo")
-                yield Input(placeholder="pedrocore", id="banco")
-
-                yield Checkbox("Plano de rollback declarado", id="rollback")
+                # Recolhido por escolha: onze campos abertos empurrariam o
+                # botao de analise para fora da tela e fariam a ferramenta
+                # parecer um formulario, e nao um console.
+                with Collapsible(
+                    title="CONFIGURAÇÕES AVANÇADAS",
+                    collapsed=True,
+                    id="avancadas",
+                ):
+                    yield from self._compose_avancadas()
 
                 yield Button("ANALISAR RISCO", id="analisar", variant="primary")
 
-            yield Static("", id="mensagem")
+    def _compose_avancadas(self) -> ComposeResult:
+        yield Label("Operação — opcional", classes="rotulo")
+        yield Label(
+            "Se não informar, o Veltrix identifica pelo prompt.", classes="ajuda"
+        )
+        yield Select(
+            [(label, label) for label, _ in OPERATIONS],
+            id="operacao",
+            prompt="Identificar pelo prompt",
+            allow_blank=True,
+        )
 
-            with Horizontal(id="acoes"):
-                yield Button("EDITAR PROMPT", id="acao-editar")
-                yield Button("REANALISAR", id="acao-reanalisar")
-                yield Button("EMITIR CONTRATO", id="acao-contrato")
-                yield Button("COPIAR PROMPT APROVADO", id="acao-copiar")
-                yield Button("EXPORTAR", id="acao-exportar")
-                yield Button("SAIR", id="acao-sair")
+        yield Label("Permissões", classes="rotulo")
+        yield Label(
+            "Declare apenas as capacidades que o executor poderá usar.",
+            classes="ajuda",
+        )
+        yield Input(placeholder="write:billing", id="permissoes")
 
-            with Horizontal(id="acoes-detalhe"):
-                yield Button("VER EVIDÊNCIA", id="acao-evidencia")
-                yield Button("VER CONTRATO", id="acao-contrato-ver")
+        yield Label("Escopo permitido", classes="rotulo")
+        yield Label("Onde o agente poderá realizar alterações.", classes="ajuda")
+        yield Input(placeholder="module:billing", id="escopo-permitido")
 
-            yield Static("", id="resultado", classes="painel")
+        yield Label("Escopo proibido", classes="rotulo")
+        yield Label("Onde ele não pode tocar, em nenhuma hipótese.", classes="ajuda")
+        yield Input(placeholder="module:auth", id="escopo-proibido")
+
+        yield Label("Alvos da operação", classes="rotulo")
+        yield Input(placeholder="module:billing", id="alvos")
+
+        yield Label("Restrições", classes="rotulo")
+        yield Input(placeholder="somente local", id="restricoes")
+
+        yield Label("Critérios de aceitação", classes="rotulo")
+        yield Input(placeholder="suíte de billing passa", id="criterios")
+
+        yield Label("Testes exigidos", classes="rotulo")
+        yield Input(placeholder="billing", id="testes")
+
+        yield Label("Integrações externas", classes="rotulo")
+        yield Input(placeholder="stripe", id="integracoes")
+
+        yield Label("Banco de dados", classes="rotulo")
+        yield Input(placeholder="pedrocore", id="banco")
+
+        yield Checkbox("Plano de rollback declarado", id="rollback")
+
+    def _compose_analise(self) -> ComposeResult:
+        with Vertical(id="coluna-analise"):
+            with Horizontal(id="linha-analise"):
+                yield Static(_EMPTY_STATE, classes="painel", id="painel-resumo")
+                yield Static("", classes="painel", id="painel-alcance")
+            yield Static("", classes="painel", id="painel-dimensoes")
 
     def on_mount(self) -> None:
+        for selector, title in (
+            ("#painel-entrada", "ENTRADA"),
+            ("#painel-resumo", "ANÁLISE DE RISCO"),
+            ("#painel-alcance", "RAIO DE IMPACTO"),
+            ("#painel-dimensoes", "DIMENSÕES DE RISCO"),
+            ("#painel-gate", "GATE FINAL"),
+            ("#painel-cenarios", "CENÁRIOS"),
+            ("#painel-historico", "HISTÓRICO"),
+            ("#painel-achados", "ACHADOS"),
+            ("#painel-recomendacoes", "RECOMENDAÇÕES"),
+        ):
+            self.query_one(selector).border_title = title
         self._reset_actions()
-        self.query_one("#resultado", Static).display = False
+        self._show_result_areas(False)
+        self._apply_width(self.size.width)
+
+    # --- responsividade ---------------------------------------------------
+
+    def on_resize(self, event) -> None:
+        self._apply_width(event.size.width)
+
+    def _apply_width(self, width: int) -> None:
+        """Em terminal estreito, duas colunas viram uma.
+
+        Nada some: o que estava lado a lado passa a ficar empilhado, e o
+        conteudo continua alcancavel por rolagem.
+        """
+        self.screen.set_class(width < _NARROW_WIDTH, "-estreito")
 
     # --- estado das acoes -------------------------------------------------
 
     def _reset_actions(self) -> None:
-        """Sem análise na tela, nenhuma ação de resultado faz sentido."""
         for selector in (
             "#acao-editar",
             "#acao-reanalisar",
             "#acao-exportar",
-            "#acao-evidencia",
-            "#acao-contrato-ver",
             *_APPROVAL_ACTIONS,
         ):
             self.query_one(selector, Button).disabled = True
+
+    def _show_result_areas(self, visible: bool) -> None:
+        for selector in (
+            "#painel-alcance",
+            "#painel-dimensoes",
+            "#painel-gate",
+            "#linha-detalhe",
+            "#tecnicos",
+        ):
+            self.query_one(selector).display = visible
 
     def _apply_gate_to_actions(self, result: ConsoleAnalysis) -> None:
         """Habilita o que o gate permite — e só o que ele permite.
@@ -243,11 +474,6 @@ class RiskConsoleApp(App):
         for selector in ("#acao-editar", "#acao-reanalisar", "#acao-exportar"):
             self.query_one(selector, Button).disabled = False
 
-        self.query_one("#acao-evidencia", Button).disabled = (
-            result.analysis.historical_evidence.sample_size == 0
-        )
-        self.query_one("#acao-contrato-ver", Button).disabled = True
-
         blocked = result.gate is RiskGate.BLOCK
         for selector in _APPROVAL_ACTIONS:
             self.query_one(selector, Button).disabled = blocked
@@ -256,16 +482,13 @@ class RiskConsoleApp(App):
         """O formulário mudou: o vínculo com a análise exibida caiu.
 
         Impede o caminho `analisa A -> edita para B -> copia B como aprovado`.
-        Enquanto não houver nova análise, o que está na tela não corresponde ao
-        que está no formulário, e as ações de aprovação ficam fora do alcance.
         """
         if self.result is None:
             return
         for selector in _APPROVAL_ACTIONS:
             self.query_one(selector, Button).disabled = True
         self._message(
-            "O formulário mudou desde a última análise. Use REANALISAR para atualizar.",
-            "aviso",
+            "O formulário mudou desde a última análise. Use REANALISAR.", "aviso"
         )
 
     # --- mensagens --------------------------------------------------------
@@ -302,32 +525,89 @@ class RiskConsoleApp(App):
             rollback_plan_present=self.query_one("#rollback", Checkbox).value,
         )
 
+    # --- pintura do resultado --------------------------------------------
+
+    _GATE_CLASSES = {
+        RiskGate.PASS: "-aprovado",
+        RiskGate.PASS_WITH_WARNINGS: "-avisos",
+        RiskGate.REVIEW_REQUIRED: "-revisao",
+        RiskGate.BLOCK: "-bloqueado",
+    }
+
+    async def _paint(self, result: ConsoleAnalysis) -> None:
+        self.query_one("#painel-resumo", Static).update(render_summary_panel(result))
+        self.query_one("#painel-alcance", Static).update(render_blast_panel(result))
+
+        columns = 2 if self.screen.has_class("-estreito") else 3
+        self.query_one("#painel-dimensoes", Static).update(
+            render_dimensions_band(result, columns=columns)
+        )
+
+        gate = self.query_one("#painel-gate", Static)
+        gate.set_classes(self._GATE_CLASSES[result.gate])
+        gate.update(render_gate_banner(result))
+
+        self.query_one("#cenarios-resumo", Static).update(render_scenarios_summary(result))
+        await self._mount_scenarios(result)
+
+        self.query_one("#historico-texto", Static).update(render_historical_panel(result))
+        self.query_one("#achados-texto", Static).update(render_findings_panel(result))
+        self.query_one("#recomendacoes-texto", Static).update(
+            render_recommendations_panel(result)
+        )
+        self.query_one("#tecnicos-texto", Static).update(render_technical_details(result))
+        self._show_result_areas(True)
+
+    async def _mount_scenarios(self, result: ConsoleAnalysis) -> None:
+        """Um `Collapsible` por cenário — nada removido, só recolhido.
+
+        A remocao e AGUARDADA antes de montar os novos. Sem isso, uma segunda
+        analise tenta montar `cenario-0` enquanto o `cenario-0` anterior ainda
+        existe, e o Textual recusa o id duplicado — o que quebrava reanalisar.
+        """
+        container = self.query_one("#cenarios-detalhe", Vertical)
+        await container.remove_children()
+        for index, item in enumerate(result.analysis.simulations):
+            title = f"{scenario_label(item.scenario)} · {severity_label(item.severity)}"
+            await container.mount(
+                Collapsible(
+                    Static(render_scenario_detail(item), classes="cenario-detalhe"),
+                    title=title,
+                    collapsed=True,
+                    id=f"cenario-{index}",
+                    classes="cenario",
+                )
+            )
+
     # --- acoes ------------------------------------------------------------
 
-    def action_analisar(self) -> None:
+    async def action_analisar(self) -> None:
         try:
             result = analyze(self._collect())
-        except ConsoleInputError as error:
-            self._message(str(error), "erro")
-            return
-        except ConsoleOperationError as error:
+        except (ConsoleInputError, ConsoleOperationError) as error:
             self._message(str(error), "erro")
             return
 
         self.result = result
-        painel = self.query_one("#resultado", Static)
-        painel.display = True
-        painel.update(render_analysis(result))
+        await self._paint(result)
         self._apply_gate_to_actions(result)
         self._message("Análise concluída. Nenhuma operação foi executada.", "ok")
+
+    def action_editar(self) -> None:
+        self.query_one("#prompt", TextArea).focus()
+        self._invalidate_binding()
+
+    def action_avancadas(self) -> None:
+        collapsible = self.query_one("#avancadas", Collapsible)
+        collapsible.collapsed = not collapsible.collapsed
 
     def action_sair(self) -> None:
         self.exit()
 
     @on(Button.Pressed, "#analisar")
     @on(Button.Pressed, "#acao-reanalisar")
-    def _pressed_analyze(self) -> None:
-        self.action_analisar()
+    async def _pressed_analyze(self) -> None:
+        await self.action_analisar()
 
     @on(Button.Pressed, "#acao-sair")
     def _pressed_exit(self) -> None:
@@ -335,8 +615,7 @@ class RiskConsoleApp(App):
 
     @on(Button.Pressed, "#acao-editar")
     def _pressed_edit(self) -> None:
-        self.query_one("#prompt", TextArea).focus()
-        self._invalidate_binding()
+        self.action_editar()
 
     @on(Button.Pressed, "#acao-contrato")
     def _pressed_contract(self) -> None:
@@ -348,16 +627,7 @@ class RiskConsoleApp(App):
             self._message(str(error), "erro")
             return
         self._contract_id = contract.contract_id
-        self.query_one("#acao-contrato-ver", Button).disabled = False
         self._message(f"Contrato emitido: {contract.contract_id}", "ok")
-
-    @on(Button.Pressed, "#acao-contrato-ver")
-    def _pressed_view_contract(self) -> None:
-        contract_id = getattr(self, "_contract_id", None)
-        if contract_id is None:
-            self._message("Nenhum contrato emitido nesta análise.", "aviso")
-            return
-        self._message(f"Contrato vigente: {contract_id}", "ok")
 
     @on(Button.Pressed, "#acao-copiar")
     def _pressed_copy(self) -> None:
@@ -369,20 +639,7 @@ class RiskConsoleApp(App):
             self._message(str(error), "erro")
             return
         self.copy_to_clipboard(text)
-        self._message(
-            "Prompt aprovado copiado. O conteúdo não é gravado em disco.", "ok"
-        )
-
-    @on(Button.Pressed, "#acao-evidencia")
-    def _pressed_evidence(self) -> None:
-        if self.result is None:
-            return
-        evidence = self.result.analysis.historical_evidence
-        self._message(
-            f"Evidência histórica: {evidence.sample_size} registro(s), "
-            f"situação {evidence.status}.",
-            "ok",
-        )
+        self._message("Prompt aprovado copiado. Nada é gravado em disco.", "ok")
 
     @on(Button.Pressed, "#acao-exportar")
     def _pressed_export(self) -> None:

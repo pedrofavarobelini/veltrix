@@ -66,19 +66,34 @@ Se o comando não for encontrado, o ambiente não foi sincronizado; rode
 
 ## 4. A tela
 
+Em terminal largo, um painel de duas colunas:
+
 ```text
-┌─────────────────────────────────────────┐
-│          VELTRIX RISK ENGINE            │
-│     Console de Risco Pré-Execução       │
-├─────────────────────────────────────────┤
-│ Projeto                                 │
-│ Ambiente                                │
-│ Executor                                │
-│ Prompt                                  │
-│ (contexto da operação)                  │
-│           ANALISAR RISCO                │
-└─────────────────────────────────────────┘
+ VELTRIX RISK ENGINE                    Console de Risco Pré-Execução
+╭─ ENTRADA ──────────────╮ ╭─ ANÁLISE DE RISCO ──╮ ╭─ RAIO DE IMPACTO ─╮
+│ Projeto                │ │ Intenção            │ │ Arquivos          │
+│ Ambiente               │ │ Modifica            │ │ Módulos           │
+│ Executor               │ │ Qualidade           │ │ Amplitude         │
+│ Prompt                 │ │ Ambiguidade         │ │ Extensão          │
+│                        │ │ Confiança           │ │ Magnitude         │
+│ ▶ CONFIGURAÇÕES AVANÇ. │ ╰─────────────────────╯ ╰───────────────────╯
+│    ANALISAR RISCO      │ ╭─ DIMENSÕES DE RISCO ────────────────────╮
+╰────────────────────────╯ ╰─────────────────────────────────────────╯
+┏━ GATE FINAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                     REVISÃO OBRIGATÓRIA                           ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+╭─ CENÁRIOS ────╮ ╭─ HISTÓRICO ──╮ ╭─ ACHADOS ───╮ ╭─ RECOMENDAÇÕES ─╮
+▶ DETALHES TÉCNICOS
+ EDITAR PROMPT  REANALISAR  EMITIR CONTRATO  COPIAR PROMPT  EXPORTAR  SAIR
 ```
+
+O **Gate Final** fica acima dos painéis de detalhe, e não no fim. É a
+resposta que se procura ao abrir a ferramenta; enterrá-la depois de vários
+cenários faria o console responder por último a pergunta que veio primeiro.
+
+Em terminal estreito (menos de 100 colunas) as duas colunas viram uma, os
+painéis empilham e a barra de ações vira uma grade de dois níveis. Nada
+desaparece.
 
 ### Projeto
 
@@ -107,20 +122,46 @@ console não executa nada.
 é **recusado com a contagem**, e não cortado em silêncio: truncar mudaria o que
 foi analisado sem você saber.
 
-### Contexto da operação
+### Configurações avançadas
 
-`Operação` (vazio = inferida do prompt) · `Permissões` · `Escopo permitido` ·
-`Escopo proibido` · `Alvos` · `Restrições` · `Critérios de aceitação` ·
-`Testes exigidos` · `Integrações externas` · `Banco de dados` ·
-`Plano de rollback`
+Recolhidas ao abrir. Dentro delas: `Operação` (opcional — o Veltrix identifica
+pelo prompt se você não informar), `Permissões`, `Escopo permitido`, `Escopo
+proibido`, `Alvos`, `Restrições`, `Critérios de aceitação`, `Testes exigidos`,
+`Integrações externas`, `Banco de dados` e `Plano de rollback`.
 
-Estes campos são opcionais **e mudam o resultado de verdade**. Vale entender o
+Cada campo traz uma linha de ajuda em português explicando o que declarar.
+
+Eles são opcionais **e mudam o resultado de verdade**. Vale entender o
 principal: sem `Permissões` declaradas, a política responde `BLOQUEADO` por
 `PERMISSION_CONFLICT` — em praticamente qualquer pedido.
 
 Isso não é defeito. O console **não preenche permissão por você** para produzir
 um resultado bonito: um pedido sem permissão declarada é, de fato, um pedido
 que não deveria executar.
+
+### Cenários e detalhes técnicos
+
+Cada cenário é uma linha com nome e severidade; abrir mostra efeito, gatilho,
+escopo afetado, contenção, rollback, verificação, risco residual e confiança.
+Nada foi removido — apenas recolhido.
+
+`DETALHES TÉCNICOS`, também recolhido, guarda reason codes, políticas,
+identificadores e scores. A tela principal fala português; o código interno
+fica onde serve de auditoria e não de leitura.
+
+### Teclado
+
+| atalho | ação |
+|---|---|
+| `Ctrl+R` | analisar risco |
+| `Ctrl+E` | editar prompt |
+| `Ctrl+D` | abrir/fechar configurações avançadas |
+| `Ctrl+Q` | sair |
+| `Tab` | navegar entre campos |
+
+Mouse funciona; teclado é suficiente. Severidade e gate sempre trazem o rótulo
+textual (`BAIXO`, `ALTO`, `BLOQUEADO`) além da cor — a tela continua legível em
+terminal monocromático ou para quem não distingue as cores usadas.
 
 ## 5. Os gates
 

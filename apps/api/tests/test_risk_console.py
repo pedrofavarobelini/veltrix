@@ -608,16 +608,19 @@ def _fill(app, entry: ConsoleRequestInput) -> None:
     app.query_one("#rollback", Checkbox).value = entry.rollback_plan_present
 
 
-def _drive(entry: ConsoleRequestInput | None, check):
+def _drive(entry: ConsoleRequestInput | None, check, size=(140, 45)):
     """Abre a TUI, preenche, analisa e entrega o app ao verificador."""
 
     async def scenario():
+        from textual.widgets import Button
+
         app = _app()
-        async with app.run_test() as pilot:
+        async with app.run_test(size=size) as pilot:
             if entry is not None:
                 _fill(app, entry)
                 await pilot.pause()
-                app.action_analisar()
+                app.query_one("#analisar", Button).press()
+                await pilot.pause()
                 await pilot.pause()
             return await check(app, pilot)
 
@@ -680,7 +683,7 @@ def test_an_approved_analysis_enables_the_approval_actions():
         from textual.widgets import Button
 
         assert app.result.gate is RiskGate.PASS
-        rendered = str(app.query_one("#resultado").content)
+        rendered = str(app.query_one("#painel-gate").content)
         assert "APROVADO" in rendered
         assert "APROVADO COM AVISOS" not in rendered
         assert not app.query_one("#acao-contrato", Button).disabled
@@ -693,7 +696,7 @@ def test_an_approved_analysis_enables_the_approval_actions():
 def test_warnings_are_rendered_as_such():
     async def check(app, _pilot):
         assert app.result.gate is RiskGate.PASS_WITH_WARNINGS
-        assert "APROVADO COM AVISOS" in str(app.query_one("#resultado").content)
+        assert "APROVADO COM AVISOS" in str(app.query_one("#painel-gate").content)
         return True
 
     assert _drive(_warnings(), check)
@@ -702,7 +705,7 @@ def test_warnings_are_rendered_as_such():
 def test_review_required_is_rendered_in_portuguese():
     async def check(app, _pilot):
         assert app.result.gate is RiskGate.REVIEW_REQUIRED
-        assert "REVISÃO OBRIGATÓRIA" in str(app.query_one("#resultado").content)
+        assert "REVISÃO OBRIGATÓRIA" in str(app.query_one("#painel-gate").content)
         return True
 
     assert _drive(_review(), check)
@@ -715,7 +718,7 @@ def test_a_blocked_gate_disables_contract_and_approved_prompt():
         from textual.widgets import Button
 
         assert app.result.gate is RiskGate.BLOCK
-        rendered = str(app.query_one("#resultado").content)
+        rendered = str(app.query_one("#painel-gate").content)
         assert "BLOQUEADO" in rendered
         assert "EXECUÇÃO BLOQUEADA" in rendered
         assert app.query_one("#acao-contrato", Button).disabled
@@ -751,6 +754,7 @@ def test_reanalysing_after_an_edit_restores_a_valid_binding():
         assert app.query_one("#acao-copiar", Button).disabled
         app.query_one("#acao-reanalisar", Button).press()
         await pilot.pause()
+        await pilot.pause()
         assert not app.query_one("#acao-copiar", Button).disabled
         return True
 
@@ -774,6 +778,7 @@ def test_an_empty_prompt_shows_a_portuguese_error():
         from textual.widgets import Button
 
         app.query_one("#analisar", Button).press()
+        await pilot.pause()
         await pilot.pause()
         assert "Prompt vazio" in str(app.query_one("#mensagem").content)
         return True
@@ -807,13 +812,14 @@ def test_the_export_action_writes_a_sanitised_file(tmp_path):
 
     async def scenario():
         app = RiskConsoleApp(export_dir=tmp_path)
-        async with app.run_test() as pilot:
-            _fill(app, _clean(prompt="Ler o billing com api_key=ABCDEFGHIJKLMNOPQRSTUV"))
-            await pilot.pause()
-            app.action_analisar()
-            await pilot.pause()
+        async with app.run_test(size=(140, 45)) as pilot:
             from textual.widgets import Button
 
+            _fill(app, _clean(prompt="Ler o billing com api_key=ABCDEFGHIJKLMNOPQRSTUV"))
+            await pilot.pause()
+            app.query_one("#analisar", Button).press()
+            await pilot.pause()
+            await pilot.pause()
             app.query_one("#acao-exportar", Button).press()
             await pilot.pause()
             return list(tmp_path.glob("risco-*.json"))
@@ -823,3 +829,367 @@ def test_the_export_action_writes_a_sanitised_file(tmp_path):
     content = files[0].read_text(encoding="utf-8")
     assert "ABCDEFGHIJKLMNOPQRSTUV" not in content
     assert REDACTED in content
+
+
+# --- layout, hierarquia e responsividade ----------------------------------
+#
+# Estes casos medem DECISOES DE DESIGN, e nao estetica: o que esta recolhido
+# ao abrir, o que aparece sem rolagem, o que vira uma coluna em terminal
+# estreito e o que continua legivel sem cor. Beleza continua sendo julgamento
+# humano; estas sao as propriedades que dariam para quebrar sem ninguem notar.
+
+
+def _collapsible(app, selector):
+    from textual.widgets import Collapsible
+
+    return app.query_one(selector, Collapsible)
+
+
+def test_the_first_screen_shows_only_the_common_path():
+    """Projeto, Ambiente, Executor, Prompt e ANALISAR. Nada mais."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Button, Select, TextArea
+
+        assert app.query_one("#projeto", Select).display
+        assert app.query_one("#ambiente", Select).display
+        assert app.query_one("#executor", Select).display
+        assert app.query_one("#prompt", TextArea).display
+        assert not app.query_one("#analisar", Button).disabled
+        return True
+
+    assert _drive(None, check)
+
+
+def test_advanced_settings_start_collapsed():
+    """Onze campos abertos empurrariam o botão de análise para fora da tela."""
+
+    async def check(app, _pilot):
+        assert _collapsible(app, "#avancadas").collapsed is True
+        return True
+
+    assert _drive(None, check)
+
+
+def test_advanced_settings_can_be_expanded():
+    async def check(app, pilot):
+        collapsible = _collapsible(app, "#avancadas")
+        collapsible.collapsed = False
+        await pilot.pause()
+        assert collapsible.collapsed is False
+        from textual.widgets import Input
+
+        assert app.query_one("#permissoes", Input)
+        return True
+
+    assert _drive(None, check)
+
+
+def test_advanced_settings_have_portuguese_help_text():
+    """Campo técnico sem explicação intimida; com explicação, ensina."""
+
+    async def check(app, _pilot):
+        from textual.widgets import Label
+
+        textos = [str(item.content) for item in app.query(Label)]
+        assert "Operação — opcional" in textos
+        assert "Se não informar, o Veltrix identifica pelo prompt." in textos
+        assert "Declare apenas as capacidades que o executor poderá usar." in textos
+        assert "Onde o agente poderá realizar alterações." in textos
+        return True
+
+    assert _drive(None, check)
+
+
+def test_result_areas_are_hidden_before_any_analysis():
+    """Painel vazio com moldura é ruído; ausência é resposta."""
+
+    async def check(app, _pilot):
+        for selector in ("#painel-gate", "#painel-dimensoes", "#linha-detalhe"):
+            assert app.query_one(selector).display is False
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_empty_state_explains_what_to_do():
+    async def check(app, _pilot):
+        texto = str(app.query_one("#painel-resumo").content)
+        assert "ANALISAR RISCO" in texto
+        assert "Nada é executado" in texto
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_gate_has_a_panel_of_its_own():
+    """Gate é informação de primeira classe, não rodapé de relatório."""
+
+    async def check(app, _pilot):
+        gate = app.query_one("#painel-gate")
+        assert gate.display is True
+        assert gate.border_title == "GATE FINAL"
+        assert "REVISÃO OBRIGATÓRIA" in str(gate.content)
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_the_gate_panel_is_colour_coded_by_state():
+    """A cor é reforço; a classe é o que o teste consegue verificar."""
+    for entry, expected in (
+        (_clean(), "-aprovado"),
+        (_warnings(), "-avisos"),
+        (_review(), "-revisao"),
+        (_blocked(), "-bloqueado"),
+    ):
+
+        async def check(app, _pilot, expected=expected):
+            assert app.query_one("#painel-gate").has_class(expected)
+            return True
+
+        assert _drive(entry, check)
+
+
+def test_severity_is_readable_without_colour():
+    """Terminal monocromático, ou olho que não distingue: o texto basta."""
+
+    async def check(app, _pilot):
+        faixa = str(app.query_one("#painel-dimensoes").content)
+        assert any(rotulo in faixa for rotulo in ("BAIXO", "MÉDIO", "ALTO", "CRÍTICO"))
+        assert "Escopo" in faixa and "Segurança" in faixa
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_scenarios_are_summarised_and_expandable():
+    """Resumo primeiro; o detalhe inteiro continua a um toque."""
+
+    async def check(app, pilot):
+        from textual.widgets import Collapsible
+
+        # O cabecalho conta os cenarios; os NOMES vivem no titulo de cada
+        # `Collapsible`, que e a propria lista. Uma lista repetida acima deles
+        # gastaria altura para dizer duas vezes a mesma coisa.
+        resumo = str(app.query_one("#cenarios-resumo").content)
+        assert "cenário(s)" in resumo
+        assert "nada é executado" in resumo
+
+        cenarios = list(app.query(".cenario"))
+        titulos = " ".join(str(item.title) for item in cenarios)
+        assert "Sucesso" in titulos
+        # Severidade inteira no titulo: truncada, ela deixaria de substituir a
+        # cor para quem nao a distingue.
+        assert "INFORMATIVO" in titulos
+        assert cenarios, "nenhum cenário montado"
+        assert all(item.collapsed for item in cenarios), "cenário nasce recolhido"
+
+        primeiro = app.query_one("#cenario-0", Collapsible)
+        primeiro.collapsed = False
+        await pilot.pause()
+        assert primeiro.collapsed is False
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_an_expanded_scenario_keeps_every_field():
+    """Organizar não é remover: o detalhe continua completo."""
+
+    async def check(app, _pilot):
+        # `.query_one(Static)` pegaria o titulo do Collapsible, que tambem e
+        # um Static. A classe aponta para o conteudo.
+        detalhe = str(app.query_one("#cenario-0 .cenario-detalhe").content)
+        for rotulo in (
+            "Efeito",
+            "Contenção",
+            "Rollback",
+            "Verificação",
+            "Risco residual",
+            "Confiança",
+        ):
+            assert rotulo in detalhe
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_findings_and_recommendations_live_in_separate_panels():
+    """O que está errado e o que fazer são leituras diferentes."""
+
+    async def check(app, _pilot):
+        assert app.query_one("#painel-achados").border_title == "ACHADOS"
+        assert app.query_one("#painel-recomendacoes").border_title == "RECOMENDAÇÕES"
+        return True
+
+    assert _drive(_blocked(), check)
+
+
+def test_reason_codes_are_not_in_the_main_reading_surface():
+    """O usuário lê a frase em português, não o código interno."""
+
+    async def check(app, _pilot):
+        achados = str(app.query_one("#achados-texto").content)
+        assert "PROMPT_QUALITY_LOW" not in achados
+        assert "FORBIDDEN_SCOPE" not in achados
+        assert any(item in achados for item in ("MÉDIO", "ALTO", "CRÍTICO"))
+        return True
+
+    assert _drive(_blocked(), check)
+
+
+def test_reason_codes_remain_available_in_technical_details():
+    """Secundários, e não escondidos: quem audita continua alcançando tudo."""
+
+    async def check(app, _pilot):
+        tecnicos = str(app.query_one("#tecnicos-texto").content)
+        assert "FORBIDDEN_SCOPE" in tecnicos
+        assert "BLOCK" in tecnicos
+        assert _collapsible(app, "#tecnicos").collapsed is True
+        return True
+
+    assert _drive(_blocked(), check)
+
+
+def test_the_action_bar_is_docked_and_complete():
+    async def check(app, _pilot):
+        from textual.widgets import Button
+
+        rotulos = {str(item.label) for item in app.query("#acoes Button")}
+        assert rotulos == {
+            "EDITAR PROMPT",
+            "REANALISAR",
+            "EMITIR CONTRATO",
+            "COPIAR PROMPT",
+            "EXPORTAR",
+            "SAIR",
+        }
+        assert app.query_one("#acoes").styles.dock == "bottom"
+        assert isinstance(app.query_one("#acao-sair", Button), Button)
+        return True
+
+    assert _drive(None, check)
+
+
+def test_a_wide_terminal_uses_two_columns():
+    async def check(app, _pilot):
+        assert not app.screen.has_class("-estreito")
+        return True
+
+    assert _drive(None, check, size=(140, 45))
+
+
+def test_a_narrow_terminal_collapses_to_one_column():
+    """Duas colunas viram uma, e nada importante desaparece."""
+
+    async def check(app, _pilot):
+        assert app.screen.has_class("-estreito")
+        for selector in ("#painel-gate", "#painel-dimensoes", "#painel-cenarios"):
+            assert app.query_one(selector).display is True
+        assert "REVISÃO OBRIGATÓRIA" in str(app.query_one("#painel-gate").content)
+        return True
+
+    assert _drive(_review(), check, size=(78, 40))
+
+
+def test_a_medium_terminal_still_renders_every_panel():
+    async def check(app, _pilot):
+        for selector in (
+            "#painel-resumo",
+            "#painel-alcance",
+            "#painel-dimensoes",
+            "#painel-gate",
+            "#painel-cenarios",
+            "#painel-historico",
+            "#painel-achados",
+            "#painel-recomendacoes",
+        ):
+            assert app.query_one(selector).display is True
+        return True
+
+    assert _drive(_review(), check, size=(110, 40))
+
+
+def test_keyboard_navigation_reaches_the_form():
+    """Mouse é opcional; teclado é obrigatório."""
+
+    async def check(app, pilot):
+        await pilot.press("tab")
+        await pilot.pause()
+        assert app.focused is not None
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_keyboard_shortcut_runs_the_analysis():
+    async def check(app, pilot):
+        from textual.widgets import TextArea
+
+        app.query_one("#prompt", TextArea).text = (
+            "Ler o relatorio de billing e auditar os totais"
+        )
+        await pilot.pause()
+        await pilot.press("ctrl+r")
+        await pilot.pause()
+        await pilot.pause()
+        assert app.result is not None
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_shortcut_toggles_advanced_settings():
+    async def check(app, pilot):
+        assert _collapsible(app, "#avancadas").collapsed is True
+        await pilot.press("ctrl+d")
+        await pilot.pause()
+        assert _collapsible(app, "#avancadas").collapsed is False
+        return True
+
+    assert _drive(None, check)
+
+
+def test_the_panel_titles_are_in_portuguese():
+    async def check(app, _pilot):
+        titulos = {
+            str(app.query_one(selector).border_title)
+            for selector in (
+                "#painel-entrada",
+                "#painel-resumo",
+                "#painel-alcance",
+                "#painel-dimensoes",
+                "#painel-gate",
+                "#painel-cenarios",
+                "#painel-historico",
+                "#painel-achados",
+                "#painel-recomendacoes",
+            )
+        }
+        assert titulos == {
+            "ENTRADA",
+            "ANÁLISE DE RISCO",
+            "RAIO DE IMPACTO",
+            "DIMENSÕES DE RISCO",
+            "GATE FINAL",
+            "CENÁRIOS",
+            "HISTÓRICO",
+            "ACHADOS",
+            "RECOMENDAÇÕES",
+        }
+        for proibido in ("Findings", "Recommendations", "Final Gate", "Scope"):
+            assert proibido not in titulos
+        return True
+
+    assert _drive(_review(), check)
+
+
+def test_the_header_stays_on_one_line():
+    """Cabeçalho não deve gastar altura que o conteúdo precisa."""
+
+    async def check(app, _pilot):
+        assert app.query_one("#cabecalho").styles.height.value == 1
+        return True
+
+    assert _drive(None, check)
