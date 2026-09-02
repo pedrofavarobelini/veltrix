@@ -2,6 +2,25 @@
 
 Atualizado em: 01/09/2026
 
+## PLATFORM EVOLUTION — 12 EVOLUCOES IMPLEMENTADAS
+
+As doze evolucoes de plataforma aprovadas estao implementadas e testadas.
+Estado real, evolucao por evolucao, em
+[[16-plataforma/PLATFORM_EVOLUTION_FINAL_STATE]].
+
+Resumo: Consumer SDK, Policy Engine, Control Center, Evaluation Plane V2,
+Model Registry com promocao por evidencia, Shadow Mode, roteamento explicavel
+por qualidade/custo/latencia, registry versionado de prompts e configuracoes,
+trilha de auditoria com correlacao, SLO com estado explicito, matriz de
+compatibilidade e Disaster Recovery com restauracao PROVADA.
+
+Invariantes preservadas e agora executaveis no Policy Engine:
+`automatic_collection = false`, `Operational Data != Training Candidate`, e
+execucao nunca delegada ao core.
+
+Contratos V1 congelados: intactos. OpenAPI: aditivo. UI React: nao alterada.
+Rename PedroCore -> Veltrix: continua fora de escopo.
+
 ## RISK ENGINE V2 — ENCERRADO (motor + produto)
 
 O motor foi fechado em R0–R5 e, no fechamento de produto, ganhou interface

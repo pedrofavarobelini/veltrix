@@ -99,6 +99,27 @@ _RUNTIME_MODULES = frozenset(
         # atende qualquer projeto que declare `risk_analysis`. Nao decide
         # risco: consome os mesmos servicos que o router HTTP consome.
         "risk_console",
+        # --- Platform Evolution -------------------------------------------
+        #
+        # Todas Runtime: decidem, roteiam, medem ou registram o que o runtime
+        # faz. Nenhuma promove candidato a treino, e nenhuma pertence a um
+        # consumidor especifico.
+        #
+        # `evaluation_plane` merece nota: ele avalia SUJEITOS do runtime
+        # (provider, modelo, prompt, rota) e produz evidencia. Nao promove e
+        # nao governa aprendizado — isso continua no Learning Plane.
+        "policy_engine",
+        "correlation",
+        "compatibility",
+        "consumer_sdk",
+        "model_registry",
+        "asset_registry",
+        "evaluation_plane",
+        "shadow_execution",
+        "routing_intelligence",
+        "slo",
+        "control_center",
+        "disaster_recovery",
         # Safe Reuse
         "safe_reuse",
         # QA e avaliacao operacional do runtime

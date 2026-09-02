@@ -11,6 +11,7 @@ from app.modules.interaction_outcomes.router import router as interaction_outcom
 from app.modules.observability.router import router as observability_router
 from app.modules.operational_memory.router import router as operational_memory_router
 from app.modules.retrieval.router import router as retrieval_router
+from app.modules.control_center.router import router as platform_control_router
 from app.modules.risk_engine.router import router as risk_engine_router
 from app.modules.safe_reuse.router import router as safe_reuse_router
 from app.modules.training_data.router import router as training_data_router
@@ -88,3 +89,4 @@ app.include_router(safe_reuse_router, prefix="/api")
 app.include_router(observability_router, prefix="/api")
 app.include_router(training_data_router, prefix="/api")
 app.include_router(evidence_platform_router, prefix="/api")
+app.include_router(platform_control_router, prefix="/api")

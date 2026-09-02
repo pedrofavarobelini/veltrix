@@ -163,6 +163,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     benchmark_parser.add_argument("--json", action="store_true", help="Saída em JSON.")
 
+    control = subparsers.add_parser(
+        "control-center", help="Retrato operacional do PedroCore (somente leitura)."
+    )
+    control.add_argument("--json", action="store_true", help="Saída em JSON.")
+
     return parser
 
 
@@ -435,6 +440,9 @@ def main(argv: list[str] | None = None, stream=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
+    if args.group == "control-center":
+        return _cmd_control_center(args, stream)
+
     if args.group != CONSOLE_SUBCOMMAND:
         parser.error("comando desconhecido")
 
@@ -442,6 +450,53 @@ def main(argv: list[str] | None = None, stream=None) -> int:
         return _open_console(stream)
 
     return _ACTIONS[args.action](args, stream)
+
+
+def _cmd_control_center(args, stream) -> int:
+    """Retrato operacional no terminal.
+
+    Existe aqui, e nao como pagina React, porque a interface principal esta
+    congelada e a operacao ja acontece no terminal. Somente leitura: nao ha
+    subcomando que promova, aprove ou apague nada.
+    """
+    from app.modules.control_center.service import control_center_service
+
+    retrato = control_center_service.snapshot()
+    if args.json:
+        print(
+            json.dumps(retrato.model_dump(mode="json"), ensure_ascii=False, indent=2),
+            file=stream,
+        )
+        return EXIT_OK
+
+    print(f"{PRODUCT_NAME} — Control Center (somente leitura)", file=stream)
+    print(f"  Saúde ............... {retrato.health_state}", file=stream)
+    if retrato.health_unavailable:
+        print(f"  Indisponíveis ....... {', '.join(retrato.health_unavailable)}", file=stream)
+    if retrato.health_degraded:
+        print(f"  Degradados .......... {', '.join(retrato.health_degraded)}", file=stream)
+    if retrato.health_unknown:
+        print(f"  Sem medição ......... {len(retrato.health_unknown)} indicador(es)", file=stream)
+    print(f"  Projetos ............ {len(retrato.projects)}", file=stream)
+    for projeto in retrato.projects:
+        print(
+            f"    {projeto.project_id:14} {len(projeto.capabilities)} capability(ies)",
+            file=stream,
+        )
+    print(f"  Modelos ............. {retrato.registries.models_total} "
+          f"({retrato.registries.models_promoted} promovido(s))", file=stream)
+    print(f"  Assets .............. {retrato.registries.assets_total} "
+          f"({retrato.registries.assets_active} ativo(s))", file=stream)
+    print(f"  Persistência (risco)  {retrato.risk.persistence_mode}", file=stream)
+    print(f"  Assinatura contrato   "
+          f"{'configurada' if retrato.risk.contract_signing_configured else 'ausente'}",
+          file=stream)
+    print(f"  Outbox .............. {retrato.resilience.outbox_mode} "
+          f"({'durável' if retrato.resilience.outbox_durable else 'não durável'})",
+          file=stream)
+    print(f"  Avaliações .......... {retrato.evaluations_total}", file=stream)
+    print(f"  Comparações shadow .. {retrato.shadow_comparisons_total}", file=stream)
+    return EXIT_OK
 
 
 def _force_utf8(stream) -> None:
