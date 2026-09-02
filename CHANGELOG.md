@@ -11,6 +11,40 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 ---
 
 
+
+## Platform Evolution — 12 evoluções de plataforma
+
+Doze evoluções implementadas sobre o PedroCore existente, sem reconstruí-lo.
+Detalhe por evolução em `PedroCore IA/16-plataforma/PLATFORM_EVOLUTION_FINAL_STATE.md`.
+
+- **Consumer SDK** — cliente oficial tipado, neutro em relação ao projeto,
+  com retry só onde repetir é seguro, idempotência derivada do conteúdo e
+  erro sanitizado.
+- **Policy Engine** — decisão transversal versionada e explicável. As três
+  invariantes da arquitetura viraram regras executáveis com teste negativo.
+- **Control Center** — agregação somente leitura (rota + `pedrocore
+  control-center`). A UI React não foi alterada.
+- **Evaluation Plane V2** — avaliação como evidência reproduzível.
+  `DATASET_NOT_READY` continua válido; métrica sem dataset é descartada.
+- **Model Registry + Promotion** — ciclo de vida explícito; promoção exige
+  `evaluation_id` e rollback é sempre possível.
+- **Shadow Mode** — observação paralela que não responde, não executa, não
+  persiste e não duplica efeito.
+- **Routing por qualidade/custo/latência** — eliminação antes de ordenação;
+  pesos declarados por estratégia; seleção fora do ranking é recusada.
+- **Prompt & Configuration Registry** — assets governados versionados, com
+  hash conferido e segredo recusado na entrada.
+- **Unified Audit / Correlation** — `correlation_id` transversal; a trilha
+  guarda ponteiro, nunca conteúdo.
+- **SLO / Health** — sem medição o indicador é `UNKNOWN`, nunca `HEALTHY`.
+- **Compatibility Matrix** — resposta calculada, sem tabela por projeto.
+- **Disaster Recovery** — restauração provada destruindo estado descartável
+  antes de restaurar.
+
+Verificação: 1744 testes com PostgreSQL real, 1722 em paridade com a CI, ruff
+limpo, frontend 117 verde, grafo 173/1012/0, contratos V1 intactos e OpenAPI
+aditivo (40 → 43 paths, 166 → 180 schemas, zero remoção).
+
 ## Risk Engine V2 — fechamento de produto
 
 Console, CLI e porta HTTP sobre o motor já fechado em R0–R5. O motor não mudou.
