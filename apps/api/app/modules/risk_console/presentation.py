@@ -300,3 +300,39 @@ def derive_recommendations(
         )
 
     return items
+
+
+# Regras deterministicas: frase humana por regra.
+#
+# O motor descreve o achado como "Regra determinística acionada:
+# database_migration." — util para auditoria, ruim para leitura. O usuario
+# precisa saber O QUE foi detectado antes de saber COMO a regra se chama.
+#
+# O identificador continua existindo e vive em DETALHES TÉCNICOS.
+RULE_EXPLANATIONS: dict[str, str] = {
+    "database_migration": "O pedido envolve migração de banco de dados.",
+    "schema_change": "O pedido altera o schema do banco.",
+    "auth_authz": "O pedido toca autenticação ou autorização.",
+    "secrets_env": "O pedido menciona segredo, credencial ou variável de ambiente.",
+    "ci_cd": "O pedido altera pipeline de integração ou entrega.",
+    "delete": "O pedido remove ou apaga dados.",
+    "mass_file_change": "O pedido altera arquivos em massa.",
+    "security_policy": "O pedido altera política de segurança ou acesso.",
+    "production_config": "O pedido envolve configuração de produção.",
+    "permissions": "O pedido altera permissões ou papéis.",
+    "external_integration": "O pedido envolve integração externa.",
+}
+
+_RULE_PREFIX = "Regra determinística acionada: "
+
+
+def humanize_finding(title: str) -> str:
+    """Frase humana para um achado, quando ele for o eco de uma regra.
+
+    Achado que nao vem de regra ja e texto humano e passa intacto: reescrever
+    o que ja esta bom seria trocar a voz do motor pela minha.
+    """
+    if not title.startswith(_RULE_PREFIX):
+        return title
+    identificador = title[len(_RULE_PREFIX) :].rstrip(".").strip()
+    return RULE_EXPLANATIONS.get(identificador, title)

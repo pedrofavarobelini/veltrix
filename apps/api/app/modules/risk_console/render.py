@@ -38,6 +38,7 @@ from app.modules.risk_console.branding import (
 from app.modules.risk_console.domain import environment_label, executor_label, operation_label
 from app.modules.risk_console.presentation import (
     ambiguity_label,
+    humanize_finding,
     dimension_label,
     gate_color,
     gate_label,
@@ -226,6 +227,50 @@ def render_dimensions_band(result: ConsoleAnalysis, columns: int = 3) -> str:
     return "\n".join(lines).rstrip()
 
 
+
+def render_context_panel(result: ConsoleAnalysis) -> str:
+    """O contexto que a analise usou, com a ORIGEM de cada fato.
+
+    Existe por causa de um problema real encontrado na homologacao: os campos
+    avancados exibiam valores de demonstracao plausiveis, o formulario lia como
+    preenchido, e a analise saiu com contexto que ninguem quis declarar.
+
+    Os placeholders foram corrigidos. Este painel fecha a porta pelo outro
+    lado: agora da para ver, antes de agir, exatamente o que foi declarado e o
+    que nao foi.
+    """
+    from app.modules.risk_console.domain import (
+        CONTEXT_FIELDS,
+        PROVENANCE_LABELS,
+        Provenance,
+    )
+
+    proveniencia = result.provenance or {}
+    if not proveniencia:
+        return _muted("  Origem do contexto não registrada nesta análise.")
+
+    cores = {
+        Provenance.DECLARED: COLOR_ACCENT,
+        Provenance.INFERRED: None,
+        Provenance.DEFAULTED: None,
+        Provenance.UNKNOWN: COLOR_MUTED,
+    }
+    linhas = []
+    for campo, rotulo in CONTEXT_FIELDS:
+        origem = proveniencia.get(campo)
+        if origem is None:
+            continue
+        linhas.append(
+            _row(rotulo, PROVENANCE_LABELS[origem], cores[origem], 14)
+        )
+    declarados = sum(1 for o in proveniencia.values() if o is Provenance.DECLARED)
+    linhas.append("")
+    linhas.append(
+        _muted(f"  {declarados} campo(s) declarado(s); o resto não entrou.")
+    )
+    return "\n".join(linhas)
+
+
 def render_scenarios_summary(result: ConsoleAnalysis) -> str:
     """Cabecalho do painel de cenarios.
 
@@ -305,7 +350,8 @@ def render_findings_panel(result: ConsoleAnalysis) -> str:
     for item in findings:
         color = severity_color(item.severity)
         lines.append(
-            f"  [{color}]{escape(severity_label(item.severity))}[/]  {escape(item.title)}"
+            f"  [{color}]{escape(severity_label(item.severity))}[/]  "
+            f"{escape(humanize_finding(item.title))}"
         )
     return "\n".join(lines)
 

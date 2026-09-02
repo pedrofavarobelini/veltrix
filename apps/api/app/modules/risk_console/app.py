@@ -101,6 +101,7 @@ from app.modules.risk_console.export import as_json
 
 from app.modules.risk_console.render import (
     render_blast_panel,
+    render_context_panel,
     render_dimensions_band,
     render_findings_panel,
     render_gate_banner,
@@ -227,10 +228,11 @@ class RiskConsoleApp(App):
        entre paineis empurravam o ultimo para fora da tela, comendo a borda
        direita. `fr` divide o que sobra DEPOIS das margens. */
     #linha-detalhe > Vertical {{ height: auto; }}
+    #painel-contexto {{ width: 3fr; }}
     #painel-cenarios {{ width: 3fr; }}
     #painel-historico {{ width: 2fr; }}
-    #painel-achados {{ width: 3fr; }}
-    #painel-recomendacoes {{ width: 3fr; }}
+    #painel-achados {{ width: 2fr; }}
+    #painel-recomendacoes {{ width: 2fr; }}
 
     /* --- gate: o veredito tem peso proprio ----------------------------- */
     #painel-gate {{
@@ -274,6 +276,14 @@ class RiskConsoleApp(App):
     Screen.-estreito #avancadas-colunas {{ layout: vertical; height: auto; }}
     Screen.-estreito .grupo-coluna {{ width: 100%; }}
     .ajuda {{ color: {COLOR_MUTED}; text-style: italic; width: 100%; height: auto; }}
+    Input {{ border: round {COLOR_BORDER}; }}
+    Input:focus {{ border: round {COLOR_ACCENT}; }}
+    /* A dica precisa parecer dica. Com onze campos, o contraste padrao do
+       Textual era sinal fraco demais e a tela lia como preenchida. */
+    Input > .input--placeholder {{
+        color: {COLOR_MUTED};
+        text-style: italic;
+    }}
     #prompt {{ height: 9; border: round {COLOR_BORDER}; }}
     #prompt:focus {{ border: round {COLOR_ACCENT}; }}
     #analisar {{ width: 100%; height: 3; }}
@@ -330,6 +340,8 @@ class RiskConsoleApp(App):
             yield Static("", id="painel-gate")
 
             with Horizontal(id="linha-detalhe"):
+                with Vertical(classes="painel", id="painel-contexto"):
+                    yield Static("", id="contexto-texto")
                 with Vertical(classes="painel", id="painel-cenarios"):
                     yield Static("", id="cenarios-resumo")
                     yield Vertical(id="cenarios-detalhe", classes="conteudo")
@@ -400,22 +412,22 @@ class RiskConsoleApp(App):
                 yield Label("AUTORIZAÇÃO", classes="grupo")
                 yield Label("Permissões", classes="rotulo")
                 yield Label("Capacidades que o executor poderá usar.", classes="ajuda")
-                yield Input(placeholder="write:billing", id="permissoes")
+                yield Input(placeholder="ex.: write:<módulo>", id="permissoes")
 
                 yield Label("Escopo permitido", classes="rotulo")
                 yield Label("Onde o agente poderá alterar.", classes="ajuda")
-                yield Input(placeholder="module:billing", id="escopo-permitido")
+                yield Input(placeholder="ex.: module:<nome>", id="escopo-permitido")
 
                 yield Label("Escopo proibido", classes="rotulo")
                 yield Label("Áreas que nunca poderão mudar.", classes="ajuda")
-                yield Input(placeholder="module:auth", id="escopo-proibido")
+                yield Input(placeholder="ex.: module:<nome>", id="escopo-proibido")
 
                 yield Label("VALIDAÇÃO", classes="grupo")
                 yield Label("Critérios de aceitação", classes="rotulo")
-                yield Input(placeholder="suíte de billing passa", id="criterios")
+                yield Input(placeholder="ex.: <critério de aceitação>", id="criterios")
 
                 yield Label("Testes exigidos", classes="rotulo")
-                yield Input(placeholder="billing", id="testes")
+                yield Input(placeholder="ex.: <suíte de testes>", id="testes")
 
                 yield Checkbox("Plano de rollback declarado", id="rollback")
 
@@ -431,17 +443,17 @@ class RiskConsoleApp(App):
                 )
 
                 yield Label("Alvos da operação", classes="rotulo")
-                yield Input(placeholder="module:billing", id="alvos")
+                yield Input(placeholder="ex.: module:<nome>", id="alvos")
 
                 yield Label("Restrições", classes="rotulo")
-                yield Input(placeholder="somente local", id="restricoes")
+                yield Input(placeholder="ex.: <restrição>", id="restricoes")
 
                 yield Label("DEPENDÊNCIAS", classes="grupo")
                 yield Label("Integrações externas", classes="rotulo")
-                yield Input(placeholder="stripe", id="integracoes")
+                yield Input(placeholder="ex.: <serviço externo>", id="integracoes")
 
                 yield Label("Banco de dados", classes="rotulo")
-                yield Input(placeholder="pedrocore", id="banco")
+                yield Input(placeholder="ex.: <banco de dados>", id="banco")
 
     def _compose_analise(self) -> ComposeResult:
         # Empilhados, e nao lado a lado: assim cada painel ocupa os 62% da
@@ -458,6 +470,7 @@ class RiskConsoleApp(App):
             ("#painel-alcance", "RAIO DE IMPACTO"),
             ("#painel-dimensoes", "DIMENSÕES DE RISCO"),
             ("#painel-gate", "GATE FINAL"),
+            ("#painel-contexto", "CONTEXTO"),
             ("#painel-cenarios", "CENÁRIOS"),
             ("#painel-historico", "HISTÓRICO"),
             ("#painel-achados", "ACHADOS"),
@@ -596,6 +609,7 @@ class RiskConsoleApp(App):
         gate.set_classes(self._GATE_CLASSES[result.gate])
         gate.update(render_gate_banner(result))
 
+        self.query_one("#contexto-texto", Static).update(render_context_panel(result))
         self.query_one("#cenarios-resumo", Static).update(render_scenarios_summary(result))
         await self._mount_scenarios(result)
 

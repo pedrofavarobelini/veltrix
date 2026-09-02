@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
+from enum import Enum
 
 from app.modules.project_context.manifests import PROJECT_MANIFESTS
 from app.modules.risk_console.branding import CONSOLE_AGENT_ID, CONSOLE_PRODUCER
@@ -231,4 +232,128 @@ def build_request(entry: ConsoleRequestInput) -> RiskRequest:
             destructive=operation is OperationKind.DELETE,
             external_effects=bool(entry.external_integrations),
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Proveniencia do contexto
+# ---------------------------------------------------------------------------
+#
+# A homologacao humana encontrou um problema real: os placeholders eram valores
+# de dominio plausiveis, e onze campos exibindo texto plausivel faziam a tela
+# ler como formulario PREENCHIDO. Quem abriu o console aceitou aqueles valores
+# como estado atual, e a analise saiu com contexto de billing, auth e
+# integracao externa que ninguem quis declarar.
+#
+# Os placeholders foram corrigidos. Mas a licao maior e que o console nunca
+# dizia DE ONDE cada fato veio. Passa a dizer.
+
+
+class Provenance(str, Enum):
+    """De onde veio cada fato que a analise usou.
+
+    Misturar os quatro em silencio e como o problema aconteceu: um valor
+    assumido pelo console parecia declarado pelo humano.
+    """
+
+    # O humano digitou.
+    DECLARED = "DECLARED"
+    # O motor derivou do prompt, com a tabela de termos dele.
+    INFERRED = "INFERRED"
+    # O console supriu por ter um default de formulario.
+    DEFAULTED = "DEFAULTED"
+    # Ninguem declarou. Ausencia e um fato, e aparece como tal.
+    UNKNOWN = "UNKNOWN"
+
+
+# Rotulos curtos: o painel divide a largura com outros quatro, e rotulo
+# truncado deixaria de informar exatamente o que veio informar.
+PROVENANCE_LABELS: dict[Provenance, str] = {
+    Provenance.DECLARED: "declarado",
+    Provenance.INFERRED: "inferido",
+    Provenance.DEFAULTED: "padrão",
+    Provenance.UNKNOWN: "—",
+}
+
+# Rotulo humano de cada campo de contexto, na ordem em que se le.
+CONTEXT_FIELDS: tuple[tuple[str, str], ...] = (
+    ("project_id", "Projeto"),
+    ("environment", "Ambiente"),
+    ("executor", "Executor"),
+    ("operation", "Operação"),
+    ("permissions", "Permissões"),
+    ("allowed_scope", "Escopo permitido"),
+    ("forbidden_scope", "Escopo proibido"),
+    ("targets", "Alvos"),
+    ("constraints", "Restrições"),
+    ("acceptance_criteria", "Critérios"),
+    ("required_tests", "Testes"),
+    ("external_integrations", "Integrações"),
+    ("database", "Banco"),
+    ("rollback_plan_present", "Rollback"),
+)
+
+
+def context_provenance(entry: ConsoleRequestInput) -> dict[str, Provenance]:
+    """Classifica cada campo do contexto pela sua origem.
+
+    Projeto, ambiente e executor sao `DEFAULTED` quando o formulario abriu com
+    eles: o humano nao os escolheu, o console escolheu por ele. Dize-lo importa
+    porque "Desenvolvimento" assumido e "Desenvolvimento" escolhido levam a
+    mesma analise e a confiancas diferentes.
+    """
+    projetos = available_projects()
+    padrao_projeto = projetos[0] if projetos else ""
+
+    proveniencia: dict[str, Provenance] = {}
+
+    proveniencia["project_id"] = (
+        Provenance.DEFAULTED
+        if (entry.project_id or "").strip().lower() == padrao_projeto
+        else Provenance.DECLARED
+    )
+    proveniencia["environment"] = (
+        Provenance.DEFAULTED
+        if entry.environment_label == ENVIRONMENTS[0][0]
+        else Provenance.DECLARED
+    )
+    proveniencia["executor"] = (
+        Provenance.DEFAULTED
+        if entry.executor_label == EXECUTORS[0][0]
+        else Provenance.DECLARED
+    )
+    proveniencia["operation"] = (
+        Provenance.DECLARED if entry.operation is not None else Provenance.INFERRED
+    )
+
+    listas = {
+        "permissions": entry.permissions,
+        "allowed_scope": entry.allowed_scope,
+        "forbidden_scope": entry.forbidden_scope,
+        "targets": entry.targets,
+        "constraints": entry.constraints,
+        "acceptance_criteria": entry.acceptance_criteria,
+        "required_tests": entry.required_tests,
+        "external_integrations": entry.external_integrations,
+    }
+    for campo, valor in listas.items():
+        proveniencia[campo] = Provenance.DECLARED if valor else Provenance.UNKNOWN
+
+    proveniencia["database"] = (
+        Provenance.DECLARED if entry.database else Provenance.UNKNOWN
+    )
+    # Checkbox desmarcada nao e "nao ha plano": e "ninguem declarou que ha".
+    proveniencia["rollback_plan_present"] = (
+        Provenance.DECLARED if entry.rollback_plan_present else Provenance.UNKNOWN
+    )
+    return proveniencia
+
+
+def declared_context_fields(entry: ConsoleRequestInput) -> list[str]:
+    """Campos que o humano realmente declarou. Base do teste de contaminacao."""
+    proveniencia = context_provenance(entry)
+    return sorted(
+        campo
+        for campo, origem in proveniencia.items()
+        if origem is Provenance.DECLARED
     )

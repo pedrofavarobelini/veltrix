@@ -22,7 +22,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.modules.risk_console.domain import ConsoleRequestInput, build_request
+from app.modules.risk_console.domain import (
+    ConsoleRequestInput,
+    Provenance,
+    build_request,
+    context_provenance,
+)
 from app.modules.risk_console.presentation import Recommendation, derive_recommendations
 from app.modules.risk_engine.execution_contract_schemas import ExecutionContract, RiskGate
 from app.modules.risk_engine.execution_contract_service import (
@@ -66,6 +71,10 @@ class ConsoleAnalysis:
     gate_reasons: list[str]
     signature: str
     recommendations: list[Recommendation] = field(default_factory=list)
+    # Origem de cada fato do contexto. Sem isto, um valor assumido pelo
+    # console e indistinguivel de um valor declarado pelo humano — que foi
+    # exatamente como a contaminacao passou despercebida.
+    provenance: dict[str, Provenance] = field(default_factory=dict)
 
     @property
     def blocked(self) -> bool:
@@ -85,7 +94,9 @@ class ConsoleAnalysis:
 def analyze(entry: ConsoleRequestInput) -> ConsoleAnalysis:
     """Analisa uma entrada do console. NUNCA executa a operacao alvo."""
     request = build_request(entry)
-    return analyze_request(request)
+    resultado = analyze_request(request)
+    resultado.provenance = context_provenance(entry)
+    return resultado
 
 
 def analyze_request(request: RiskRequest) -> ConsoleAnalysis:
