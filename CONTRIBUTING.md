@@ -9,6 +9,10 @@ documento existe para que isso não seja surpresa.
 ```bash
 cd apps/api
 uv sync            # cria .venv e instala a partir do uv.lock
+
+veltrix risk             # Risk Console (TUI)
+veltrix control-center   # retrato operacional, somente leitura
+# `pedrocore` continua funcionando como alias legado do mesmo comando.
 ```
 
 O projeto usa [uv](https://docs.astral.sh/uv/) e declara as dependências de
