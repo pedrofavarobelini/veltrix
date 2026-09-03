@@ -105,6 +105,75 @@ def _mentions(text: str, terms: tuple[str, ...]) -> bool:
     return any(termo in baixo for termo in terms)
 
 
+def _verb_positions(text: str) -> list[tuple[int, bool]]:
+    """Posicoes dos verbos, com a marca de mutacao.
+
+    `True` = o verbo MUDA estado. `False` = o verbo verifica ou le.
+    """
+    posicoes: list[tuple[int, bool]] = []
+    for capacidade, termos in CAPABILITY_TERMS.items():
+        muda = capacidade in _MUTATING
+        for termo in termos:
+            inicio = text.find(termo)
+            while inicio != -1:
+                posicoes.append((inicio, muda))
+                inicio = text.find(termo, inicio + 1)
+    return sorted(posicoes)
+
+
+def _classify_areas(text: str, areas: tuple[str, ...]) -> tuple[list[str], list[str]]:
+    """Separa areas citadas em ALVO DE MUTACAO e ALVO DE VERIFICACAO.
+
+    A distincao importa porque escopo de mutacao e AUTORIZACAO: incluir
+    `module:testes` so porque os testes serao executados ampliaria o que pode
+    ser alterado, sem ninguem ter pedido.
+
+    Como a decisao e tomada
+    -----------------------
+
+    Pelo verbo mais PROXIMO que precede a area, e nao pela oracao inteira.
+
+        "Atualize apenas o Risk Console, rode os testes relacionados"
+                ^mutacao         ^area          ^verificacao  ^area
+
+    Uma virgula nao separa oracoes aqui — a frase e uma so — mas os dois
+    verbos governam trechos diferentes dela. Classificar a oracao inteira
+    tornaria `testes` alvo de alteracao por vizinhanca.
+
+    Nao e analise sintatica: e proximidade. Resolve o caso que aparece em
+    prompt de instrucao e falha para o lado seguro, porque area sem verbo de
+    mutacao antes dela nunca vira alvo de mutacao.
+    """
+    from app.modules.risk_engine.polarity import split_clauses
+
+    mutacao: list[str] = []
+    verificacao: list[str] = []
+    ordenadas = sorted(areas, key=len, reverse=True)
+    vistas: set[str] = set()
+
+    for clausula in split_clauses(text):
+        if not clausula.affirmative:
+            continue
+        baixo = clausula.text.lower()
+        verbos = _verb_positions(baixo)
+
+        for area in ordenadas:
+            posicao = baixo.find(area)
+            if posicao == -1:
+                continue
+            slug = area_slug(area)
+            if slug in vistas:
+                continue
+            vistas.add(slug)
+
+            anteriores = [muda for indice, muda in verbos if indice < posicao]
+            # Sem verbo antes da area, ela nao e alvo de alteracao. Assumir
+            # mutacao por omissao seria ampliar escopo por omissao.
+            destino = mutacao if anteriores and anteriores[-1] else verificacao
+            destino.append(slug)
+    return mutacao, verificacao
+
+
 class AutoContextBuilder:
     """Constrói a proposta. Não autoriza, não analisa, não decide gate."""
 
@@ -315,7 +384,13 @@ class AutoContextBuilder:
         campos.append(self._forbidden_scope(permissoes, declarado))
         campos.append(self._requested_permissions(permissoes, declarado))
         campos.append(self._effective_permissions(permissoes))
-        campos.append(self._required_tests(por_capacidade, declarado))
+        superficie = project_surface(project_id)
+        _mutacao, verificacao = (
+            _classify_areas(afirmativo, superficie.areas) if superficie else ([], [])
+        )
+        campos.append(
+            self._required_tests(por_capacidade, declarado, tuple(verificacao))
+        )
         campos.append(self._database(por_capacidade, declarado))
         campos.append(self._rollback(por_capacidade, declarado))
         return campos
@@ -377,13 +452,7 @@ class AutoContextBuilder:
                 reason="Projeto sem áreas declaradas; alvo não pôde ser inferido.",
                 confirmation_required=True,
             )
-        baixo = afirmativo.lower()
-        # Area mais especifica primeiro: "risk console" antes de "console".
-        encontradas = [
-            area_slug(area)
-            for area in sorted(superficie.areas, key=len, reverse=True)
-            if area in baixo
-        ]
+        encontradas, _verificacao = _classify_areas(afirmativo, superficie.areas)
         if not encontradas:
             return ProposedField(
                 field="targets",
@@ -393,7 +462,7 @@ class AutoContextBuilder:
                 confidence=Confidence.LOW,
                 # Nao virar "o projeto inteiro" e a decisao central aqui: um
                 # alvo amplo inventado seria autorizacao ampla inventada.
-                reason="Nenhuma área declarada do projeto foi citada no pedido.",
+                reason="Nenhuma área do projeto foi citada como alvo de alteração.",
                 confirmation_required=True,
             )
         return ProposedField(
@@ -402,7 +471,7 @@ class AutoContextBuilder:
             values=tuple(dict.fromkeys(encontradas)),
             origin=ContextOrigin.INFERRED,
             confidence=Confidence.HIGH if len(encontradas) == 1 else Confidence.MEDIUM,
-            reason="Áreas do projeto citadas no que o prompt pede.",
+            reason="Áreas que o prompt pede para ALTERAR.",
             confirmation_required=True,
         )
 
@@ -501,7 +570,9 @@ class AutoContextBuilder:
             reason="Interseção de pedido, executor, projeto e política.",
         )
 
-    def _required_tests(self, por_capacidade, declarado) -> ProposedField:
+    def _required_tests(
+        self, por_capacidade, declarado, verificacao: tuple[str, ...] = ()
+    ) -> ProposedField:
         ja = self._declared(declarado, "required_tests", "Testes exigidos")
         if ja:
             return ja
@@ -510,10 +581,12 @@ class AutoContextBuilder:
             return ProposedField(
                 field="required_tests",
                 label="Testes exigidos",
-                values=("suíte declarada no pedido",),
+                # Alvo de VERIFICACAO, e nao de mutacao. Executar um teste nao
+                # autoriza altera-lo.
+                values=verificacao or ("suíte relacionada ao pedido",),
                 origin=ContextOrigin.INFERRED,
                 confidence=Confidence.MEDIUM,
-                reason="O prompt pede execução de testes.",
+                reason="O prompt pede execução de testes — verificação, não alteração.",
             )
         return ProposedField(
             field="required_tests",

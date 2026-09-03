@@ -252,16 +252,23 @@ def render_context_panel(result: ConsoleAnalysis) -> str:
     cores = {
         Provenance.DECLARED: COLOR_ACCENT,
         Provenance.INFERRED: None,
+        Provenance.POLICY_DERIVED: None,
         Provenance.DEFAULTED: None,
         Provenance.UNKNOWN: COLOR_MUTED,
     }
+    # `confirmado` e METADADO, e nao proveniencia. Revisar uma inferencia nao
+    # a torna declaracao — mostrar as duas coisas juntas, e separadas, e o que
+    # impede a confusao que a homologacao encontrou.
+    confirmados = result.confirmed or frozenset()
+
     linhas = []
     for campo, rotulo in CONTEXT_FIELDS:
         origem = proveniencia.get(campo)
         if origem is None:
             continue
+        marca = " ✓" if campo in confirmados else ""
         linhas.append(
-            _row(rotulo, PROVENANCE_LABELS[origem], cores[origem], 14)
+            _row(rotulo, PROVENANCE_LABELS[origem] + marca, cores[origem], 14)
         )
     # Proibicoes detectadas no proprio prompt. Aparecem como RESTRICAO, e nao
     # como alvo afetado: "nao altere migrations" cita migrations e nao pede
@@ -274,6 +281,11 @@ def render_context_panel(result: ConsoleAnalysis) -> str:
             linhas.append(f"    [{COLOR_MUTED}]· {escape(termo)}[/]")
 
     declarados = sum(1 for o in proveniencia.values() if o is Provenance.DECLARED)
+    if confirmados:
+        linhas.append("")
+        linhas.append(
+            _muted(f"  ✓ {len(confirmados)} item(ns) revisado(s) e confirmado(s).")
+        )
     linhas.append("")
     linhas.append(
         _muted(f"  {declarados} campo(s) declarado(s); o resto não entrou.")
