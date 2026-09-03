@@ -14,6 +14,48 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 
 
+## UX final e Project Registry
+
+O Risk Console passa a ter **três estados exclusivos** e o Veltrix ganha um
+catálogo de projetos extensível.
+
+```text
+ENTRADA  →  REVISÃO DE CONTEXTO  →  RESULTADO
+                                    gate → resumo → riscos → por quê →
+                                    o que fazer → 6 abas de detalhe
+```
+
+### Adicionado
+
+- **Project Registry** (`app/modules/project_registry/`): identidade de
+  projeto com `Protocol` + InMemory + LocalJson + PostgreSQL, migration
+  aditiva `0012`, seis projetos-semente e criação/edição/arquivamento pelo
+  console. Identidade normalizada, única e imutável; arquivar nunca apaga.
+- **NOVO PROJETO** e **GERENCIAR PROJETOS** no console.
+- Visão primária do resultado: `RESUMO DA OPERAÇÃO`, `PRINCIPAIS RISCOS`,
+  `POR QUÊ?` e `O QUE FAZER?`, com limite de cinco itens e ponteiro para o
+  restante.
+- `TabbedContent` com seis abas de detalhe, uma renderizada por vez.
+- Atalhos `Ctrl+J` (avançar) e `Esc` (voltar). Nenhum atalho sugere executar.
+
+### Alterado
+
+- A lista de projetos passa a vir do Project Registry, e não do Capability
+  Manifest. Um projeto **sem** manifesto é analisável; os fatos ausentes ficam
+  `UNKNOWN`.
+- A guarda de `build_request` deixa de exigir a capability `risk_analysis` e
+  passa a exigir **projeto registrado e ativo** — guarda de identidade, não de
+  capacidade.
+
+### Não incluído, deliberadamente
+
+- Sincronização com GitHub. `repository_url` é metadado; nenhuma rede é tocada,
+  nenhum token é pedido.
+- Qualquer alteração na decisão de risco. Teste de paridade compara gate,
+  dimensões, alcance, cenários, achados e recomendações antes e depois.
+
+---
+
 ## Risk Auto Context
 
 Configurações Avançadas deixam de ser obrigatórias no fluxo diário. O prompt é

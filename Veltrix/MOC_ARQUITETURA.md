@@ -103,3 +103,4 @@ Estes documentos nasceram como planejamento e devem ser lidos junto do estado at
 - [[11-arquitetura-alvo/PROMPT_BUILDER]]
 - [[10-contratos/CONTRATOS_TECNICOS_PEDROCORE]]
 - [[10-contratos/CONTRATO_ORQUESTRACAO]]
+- [[15-risk-engine/PROJECT_REGISTRY]] - catalogo de identidade de projeto (Shared Kernel).

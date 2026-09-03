@@ -249,3 +249,50 @@ foi o que tornou o resto seguro.
 **Fail-closed em toda decisão que importa.** Banco indisponível não vira
 memória. Regra quebrada não vira permissão. Atributo ausente não vira sim.
 Indicador sem medição não vira saudável. Configuração ambígua não vira escolha.
+
+---
+
+## 11. Última frente funcional: UX final e Project Registry
+
+Depois do fechamento acima, duas coisas ficaram claras no uso real.
+
+**A tela tinha informação demais ao mesmo tempo.** Formulário, gate, dimensões,
+alcance, cenários, histórico, contexto e detalhes técnicos competiam pela mesma
+primeira viewport. Nenhuma delas estava errada; juntas, nenhuma era legível.
+
+A resposta foi ordem, não remoção: três estados exclusivos — entrada, revisão,
+resultado — e, no resultado, uma visão primária curta (gate → resumo → riscos →
+por quê → o que fazer) com toda a evidência preservada em seis abas, uma
+renderizada por vez.
+
+**O seletor de projeto era refém do código-fonte.** A lista vinha do Capability
+Manifest, então só aparecia quem tinha manifesto escrito no repositório — e um
+usuário com projeto próprio não tinha como analisá-lo.
+
+O Project Registry separou identidade de capacidade. Um projeto criado pelo
+usuário é cidadão de primeira classe: aparece, é selecionado, chega ao
+`RiskRequest` e é analisado. O que ele não ganha é permissão — sem manifesto,
+os fatos ausentes ficam `UNKNOWN`, e a interseção executor ∩ projeto ∩ política
+continua sendo a única fonte de permissão efetiva.
+
+Detalhes em [[RISK_CONSOLE]] e [[PROJECT_REGISTRY]].
+
+### O que esta frente acrescentou ao método
+
+**Layout não pode mudar decisão — e isso precisa ser provado, não prometido.**
+Um teste de paridade roda a mesma requisição confirmada e compara gate,
+dimensões, alcance, cenários, achados e recomendações. Ele também ensinou a
+comparar os campos certos: `finding_id` e `signal_ids` são gerados por análise,
+e compará-los mediria a aleatoriedade do `uuid4`, não a estabilidade da
+decisão.
+
+**Seed é configuração; comportamento por nome é regra.** A diferença é fácil de
+apagar sem perceber. O teste que lê o AST à procura de
+`if project_id == "<nome>"` existe para que a lista de projetos iniciais nunca
+vire uma lista de casos especiais.
+
+**Uma guarda que atrapalha o usuário certo geralmente está respondendo à
+pergunta errada.** Exigir manifesto para analisar parecia segurança e era
+acoplamento. A guarda correta era de identidade: projeto desconhecido ou
+arquivado é recusado; projeto sem manifesto é analisado com `UNKNOWN` onde não
+há fato.

@@ -217,10 +217,37 @@ def test_an_empty_prompt_is_refused_in_portuguese():
     assert "Prompt vazio" in str(error.value)
 
 
-def test_a_project_without_the_capability_is_refused():
+def test_an_unregistered_project_is_refused():
+    """A guarda e de IDENTIDADE, e nao mais de capability declarada.
+
+    Exigir manifesto para analisar amarrava "poder ser analisado" a "estar
+    escrito no codigo" — e deixava o usuario sem como analisar um projeto
+    proprio. O que continua barrado e um id que o catalogo nao conhece.
+    """
     with pytest.raises(ConsoleInputError) as error:
-        build_request(_clean(project_id="structa"))
-    assert "risk_analysis" in str(error.value)
+        build_request(_clean(project_id="projeto-que-nao-existe"))
+    assert "não está registrado" in str(error.value)
+
+
+def test_an_archived_project_is_refused():
+    """Arquivado sai do fluxo normal — inclusive quando o id e informado."""
+    from app.modules.project_registry.service import project_registry
+
+    project_registry().archive("orlabyte")
+    try:
+        with pytest.raises(ConsoleInputError) as error:
+            build_request(_clean(project_id="orlabyte"))
+        assert "arquivado" in str(error.value)
+    finally:
+        project_registry().restore("orlabyte")
+
+
+def test_a_registered_project_without_a_manifest_is_analysable():
+    """O oposto do teste anterior: sem manifesto NAO e motivo de recusa."""
+    from app.modules.project_registry.service import project_registry
+
+    assert project_registry().has_manifest("rivvo") is False
+    assert build_request(_clean(project_id="rivvo")).project_id == "rivvo"
 
 
 def test_an_invalid_environment_is_refused():
@@ -241,9 +268,24 @@ def test_multiline_prompt_is_preserved():
     assert build_request(_clean(prompt=text)).request_text == text
 
 
-def test_only_projects_declaring_the_capability_are_offered():
+def test_the_offered_projects_come_from_the_registry():
+    """A lista deixou de sair do manifesto e passou a sair do catalogo."""
+    from app.modules.project_registry.service import project_registry
+
     assert PROJECT in available_projects()
-    assert "structa" not in available_projects()
+    assert list(available_projects()) == [
+        item.project_id for item in project_registry().list_projects()
+    ]
+
+
+def test_an_archived_project_is_not_offered():
+    from app.modules.project_registry.service import project_registry
+
+    project_registry().archive("orlabyte")
+    try:
+        assert "orlabyte" not in available_projects()
+    finally:
+        project_registry().restore("orlabyte")
 
 
 def test_split_list_accepts_commas_and_newlines():
@@ -429,7 +471,9 @@ def test_cli_refuses_an_unknown_project(tmp_path):
         "risk", "analyze", _prompt_file(tmp_path, "qualquer coisa"), "--project", "inexistente"
     )
     assert code == cli.EXIT_INPUT_ERROR
-    assert "risk_analysis" in output
+    # A guarda passou a ser de identidade: um id que o catalogo nao conhece
+    # nao vira projeto por ser digitado.
+    assert "registrado" in output
 
 
 def test_cli_refuses_an_invalid_environment(tmp_path):
@@ -926,21 +970,40 @@ def test_advanced_settings_have_portuguese_help_text():
 
 
 def test_result_areas_are_hidden_before_any_analysis():
-    """Painel vazio com moldura é ruído; ausência é resposta."""
+    """Painel vazio com moldura e ruido; ausencia e resposta.
+
+    A ocultacao passou a ser por ESTADO: o console abre em ENTRADA, e o bloco
+    inteiro de resultado nao esta na tela — o que e mais forte do que esconder
+    painel por painel, porque nao ha painel de resultado para esquecer.
+    """
 
     async def check(app, _pilot):
-        for selector in ("#painel-gate", "#painel-dimensoes", "#linha-detalhe"):
-            assert app.query_one(selector).display is False
+        assert app.state == "entrada"
+        assert app.query_one("#estado-resultado").display is False
+        assert app.query_one("#estado-revisao").display is False
         return True
 
     assert _drive(None, check)
 
 
-def test_the_empty_state_explains_what_to_do():
-    async def check(app, _pilot):
-        texto = str(app.query_one("#painel-resumo").content)
-        assert "ANALISAR RISCO" in texto
-        assert "Nada é executado" in texto
+def test_the_entry_state_offers_the_action_and_says_nothing_is_executed():
+    """O estado vazio deixou de ser um painel de texto e virou a propria tela.
+
+    A promessa de que nada e executado continua visivel — agora na revisao de
+    contexto, que e onde o usuario decide seguir.
+    """
+    from textual.widgets import Button, TextArea
+
+    async def check(app, pilot):
+        assert app.query_one("#analisar", Button).label.plain == "ANALISAR RISCO"
+        app.query_one("#prompt", TextArea).text = "Atualize a documentação."
+        await pilot.pause()
+        app.query_one("#analisar", Button).press()
+        await pilot.pause()
+        await pilot.pause()
+        assert "nenhuma operação será executada" in str(
+            app.query_one("#revisao-texto").content
+        )
         return True
 
     assert _drive(None, check)
@@ -1040,11 +1103,18 @@ def test_an_expanded_scenario_keeps_every_field():
 
 
 def test_findings_and_recommendations_live_in_separate_panels():
-    """O que está errado e o que fazer são leituras diferentes."""
+    """O que esta errado e o que fazer sao leituras diferentes.
+
+    Na visao primaria sao dois paineis com pergunta propria; a lista completa
+    de cada um continua separada na aba de detalhes tecnicos.
+    """
 
     async def check(app, _pilot):
-        assert app.query_one("#painel-achados").border_title == "ACHADOS"
-        assert app.query_one("#painel-recomendacoes").border_title == "RECOMENDAÇÕES"
+        assert app.query_one("#painel-porque").border_title == "POR QUÊ?"
+        assert app.query_one("#painel-acoes-sugeridas").border_title == "O QUE FAZER?"
+        achados = str(app.query_one("#achados-texto").content)
+        recomendacoes = str(app.query_one("#recomendacoes-texto").content)
+        assert achados and recomendacoes and achados != recomendacoes
         return True
 
     assert _drive(_blocked(), check)
@@ -1064,13 +1134,18 @@ def test_reason_codes_are_not_in_the_main_reading_surface():
 
 
 def test_reason_codes_remain_available_in_technical_details():
-    """Secundários, e não escondidos: quem audita continua alcançando tudo."""
+    """Secundarios, e nao escondidos: quem audita continua alcancando tudo.
+
+    O recolhimento deixou de ser um `Collapsible` e passou a ser uma ABA que
+    nao abre por padrao — mesma promessa, uma superficie de detalhe por vez.
+    """
+    from textual.widgets import TabbedContent
 
     async def check(app, _pilot):
         tecnicos = str(app.query_one("#tecnicos-texto").content)
         assert "FORBIDDEN_SCOPE" in tecnicos
         assert "BLOCK" in tecnicos
-        assert _collapsible(app, "#tecnicos").collapsed is True
+        assert app.query_one("#detalhes", TabbedContent).active != "aba-tecnicos"
         return True
 
     assert _drive(_blocked(), check)
@@ -1111,27 +1186,37 @@ def test_a_narrow_terminal_collapses_to_one_column():
 
     async def check(app, _pilot):
         assert app.screen.has_class("-estreito")
-        for selector in ("#painel-gate", "#painel-dimensoes", "#painel-cenarios"):
-            assert app.query_one(selector).display is True
+        assert app.state == "resultado"
+        primeiro = next(iter(app.query_one("#estado-resultado").children))
+        assert primeiro.id == "painel-gate"
         assert "REVISÃO OBRIGATÓRIA" in str(app.query_one("#painel-gate").content)
+        # Em estreito, os dois paineis do topo empilham em vez de dividir.
+        resumo = app.query_one("#painel-resumo-operacao").region
+        riscos = app.query_one("#painel-riscos").region
+        assert riscos.y >= resumo.y + resumo.height - 1
         return True
 
     assert _drive(_review(), check, size=(78, 40))
 
 
-def test_a_medium_terminal_still_renders_every_panel():
+def test_a_medium_terminal_still_fills_every_surface():
+    """Nenhuma superficie fica vazia so por caber atras de uma aba."""
+
     async def check(app, _pilot):
         for selector in (
-            "#painel-resumo",
+            "#painel-gate",
+            "#painel-resumo-operacao",
+            "#painel-riscos",
+            "#painel-porque",
+            "#painel-acoes-sugeridas",
             "#painel-alcance",
             "#painel-dimensoes",
-            "#painel-gate",
-            "#painel-cenarios",
-            "#painel-historico",
-            "#painel-achados",
-            "#painel-recomendacoes",
+            "#cenarios-resumo",
+            "#historico-texto",
+            "#contexto-texto",
+            "#tecnicos-texto",
         ):
-            assert app.query_one(selector).display is True
+            assert str(app.query_one(selector).content).strip(), selector
         return True
 
     assert _drive(_review(), check, size=(110, 40))
@@ -1188,29 +1273,41 @@ def test_the_panel_titles_are_in_portuguese():
             str(app.query_one(selector).border_title)
             for selector in (
                 "#painel-entrada",
-                "#painel-resumo",
-                "#painel-alcance",
-                "#painel-dimensoes",
+                "#painel-revisao",
                 "#painel-gate",
-                "#painel-cenarios",
-                "#painel-historico",
-                "#painel-achados",
-                "#painel-recomendacoes",
+                "#painel-resumo-operacao",
+                "#painel-riscos",
+                "#painel-porque",
+                "#painel-acoes-sugeridas",
             )
         }
         assert titulos == {
             "ENTRADA",
-            "ANÁLISE DE RISCO",
-            "RAIO DE IMPACTO",
-            "DIMENSÕES DE RISCO",
+            "REVISÃO DE CONTEXTO",
             "GATE FINAL",
-            "CENÁRIOS",
-            "HISTÓRICO",
-            "ACHADOS",
-            "RECOMENDAÇÕES",
+            "RESUMO DA OPERAÇÃO",
+            "PRINCIPAIS RISCOS",
+            "POR QUÊ?",
+            "O QUE FAZER?",
         }
         for proibido in ("Findings", "Recommendations", "Final Gate", "Scope"):
             assert proibido not in titulos
+
+        # As abas tambem sao superficie de leitura, e tambem estao em PT-BR.
+        from textual.widgets import TabbedContent
+
+        abas = {
+            str(item.label.plain)
+            for item in app.query_one("#detalhes", TabbedContent).query("Tab")
+        }
+        assert abas == {
+            "RAIO DE IMPACTO",
+            "DIMENSÕES",
+            "CENÁRIOS",
+            "HISTÓRICO",
+            "CONTEXTO",
+            "DETALHES TÉCNICOS",
+        }
         return True
 
     assert _drive(_review(), check)
@@ -1246,28 +1343,33 @@ def test_the_header_is_a_single_coherent_block():
     assert _drive(None, check)
 
 
-def test_the_analysis_column_takes_most_of_the_width():
-    """A saída mais importante do produto não pode ser o painel menor."""
+def test_the_entry_uses_the_screen_it_has():
+    """A entrada deixou de dividir a tela com uma analise que nao existe.
+
+    Antes, o formulario ocupava 38% e o resto era painel vazio esperando um
+    resultado. Sozinho no ESTADO 1, ele usa a largura inteira.
+    """
 
     async def check(app, _pilot):
-        entrada = app.query_one("#coluna-entrada").size.width
-        analise = app.query_one("#coluna-analise").size.width
-        assert analise > entrada
-        proporcao = analise / (entrada + analise)
-        assert 0.55 <= proporcao <= 0.68, f"análise ocupa {proporcao:.0%}"
+        tela = app.size.width
+        entrada = app.query_one("#painel-entrada").size.width
+        assert entrada >= tela * 0.9, f"entrada usa {entrada} de {tela}"
         return True
 
     assert _drive(None, check, size=(140, 45))
 
 
-def test_the_analysis_panels_use_the_full_column():
-    """Empilhados, e não lado a lado: cada painel usa os 62% inteiros."""
+def test_the_result_panels_use_the_full_width():
+    """Em terminal largo, os dois paineis do topo dividem a linha por igual."""
 
     async def check(app, _pilot):
-        coluna = app.query_one("#coluna-analise").size.width
-        for selector in ("#painel-resumo", "#painel-alcance"):
-            largura = app.query_one(selector).size.width
-            assert largura >= coluna * 0.9, f"{selector} usa {largura} de {coluna}"
+        tela = app.size.width
+        resumo = app.query_one("#painel-resumo-operacao").size.width
+        riscos = app.query_one("#painel-riscos").size.width
+        assert abs(resumo - riscos) <= 2, "as duas colunas do topo divergem"
+        assert resumo + riscos >= tela * 0.9
+        for selector in ("#painel-gate", "#painel-porque", "#painel-acoes-sugeridas"):
+            assert app.query_one(selector).size.width >= tela * 0.9, selector
         return True
 
     assert _drive(_review(), check, size=(140, 45))

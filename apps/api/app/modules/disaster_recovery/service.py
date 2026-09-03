@@ -91,6 +91,16 @@ CRITICAL_STORES: tuple[StoreDescriptor, ...] = (
         depends_on=("caller_identity",),
     ),
     StoreDescriptor(
+        store_id="pedrocore_projects",
+        description="Catalogo de identidade dos projetos conhecidos.",
+        # Restaurado logo depois do banco e antes de tudo que e isolado POR
+        # projeto: uma analise restaurada sob um `project_id` que o catalogo
+        # ainda nao conhece seria historico orfao de identidade.
+        criticality=StoreCriticality.CRITICAL,
+        restore_order=2,
+        depends_on=("postgresql",),
+    ),
+    StoreDescriptor(
         store_id="pedrocore_asset_versions",
         description="Assets governados versionados (prompts e configurações).",
         criticality=StoreCriticality.CRITICAL,

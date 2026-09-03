@@ -202,6 +202,13 @@ _SHARED_KERNEL_MODULES = frozenset(
         "caller_identity",
         "contracts",
         "project_context",
+        # Project Registry: identidade de projeto, ao lado do Project Context.
+        #
+        # Kernel porque a pergunta "que projeto e este?" e feita pelos dois
+        # planos, e a resposta precisa ser a mesma nos dois. Ele guarda
+        # IDENTIDADE — nao capacidade, nao politica, nao permissao —, o que e
+        # exatamente o que um kernel pode carregar sem puxar um plano junto.
+        "project_registry",
         "real_features",
         "docs_graph",
         # Universal Contracts V1 (ADR-PEDROCORE-UNIVERSAL-CONTRACTS-01).

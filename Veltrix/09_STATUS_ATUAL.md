@@ -35,6 +35,31 @@ execucao nunca delegada ao core.
 Contratos V1 congelados: intactos. OpenAPI: aditivo. UI React: nao alterada.
 Rename PedroCore -> Veltrix: CONCLUIDO no fechamento final.
 
+## UX FINAL + PROJECT REGISTRY — READY (aguardando homologacao humana)
+
+Ultima frente funcional antes do public-release gate.
+
+O Risk Console passou a ter tres estados exclusivos — ENTRADA, REVISAO DE
+CONTEXTO e RESULTADO. No resultado a ordem e gate, resumo da operacao,
+principais riscos, por que e o que fazer; toda a evidencia continua inteira em
+seis abas, uma renderizada por vez. Nada foi removido: o que mudou foi quanto
+aparece antes de alguem pedir.
+
+O Project Registry substituiu o Capability Manifest como fonte da lista de
+projetos. Seis projetos-semente, criacao e edicao pelo console, persistencia
+com Protocol + InMemory + LocalJson + PostgreSQL e migration aditiva 0012. Um
+projeto criado pelo usuario e analisavel como qualquer outro; sem manifesto, os
+fatos ausentes ficam UNKNOWN, e nenhuma capacidade e deduzida do nome.
+
+A guarda de analise deixou de exigir a capability `risk_analysis` e passou a
+exigir projeto registrado e ativo — guarda de identidade, nao de capacidade.
+
+Decisao de risco inalterada: ha teste de paridade comparando gate, dimensoes,
+raio de impacto, cenarios, achados e recomendacoes. Nao existe sincronizacao
+com GitHub; `repository_url` e metadado.
+
+Guias: [[15-risk-engine/RISK_CONSOLE]] e [[15-risk-engine/PROJECT_REGISTRY]].
+
 ## RISK ENGINE V2 — ENCERRADO (motor + produto)
 
 O motor foi fechado em R0–R5 e, no fechamento de produto, ganhou interface
