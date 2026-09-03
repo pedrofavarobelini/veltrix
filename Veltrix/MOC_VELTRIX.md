@@ -1,6 +1,17 @@
 # MOC Veltrix
 
-## Consumer Elyra textual V1 — ATUAL
+## Estado público atual
+
+- [[17-veltrix/VELTRIX_FINAL_STATE]] — estado técnico consolidado.
+- [[09_STATUS_ATUAL]] — status canônico corrente.
+- Repositório público: `github.com/pedrofavarobelini/veltrix`, branch padrão
+  `main`, sob Apache-2.0.
+- **`HUMAN_VISUAL_ACCEPTANCE = PASS`**.
+- Project Registry concluído; migrations atuais **`0001`–`0012`**.
+- A CI do HEAD e `app.modules.docs_graph` são as fontes correntes para testes e
+  integridade documental; contagens abaixo pertencem aos checkpoints nomeados.
+
+## Consumer Elyra textual V1 — contrato vigente; gate histórico
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]] —
   identidade própria, capability mínima, schemas strict, provider policy,
@@ -9,7 +20,7 @@
   Gate PASS, `959 passed`, zero chamadas externas.
 - [[10-contratos/CONTRATO_ELYRA_TEXTUAL_V1]] — contrato executável para a Stage
   09 consumir em execução separada.
-## Eras 1–3 — CANÔNICO ATUAL
+## Eras 1–3 — escopo canônico; checkpoint histórico
 
 - [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]] —
   fechamento consolidado de Operational Intelligence, Risk Engine e Training
@@ -19,7 +30,7 @@
 - **Era 3:** FOUNDATION PASS / TRAINING DEFERRED.
 - Training Candidates reais autorizados: **0**; readiness:
   **`DATASET_NOT_READY`**.
-- Última evidência backend disponível: `924 passed, 7 skipped, 2 warnings`;
+- Evidência backend daquele fechamento: `924 passed, 7 skipped, 2 warnings`;
   Ruff global PASS; Pyright Era 3 sem erros.
 
 ## UX V1 — ESTADO DE PRODUTO PRESERVADO
@@ -30,11 +41,13 @@
   reais e a primeira suíte de testes do frontend.
 - [[20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01]] — relatório final e gates.
 - Versão de produto: **V5.2.0**. Backend: `0.2.0`, **inalterado** nas duas frentes.
-- Backend `751 passed, 7 skipped`; frontend `117 passed`; typecheck e build PASS.
-- Grafo documental: 138 documentos, 800 links, zero órfãos e zero links quebrados.
+- Snapshot daquela frente: backend `751 passed, 7 skipped`; frontend `117
+  passed`; typecheck e build PASS.
+- Grafo documental naquele checkpoint: 138 documentos, 800 links, zero órfãos
+  e zero links quebrados.
 - Multimodal (imagem/PDF/DOCX) **adiado formalmente**: [[20-ux-v1/V2_MULTIMODAL]].
 
-## Consumer Structa — ATUAL
+## Consumer Structa — contrato vigente; gate histórico
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]] —
   onboarding least-privilege, registry oficial, Report Intelligence e zero
@@ -45,8 +58,10 @@
 ## Encerramento do core — HISTÓRICO PRESERVADO
 
 - [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] - **PEDROCORE ENCERRADO — CORE OPERACIONAL CONCLUÍDO**. Assistente IA homologado **4/4**; nenhuma implementação obrigatória restante.
-- Suíte integral atual: `959 passed, 21 skipped`; eval `14/14`, `risk_level="none"`.
-- Grafo documental atual: 155 documentos, 822 links resolvidos, zero órfãos e
+- Suíte integral daquele checkpoint: `959 passed, 21 skipped`; eval `14/14`,
+  `risk_level="none"`.
+- Grafo documental daquele checkpoint: 155 documentos, 822 links resolvidos,
+  zero órfãos e
   zero links quebrados, validado por `app.modules.docs_graph`.
 
 ## Fechamento anterior — 2026-07-27 (HISTÓRICO)

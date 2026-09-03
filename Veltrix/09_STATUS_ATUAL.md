@@ -14,7 +14,8 @@ com aliases de compatibilidade para comando, variavel de ambiente e cabecalho
 de credencial.
 
 Contratos V1 congelados: intactos. Tabelas historicas: preservadas.
-Consumidores: nao migrados, por escopo.
+Consumidores nao foram migrados naquela frente de rename, por escopo;
+integracoes posteriores permanecem registradas nas secoes historicas abaixo.
 
 ## PLATFORM EVOLUTION — 12 EVOLUCOES IMPLEMENTADAS
 
@@ -74,10 +75,11 @@ com GitHub; `repository_url` e metadado.
 
 Guias: [[15-risk-engine/RISK_CONSOLE]] e [[15-risk-engine/PROJECT_REGISTRY]].
 
-## RISK ENGINE V2 — ENCERRADO (motor + produto)
+## RISK ENGINE V2 — ENCERRADO (CHECKPOINT HISTORICO: motor + produto)
 
 O motor foi fechado em R0–R5 e, no fechamento de produto, ganhou interface
-propria: Risk Console (TUI), CLI (`pedrocore risk`) e a porta HTTP do contrato
+propria: Risk Console (TUI), CLI (`veltrix risk`; `pedrocore` permanece alias)
+e a porta HTTP do contrato
 universal (`POST /api/risk/universal/analyze`). Guia de uso em
 [[15-risk-engine/RISK_CONSOLE]].
 
@@ -89,7 +91,7 @@ A UI React principal nao teve layout alterado. O rename PedroCore -> Veltrix
 fora desta frente; a marca do console esta centralizada em
 `app/modules/risk_console/branding.py`.
 
-## RISK ENGINE V2 — R0 a R5 — READY
+## RISK ENGINE V2 — R0 a R5 — READY (CHECKPOINT HISTORICO)
 
 Motor de risco encerrado como V2. Os cinco problemas objetivos do baseline
 foram fechados com evidencia: persistencia propria do dominio Risk (P1),
@@ -104,7 +106,8 @@ alterar o schema do envelope de integracao.
 Validacao: `1443 passed, 26 skipped, 0 failed`; Ruff PASS; frontend 117 passed;
 OpenAPI 39 paths, alteracoes apenas aditivas (8 campos opcionais em 2 schemas).
 
-Proximo encerramento: rename do produto para Veltrix — NAO executado.
+Naquele checkpoint, o proximo encerramento era o rename para Veltrix. Ele foi
+executado depois e esta confirmado no topo deste documento.
 
 ## LICENCA — APACHE 2.0
 
@@ -116,7 +119,7 @@ Correcao junto: `pip install -e .` falhava por descoberta ambigua de pacotes
 (`app` e `migrations` no mesmo nivel) — defeito pre-existente que o passo de
 instalacao da CI teria encontrado na primeira execucao.
 
-## PEDROCORE-CONTROL-PLANE — ERAS 4 A 10 — PASS
+## PEDROCORE-CONTROL-PLANE — ERAS 4 A 10 — PASS (CHECKPOINT HISTORICO)
 
 Evidence Platform, Learning Governance V2, resiliencia de integracao, Dataset
 Control Plane, Evaluation/Training Foundation e Contract Freeze concluidos.
@@ -152,7 +155,7 @@ Os 21 skips sao os mesmos blockers ambientais/opt-in desde a Era 1.
 
 Estado final detalhado: [[PEDROCORE_CONTROL_PLANE_FINAL_STATE]].
 
-## PEDROCORE-UNIVERSAL-CONTRACTS-01 — ERA 3 PASS
+## PEDROCORE-UNIVERSAL-CONTRACTS-01 — ERA 3 PASS (CHECKPOINT HISTORICO)
 
 Cinco contratos universais V1 criados e versionados, sem dependencia semantica
 de nenhum consumidor: Project Capability Manifest, Quality Evidence (QEC),
@@ -182,7 +185,7 @@ paths, 156 schemas, zero breaking change); grafo documental integro.
 Documentos: [[ADR_PEDROCORE_UNIVERSAL_CONTRACTS_V1]],
 [[PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]].
 
-## PEDROCORE-CONTROL-PLANE-01 — ERA 1 PASS / ERA 2 PASS
+## PEDROCORE-CONTROL-PLANE-01 — ERA 1 PASS / ERA 2 PASS (CHECKPOINT HISTORICO)
 
 O Veltrix passou a ter duas fronteiras internas declaradas e verificadas:
 **Runtime Plane** (responder agora) e **Learning Plane** (aprender depois),
@@ -215,7 +218,7 @@ Documentos: [[ADR_PEDROCORE_AI_RUNTIME_LEARNING_CONTROL_PLANE]],
 [[PEDROCORE_CURRENT_ARCHITECTURE_BASELINE]],
 [[PEDROCORE_CONTROL_PLANE_MIGRATION_MAP]].
 
-## PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL — PASS
+## PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL — PASS (CHECKPOINT HISTORICO)
 
 O Veltrix reconhece `origin_system=elyra` por credencial registrada,
 `project_id=elyra` e papel `common_consumer`. A única capability habilitada é
@@ -268,7 +271,7 @@ Dívida preservada: warnings de depreciação, Strix bloqueado por pré-requisit
 locais, resíduos humanos preexistentes no frontend e whitespace preexistente em
 `global.css`.
 
-## PEDROCORE-V1-FINAL-CLOSURE — PASS COM RESSALVAS
+## PEDROCORE-V1-FINAL-CLOSURE — PASS COM RESSALVAS (CHECKPOINT HISTORICO)
 
 Checkpoint de produto preservado. Mapa: [[MOC_UX_V1]]. Relatório:
 [[20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01]].
@@ -283,8 +286,9 @@ autorização, provider, modelo e prompt, e devolve resposta padronizada.
 ### Estado
 
 **Operacional e homologado para uso local e para o ecossistema local.** Sem
-dívida arquitetural bloqueante. Publicação no GitHub liberada tecnicamente;
-exposição da API na internet **não**.
+dívida arquitetural bloqueante. Naquele checkpoint, a publicação no GitHub
+estava liberada tecnicamente; ela foi concluída em 03/09/2026. Exposição da API
+na internet continua **não** suportada.
 
 ### Frontend
 
@@ -361,10 +365,11 @@ Imagem, PDF e DOCX **adiados formalmente para a V2**, por exigirem mudança na
 assinatura de `BaseAIProvider.generate_response`, que hoje só carrega texto.
 Ver [[20-ux-v1/V2_MULTIMODAL]].
 
-### Ressalva do veredito
+### Ressalva daquele veredito — superada
 
-A única ressalva é a ausência de `LICENSE`, que é **decisão humana pendente**,
-não defeito técnico.
+Naquele checkpoint, `LICENSE` ainda não existia e dependia de decisão humana.
+A pendência foi superada: o repositório público contém a Apache License 2.0 e
+as metadatas dos dois pacotes usam `Apache-2.0`.
 
 ## PEDROCORE-STRUCTA-CONSUMER-01 — PASS (HISTÓRICO)
 
@@ -386,7 +391,7 @@ Etapa 13 do Structa não foi iniciada.
 
 O vault canônico passou de `docs/` para `Veltrix/`, preservando com hash
 e correspondência de conteúdo os 127/127 documentos rastreados anteriores.
-Com o [[MANIFESTO_REORGANIZACAO_20260802]], o grafo atual contém 128 documentos
+Naquele checkpoint, o [[MANIFESTO_REORGANIZACAO_20260802]] registrou 128 documentos
 e 697 links resolvidos, sem órfãos, links quebrados, ambiguidades, basenames
 duplicados ou becos sem saída. O teste direcionado concluiu com
 `15 passed, 1 warning` e o validador canônico também saiu com código zero.
@@ -394,7 +399,7 @@ duplicados ou becos sem saída. O teste direcionado concluiu com
 Esta reconciliação alterou somente a raiz documental e seu validador. Não
 reabriu providers, orquestração, políticas, frontend nem homologações reais.
 
-## ENCERRAMENTO FINAL — CANÔNICO ATUAL
+## ENCERRAMENTO FINAL — CHECKPOINT CANÔNICO HISTÓRICO
 
 `FINGUARD-PEDROCORE-CANONICAL-REPLAY-DOCS-GRAPH-FINALIZE-01` —
 [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]].
@@ -421,7 +426,7 @@ FinGuard passou a **persistir o diagnóstico em disco antes do teardown**, em ve
 de apenas imprimi-lo num processo prestes a morrer.
 
 Suíte integral após todas as alterações: `736 passed, 7 skipped, 2 warnings`;
-eval `14/14`, `risk_level="none"`. Grafo documental atual íntegro (128
+eval `14/14`, `risk_level="none"`. Grafo documental daquele checkpoint íntegro (128
 documentos, 697 links resolvidos, zero órfãos).
 
 Arquitetura multi-provider: concluída. Multi-provider automático operacional:
@@ -485,7 +490,12 @@ históricos de ~30 s e ~60 s.
 
 ## Status oficial
 
-Projeto finalizado localmente como core operacional seguro. `v7.0.0` é a tag final local e aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`. `v6.0.0` permanece como tag do MVP backend e aponta para `ee2ac68679feea6ac108abba8726d11da101576c` (`ee2ac68`). Este é o documento de status oficial do projeto; prevalece sobre qualquer status histórico/duplicado ainda presente em `Veltrix/`.
+Projeto finalizado como core operacional seguro. No histórico público
+sanitizado, `v7.0.0` aponta para
+`6c4757a79ccb0b032eb860647efb1d345815d3b8` e `v6.0.0`, marco do MVP backend,
+aponta para `502acb8ee02ac6a7c007c823b73a1ad745836118`. Este é o documento de status
+oficial do projeto; prevalece sobre qualquer status histórico/duplicado ainda
+presente em `Veltrix/`.
 
 DOCFIX anterior: `Veltrix/00_MAPEAMENTO_GERAL_PEDROCORE.md` e os MOCs Obsidian em `Veltrix/MOC_*.md` organizam a leitura atual sem alterar código funcional.
 
@@ -573,10 +583,13 @@ Implementação inicial de código:
 - `PEDROCORE-IMPLEMENT-01C/01D/01E/01F/01G/01H` (Project Context, Prompt Builder, metadados estruturais, audit não persistente) commitada em `95cbfab`; correção documental commitada em `1ff1758`.
 - `PEDROCORE-IMPLEMENT-02A/02B/02C/02D/02E/02F/02G` — Policy de `allowed_tasks`, artefatos textuais por payload, Prompt Builder com artefatos, QA response skeleton seguro, warnings específicos de QA textual e testes de contrato — implementada, validada e commitada em `e115672`. Testes backend: `66 passed, 2 warnings`. `apps/web` limpo, `.env` intocado, nenhum provider real chamado, FinGuard não acessado, nenhum endpoint novo criado, QA skeleton sem análise real, `can_advance` nunca `true`.
 
-## Local oficial
+## Layout do repositorio
 
 ```txt
-C:\Projetos\pedrocore-ia
+veltrix/
+  apps/api/
+  apps/web/
+  Veltrix/
 ```
 
 ## Concluído
@@ -598,7 +611,9 @@ C:\Projetos\pedrocore-ia
 - `PEDROCORE-FINALIZE-04` — consolidação documental do MVP backend, exemplos de API e preparação/registro da tag. Commitada em `ee2ac68`; tag anotada `v6.0.0` criada com a mensagem `v6.0.0 - MVP backend Veltrix`, apontando para `ee2ac68`.
 - `PEDROCORE-IMPLEMENT-04` — expansão operacional segura (Blocos 8–11): contrato FinGuard por payload fake, Artifact Reader controlado, QA visual stub, agente exploratório assistido. Commitada em `18d1fc5`.
 - `PEDROCORE-IMPLEMENT-05` — flags/guards/testes opt-in, FinGuard controlado com policy enforcement forte, reader consolidado, OCR local opt-in, multimodal guard e Playwright read-only opt-in. Commitada nas subfrentes `33a7dc2`, `790e1b4`, `70afba1`, `b3f1be5`, `2670040`, `3bcfa05`.
-- `PEDROCORE-FINALIZE-06` — enforcement final do release gate, documentação final e tag local `v7.0.0`. HEAD esperado: `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
+- `PEDROCORE-FINALIZE-06` — enforcement final do release gate, documentação
+  final e tag anotada `v7.0.0`. Após a sanitização do histórico para publicação,
+  a tag pública aponta para `6c4757a79ccb0b032eb860647efb1d345815d3b8`.
 
 - `PEDROCORE-MODEL-FOUNDATION-01` — fundação de inteligência própria: Intelligence Layer (`intelligence_layer/`, plano determinístico interno por task, nunca habilita provider real), Report Intelligence Foundation (`report_intelligence/`, sinais determinísticos de relatórios técnicos, sem persistência), contrato futuro do Local Model Provider (`providers/local_model_contract.py`, `local_model` ≠ `local_qa`, sem geração), Evaluation Foundation (`evaluation/`, checks de segurança/coerência) e 4 task_types novos somente para `pedrocore`. Testes backend: `257 passed, 6 skipped, 2 warnings` (41 novos). Commitada em `689e50a`.
 
@@ -608,7 +623,11 @@ C:\Projetos\pedrocore-ia
 
 ## Em andamento
 
-Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`. Trabalhos futuros — provider real homologado, transport real do `local_model`, persistência operacional da observabilidade, push/deploy e execução real de OCR/multimodal/Playwright — são opcionais ou externos e exigem nova aprovação.
+Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
+Trabalhos futuros — homologação de outro provider real, transport real do
+`local_model`, persistência operacional da observabilidade, deploy e execução
+real de OCR/multimodal/Playwright — são opcionais ou externos e exigem nova
+aprovação. A publicação do código no GitHub já foi concluída.
 
 ## Ainda não existe / permanece opcional
 
@@ -621,7 +640,10 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 - Memória técnica persistente por default e RAG — `report_memory` existe com persistência default off e modos opt-in (`memory`/`local_json`); RAG/embeddings ainda não existem.
 - Provider generativo local funcional — `local_model` está registrado como provider opt-in default-off, mas sem transport real; nenhum backend (Ollama/llama.cpp/LM Studio) foi instalado ou chamado.
 - Treinamento, fine-tuning ou autoaprendizado — fora do escopo do projeto; a fundação de inteligência é determinística e avaliada (`evaluation/`).
-- Persistência em banco de dados / log persistente (audit e observabilidade permanecem voláteis). Dashboard público/admin (Bloco 12): **cancelado por decisão de produto**, não é pendência; o painel técnico local/QA foi implementado em `#/observability`.
+- Persistência de audit e observabilidade em banco/log (ambos permanecem
+  voláteis). Dashboard público/admin (Bloco 12): **cancelado por decisão de
+  produto**, não é pendência; o painel técnico local/QA foi implementado em
+  `#/observability`.
 - Análise multimodal (imagem, PDF, DOCX) — adiada formalmente para a V2 em [[20-ux-v1/V2_MULTIMODAL]].
 
 ## Proibido nesta fase
@@ -651,8 +673,8 @@ Sem frente interna bloqueante aberta após `PEDROCORE-OBSERVABILIDADE-LOCAL-01`.
 
 ## Próximos passos opcionais
 
-- Cliente HTTP no repositório FinGuard (frente separada, com aprovação própria).
-- Push para GitHub/portfólio e deploy.
+- Deploy público, somente depois dos requisitos de
+  [[20-ux-v1/MODELO_DE_AMEACA]].
 - Execução real de OCR, QA visual multimodal e Playwright somente com flags, dependências instaladas manualmente e revisão humana.
 - Homologar um segundo provider/modelo real em frente separada, escolhendo Claude ou OpenAI explicitamente; fluxo crítico continua exigindo autorização e revisão específica.
 - Saneamento adicional de documentação histórica/duplicada dentro de `Veltrix/`, se o usuário quiser reduzir ruído do vault.
