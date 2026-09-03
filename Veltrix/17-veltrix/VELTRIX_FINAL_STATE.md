@@ -198,6 +198,8 @@ export VELTRIX_PLATFORM_DATABASE_URL="postgresql://..."
 
 ## 8. Estado verificado
 
+Checkpoint deste fechamento (30/08/2026):
+
 ```text
 backend (PostgreSQL real)   1789 passed ·  8 skipped · 0 failed
 backend (paridade CI)       1750 passed · 47 skipped · 0 failed
@@ -208,6 +210,20 @@ contract freeze              6 fingerprints V1 intactos
 migrations                   0001–0011, nenhuma histórica editada
 ```
 
+Depois deste fechamento vieram o Risk Console em três estados e o Project
+Registry, que trouxeram a **migration aditiva 0012** e mais testes. Checkpoint
+da publicação pública (03/09/2026):
+
+```text
+backend (PostgreSQL real)   2073 passed ·  8 skipped · 0 failed
+backend (paridade CI)       2019 passed · 62 skipped · 0 failed
+ruff · typecheck · build    PASS
+frontend                     117 passed
+grafo documental             íntegro
+contract freeze              6 fingerprints V1 intactos
+migrations                   0001–0012, nenhuma histórica editada
+```
+
 Os skips são PostgreSQL sem banco de teste e opt-ins de provider real. Nenhum
 virou PASS.
 
@@ -215,8 +231,13 @@ virou PASS.
 
 ```text
 ReplayDock · migração dos consumidores · fine-tuning · treinamento real
-dataset artificial · publicação pública do repositório
+dataset artificial
 ```
+
+> **Publicação pública: concluída em 03/09/2026.** O repositório saiu de
+> privado e vive em `github.com/pedrofavarobelini/veltrix` sob Apache-2.0.
+> Deixou de ser item fora de escopo — está registrado aqui porque este
+> documento descreve o estado real, e o estado real mudou.
 
 As oito evoluções futuras — MCP+A2A, Capability Leases, Proof of Execution,
 Decision Replay, Counterfactual Lab, OpenTelemetry GenAI, AI-BOM, Sigstore —

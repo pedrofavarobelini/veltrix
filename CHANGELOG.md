@@ -10,9 +10,42 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ---
 
+## Publicação pública — 03/09/2026
 
+O repositório passou a ser público sob **Apache-2.0** em
+`github.com/pedrofavarobelini/veltrix`. `HUMAN_VISUAL_ACCEPTANCE = PASS`.
 
+Nenhuma mudança de comportamento do produto: contratos V1 congelados,
+superfície HTTP e migrations intactos.
 
+### Adicionado
+
+- Guard de taxonomia de skips em `apps/api/tests/conftest.py`: a sessão falha
+  se aparecer um skip fora das duas categorias declaradas (PostgreSQL de teste
+  e opt-in de recurso real). A documentação prometia investigar skip novo; o
+  guard passou a verificar isso em vez de prometer.
+
+### Alterado
+
+- `CONTRIBUTING.md` e `ci.yml` deixaram de afirmar uma contagem de skips e
+  passaram a descrever as duas categorias. Contagem envelhece a cada teste
+  novo — a taxonomia, não.
+- `README.md` reorganizado: o que o Veltrix é vem antes do histórico de
+  frentes, e as métricas de teste passaram a ser gates mais um snapshot
+  datado, em vez de números antigos apresentados como resultado atual.
+- Assets do frontend perderam o nome da marca antiga
+  (`pedrocore-logo-icon.png` → `veltrix-logo-icon.png`). Os bytes da imagem
+  não mudaram. Identificadores congelados (`PEDROCORE_*`,
+  `pedrocore-integration/v1`, tabelas `pedrocore_*`) seguem preservados por
+  compatibilidade.
+
+### Removido
+
+- Estado local do editor Obsidian (`Veltrix/.obsidian/`) e o script obsoleto
+  `atualizar-docs-v1.ps1`, que gerava uma árvore `docs/` que não existe mais.
+- Cópia duplicada e não referenciada do logo em `apps/web/public/`.
+
+---
 
 ## UX final e Project Registry
 

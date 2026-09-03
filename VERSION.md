@@ -1,9 +1,8 @@
 # Veltrix — Versionamento
 
-Atualizado em: 30/08/2026
+Atualizado em: 03/09/2026
 
 Licença: **Apache-2.0**.
-Atualizado em: 20/08/2026
 
 ## Checkpoint documental atual
 

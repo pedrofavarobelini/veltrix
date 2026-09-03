@@ -12,119 +12,6 @@ Licenciado sob a **Apache License 2.0** (SPDX: `Apache-2.0`). Veja [LICENSE](LIC
 > (`PEDROCORE_*`) e o comando `pedrocore` continuam funcionando — detalhes e
 > motivos em [Veltrix/17-veltrix/MIGRACAO_PEDROCORE_VELTRIX.md](Veltrix/17-veltrix/MIGRACAO_PEDROCORE_VELTRIX.md).
 
-## Começar
-
-```bash
-cd apps/api
-uv sync
-
-veltrix risk             # Risk Console (TUI)
-veltrix control-center   # retrato operacional
-veltrix risk analyze prompt.txt --json
-```
-
-## FRENTE ATUAL — AI RUNTIME & LEARNING CONTROL PLANE
-
-A frente `CONTROL-PLANE-01` reorganizou o Veltrix em duas fronteiras
-internas declaradas e verificadas por teste, e construiu sobre elas a
-plataforma de integração universal.
-
-```text
-                      VELTRIX (modular monolith)
-                              │
-        ┌─────────────────────┴─────────────────────┐
-   RUNTIME PLANE                              LEARNING PLANE
-   responder agora  ──── evidência/contratos ────►  aprender depois
-```
-
-**O que existe hoje**
-
-- **Universal Contracts V1**, congelados: Project Capability Manifest, Quality
-  Evidence (QEC), Execution Outcome, Learning Source e o envelope de
-  integração. Alterar a forma de qualquer um quebra o build.
-- **Evidence Platform**: ingestão fail-closed com validação de contrato,
-  fronteira de autoridade, varredura de privacidade, fingerprint do servidor,
-  idempotência e deduplicação.
-- **Learning Governance**: seleção manual, elegibilidade, privacidade,
-  proveniência, autorização e ciclo de vida de candidato.
-- **Resiliência**: outbox **durável** com backoff, dead-letter e reconciliação.
-  Sobrevive tanto ao Veltrix fora do ar quanto ao restart do próprio
-  consumidor — um outbox que não sobrevive ao processo é um buffer, não um
-  outbox.
-- **Dataset Control Plane**: registry, versionamento, linhagem e split, com
-  materialização travada por readiness real.
-- **Evaluation & Training Foundation**: baseline, comparação, promoção e
-  rollback — sem executar treinamento.
-
-**Princípio que atravessa tudo**
-
-O consumidor envia **fato observado**; o Veltrix emite **julgamento**. Um
-payload que tenta declarar elegibilidade, autorização, score autoritativo ou
-um Training Candidate pronto é recusado inteiro, em qualquer profundidade e
-qualquer grafia.
-
-```text
-Operational Data  !=  Training Candidate  !=  Canonical Training Example
-```
-
-**Estado**
-
-```text
-CONTROL_PLANE_READY      governança completa e testada
-DATASET_NOT_READY        correto — não há população real autorizada
-```
-
-`automatic_collection` é `Literal[False]`: um tipo que faz o validador recusar
-`True`, não uma flag desligada.
-
-**Validação:** `1340 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
-do frontend PASS; grafo documental íntegro; OpenAPI sem breaking change
-(37 → 39 paths, todos aditivos).
-
-Documentos: `Veltrix/20-control-plane/`.
-
-## FRENTE ANTERIOR — ELYRA ONBOARDING V1 TEXTUAL
-
-`PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL` registrou Elyra como consumer oficial:
-`project_id=elyra`, identidade `registered`, papel `common_consumer`, uma única
-task `wellbeing_report_interpretation` e schemas strict/versionados. CI usa
-mock determinístico; execução real é `provider=auto`, Gemini não produtivo,
-sem modelo do caller e sem fallback. Resultado: **PASS**, `959 passed, 21
-skipped`, Ruff integral, eval `14/14` e grafo `155/822`; zero chamadas
-externas. Contrato:
-`Veltrix/10-contratos/CONTRATO_ELYRA_TEXTUAL_V1.md`.
-
-## MICROFRENTE ANTERIOR — STRUCTA CONSUMER
-
-`PEDROCORE-STRUCTA-CONSUMER-01` registrou o Structa como consumer oficial de
-menor privilégio: `project_id=structa`, identidade `registered`, papel
-`technical_tool`, somente `qa_report_analysis` e somente Gemini em ambiente
-não produtivo. Provider real e fallback real continuam default-off. A frente
-foi inteiramente offline (`plannedRealCalls=0`, `actualRealCalls=0`) e está em
-`Veltrix/17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01.md`.
-
-## ENCERRAMENTO DO CORE — PRESERVADO
-## Estado consolidado — Eras 1 a 3
-
-```text
-ERA 1 — PASS                         Operational Intelligence Foundation
-ERA 2 — PASS                         Motor de Risco de Execução por IA
-ERA 3 — FOUNDATION PASS              Training Foundation
-        TRAINING DEFERRED             DATASET_NOT_READY
-```
-
-Candidate Acquisition está implementada, mas há **zero candidatos reais
-autorizados**. Não existem Canonical Dataset, splits, fine-tuning, modelo próprio
-ou Local Provider treinado; Hugging Face não foi iniciado. Operational Learning
-usa memória, evidências, outcomes, patterns, retrieval e policies sem alterar
-pesos neurais.
-
-Checkpoint documental e arquitetura completa:
-[`Veltrix/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md`](Veltrix%20IA/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md).
-Última evidência backend disponível: `924 passed, 7 skipped, 2 warnings`; Ruff
-global PASS; Pyright Era 3 sem erros. Esta reconciliação não repetiu testes e não
-alterou código, configuração ou Git.
-
 Gateway e orquestrador central de IA para um ecossistema de projetos.
 
 Em vez de cada aplicação integrar diretamente com Gemini, OpenAI, Claude e
@@ -147,6 +34,21 @@ uso local e para o ecossistema local.
 > configuração padrão é voltada ao uso local. Ver [Segurança](#segurança).
 
 ---
+
+## Começar
+
+```bash
+cd apps/api
+uv sync
+
+veltrix risk             # Risk Console (TUI)
+veltrix control-center   # retrato operacional
+veltrix risk analyze prompt.txt --json
+```
+
+
+---
+
 
 ## Arquitetura
 
@@ -225,7 +127,7 @@ gate sozinho.
 - `README.md` (este arquivo)
 - `VERSION.md`
 - `Veltrix/00_MAPEAMENTO_GERAL_PEDROCORE.md`
-- `Veltrix/MOC_PEDROCORE_IA.md`
+- `Veltrix/MOC_VELTRIX.md`
 - `Veltrix/MOC_MULTI_PROVIDER_SAFE_EVOLUTION.md`
 - `Veltrix/17-multi-provider-safe-evolution/FECHAMENTO_ETAPAS_1_A_7.md`
 - `Veltrix/10-contratos/CONTRATO_ELYRA_TEXTUAL_V1.md`
@@ -366,14 +268,42 @@ npm run typecheck
 npm run build
 ```
 
-Resultado da última execução (16/08/2026):
+**Os gates que precisam passar** — é isto que define uma suíte verde, não um
+número, porque o número muda a cada teste novo:
 
 ```text
-backend    751 passed, 7 skipped, 2 warnings
-frontend    86 passed (6 arquivos)
-typecheck   PASS
-build       PASS
+backend        pytest sem falha
+ruff           sem violação
+contract freeze fingerprints V1 intactos
+frontend       vitest sem falha · typecheck · build
+npm audit      zero vulnerabilidade
+grafo documental  zero órfão · zero link quebrado
 ```
+
+A CI roda exatamente esses gates a cada push; o selo dela é a fonte corrente.
+
+<details>
+<summary>Snapshot datado — 03/09/2026, commit da publicação pública</summary>
+
+```text
+backend (PostgreSQL de teste)  2073 passed ·  8 skipped
+backend (paridade CI)          2019 passed · 62 skipped
+frontend                        117 passed (6 arquivos)
+ruff · typecheck · build        PASS
+npm audit                       0 vulnerabilidades
+grafo documental                176 documentos · 1029 links · íntegro
+```
+
+Um snapshot envelhece; ele está aqui como evidência de uma data, não como
+promessa do que você verá hoje.
+
+</details>
+
+**Sobre os skips.** Todo skip pertence a uma de duas categorias — precisa de um
+PostgreSQL de teste (`PEDROCORE_TEST_POSTGRES_URL`) ou é opt-in de recurso real
+(`PEDROCORE_RUN_REAL_*`). Um skip fora dessas duas faz a sessão falhar: o guard
+está em `apps/api/tests/conftest.py`. Configurando um PostgreSQL de teste, a
+primeira categoria desaparece inteira.
 
 Nenhuma das suítes chama provider real ou faz requisição de rede externa.
 Testes que exigiriam isso são opt-in por flags `PEDROCORE_RUN_REAL_*_TESTS` e
@@ -454,11 +384,121 @@ Política de reporte de vulnerabilidade: [`SECURITY.md`](SECURITY.md).
 
 ---
 
+## Histórico de frentes
+
+Cada frente abaixo foi fechada com o número de testes que era verdade **no
+dia do fechamento**. São checkpoints datados, não o resultado de hoje — o
+estado corrente está em [Testes](#testes) e na CI.
+
+### FRENTE ATUAL — AI RUNTIME & LEARNING CONTROL PLANE
+
+A frente `CONTROL-PLANE-01` reorganizou o Veltrix em duas fronteiras
+internas declaradas e verificadas por teste, e construiu sobre elas a
+plataforma de integração universal.
+
+```text
+                      VELTRIX (modular monolith)
+                              │
+        ┌─────────────────────┴─────────────────────┐
+   RUNTIME PLANE                              LEARNING PLANE
+   responder agora  ──── evidência/contratos ────►  aprender depois
+```
+
+**O que existe hoje**
+
+- **Universal Contracts V1**, congelados: Project Capability Manifest, Quality
+  Evidence (QEC), Execution Outcome, Learning Source e o envelope de
+  integração. Alterar a forma de qualquer um quebra o build.
+- **Evidence Platform**: ingestão fail-closed com validação de contrato,
+  fronteira de autoridade, varredura de privacidade, fingerprint do servidor,
+  idempotência e deduplicação.
+- **Learning Governance**: seleção manual, elegibilidade, privacidade,
+  proveniência, autorização e ciclo de vida de candidato.
+- **Resiliência**: outbox **durável** com backoff, dead-letter e reconciliação.
+  Sobrevive tanto ao Veltrix fora do ar quanto ao restart do próprio
+  consumidor — um outbox que não sobrevive ao processo é um buffer, não um
+  outbox.
+- **Dataset Control Plane**: registry, versionamento, linhagem e split, com
+  materialização travada por readiness real.
+- **Evaluation & Training Foundation**: baseline, comparação, promoção e
+  rollback — sem executar treinamento.
+
+**Princípio que atravessa tudo**
+
+O consumidor envia **fato observado**; o Veltrix emite **julgamento**. Um
+payload que tenta declarar elegibilidade, autorização, score autoritativo ou
+um Training Candidate pronto é recusado inteiro, em qualquer profundidade e
+qualquer grafia.
+
+```text
+Operational Data  !=  Training Candidate  !=  Canonical Training Example
+```
+
+**Estado**
+
+```text
+CONTROL_PLANE_READY      governança completa e testada
+DATASET_NOT_READY        correto — não há população real autorizada
+```
+
+`automatic_collection` é `Literal[False]`: um tipo que faz o validador recusar
+`True`, não uma flag desligada.
+
+**Validação no fechamento da frente:** `1340 passed, 21 skipped, 0 failed`; Ruff integral PASS; build
+do frontend PASS; grafo documental íntegro; OpenAPI sem breaking change
+(37 → 39 paths, todos aditivos).
+
+Documentos: `Veltrix/20-control-plane/`.
+
+### FRENTE ANTERIOR — ELYRA ONBOARDING V1 TEXTUAL
+
+`PEDROCORE-ELYRA-ONBOARDING-V1-TEXTUAL` registrou Elyra como consumer oficial:
+`project_id=elyra`, identidade `registered`, papel `common_consumer`, uma única
+task `wellbeing_report_interpretation` e schemas strict/versionados. CI usa
+mock determinístico; execução real é `provider=auto`, Gemini não produtivo,
+sem modelo do caller e sem fallback. Resultado: **PASS**, `959 passed, 21
+skipped`, Ruff integral, eval `14/14` e grafo `155/822`; zero chamadas
+externas. Contrato:
+`Veltrix/10-contratos/CONTRATO_ELYRA_TEXTUAL_V1.md`.
+
+### MICROFRENTE ANTERIOR — STRUCTA CONSUMER
+
+`PEDROCORE-STRUCTA-CONSUMER-01` registrou o Structa como consumer oficial de
+menor privilégio: `project_id=structa`, identidade `registered`, papel
+`technical_tool`, somente `qa_report_analysis` e somente Gemini em ambiente
+não produtivo. Provider real e fallback real continuam default-off. A frente
+foi inteiramente offline (`plannedRealCalls=0`, `actualRealCalls=0`) e está em
+`Veltrix/17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01.md`.
+
+### ENCERRAMENTO DO CORE — PRESERVADO
+### Estado consolidado — Eras 1 a 3
+
+```text
+ERA 1 — PASS                         Operational Intelligence Foundation
+ERA 2 — PASS                         Motor de Risco de Execução por IA
+ERA 3 — FOUNDATION PASS              Training Foundation
+        TRAINING DEFERRED             DATASET_NOT_READY
+```
+
+Candidate Acquisition está implementada, mas há **zero candidatos reais
+autorizados**. Não existem Canonical Dataset, splits, fine-tuning, modelo próprio
+ou Local Provider treinado; Hugging Face não foi iniciado. Operational Learning
+usa memória, evidências, outcomes, patterns, retrieval e policies sem alterar
+pesos neurais.
+
+Checkpoint documental e arquitetura completa:
+[`Veltrix/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md`](Veltrix/19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3.md).
+Evidência backend daquele fechamento: `924 passed, 7 skipped, 2 warnings`; Ruff
+global PASS; Pyright Era 3 sem erros. Esta reconciliação não repetiu testes e não
+alterou código, configuração ou Git.
+
+---
+
 ## Documentação
 
 A documentação canônica vive em `Veltrix/`, como vault Obsidian navegável.
 
-- **Entrada principal:** [`Veltrix/MOC_PEDROCORE_IA.md`](Veltrix%20IA/MOC_PEDROCORE_IA.md)
+- **Entrada principal:** [`Veltrix/MOC_VELTRIX.md`](Veltrix/MOC_VELTRIX.md)
 - Interface atual: `Veltrix/MOC_UX_V1.md`
 - Arquitetura: `Veltrix/MOC_ARQUITETURA.md`
 - Segurança: `Veltrix/MOC_SEGURANCA.md`
@@ -479,6 +519,8 @@ Ver [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Licença
 
-**Ainda não definida.** Sem um arquivo `LICENSE`, o padrão legal é que todos os
-direitos ficam reservados ao autor. A escolha da licença é uma decisão pendente
-do proprietário do projeto.
+**Apache License 2.0** — SPDX `Apache-2.0`. O texto integral está em
+[LICENSE](LICENSE); `apps/api/pyproject.toml` e `apps/web/package.json`
+declaram o mesmo identificador.
+
+Copyright 2026 Pedro Favaro Belini.
