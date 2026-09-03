@@ -4,6 +4,20 @@ Atualizado em: 03/09/2026
 
 Licença: **Apache-2.0**.
 
+## Estado do produto — FINALIZADO / FROZEN
+
+**VELTRIX FINALIZATION = PASS** · **VELTRIX FUNCTIONAL FREEZE = ACTIVE**
+(03/09/2026).
+
+O Final Functional Gate encerrou a manutenção comum do Veltrix. Ele **não**
+altera versão de produto, pacote ou tag: corrigiu defeitos dentro dos contratos
+já congelados. Registro em
+`Veltrix/19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE.md`.
+
+Reabertura futura só se a mudança aumentar uma capacidade real do Veltrix ou for
+necessária para ele operar como núcleo de outro sistema. Correção trivial,
+ajuste cosmético e refatoração sem ganho concreto **não** reabrem o projeto.
+
 ## Checkpoint documental atual
 
 O fechamento das Eras 1–3 não altera versão de produto, pacote ou tag:

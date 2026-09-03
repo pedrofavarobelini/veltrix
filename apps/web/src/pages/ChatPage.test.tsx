@@ -294,6 +294,106 @@ describe("ChatPage — provider interno em desenvolvimento", () => {
   });
 });
 
+describe("ChatPage — verdade sobre quem respondeu", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.spyOn(api, "getProviders").mockResolvedValue(CATALOG);
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", undefined);
+  });
+
+  async function sendWithGemini(response: api.ChatResponse) {
+    persistSettings({ provider: "gemini", authorizedRealProvider: "gemini" });
+    const send = vi.spyOn(api, "sendChatMessage").mockResolvedValue(response);
+
+    render(<ChatPage />);
+    await waitFor(() => expect(api.getProviders).toHaveBeenCalled());
+
+    fireEvent.change(composer(), {
+      target: { value: "Me fale o que foi feito recentemente no sistema." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+
+    return send;
+  }
+
+  // (B) IA real explicitamente escolhida: o Veltrix proíbe a degradação
+  // silenciosa para Mock no PRÓPRIO chat, pelo campo que já existe no contrato.
+  it("escolha explícita de IA real proíbe o fallback Mock silencioso", async () => {
+    const send = await sendWithGemini(chatResponse());
+
+    expect(send.mock.calls[0][0].allow_real_provider).toBe(true);
+    expect(send.mock.calls[0][0].allow_mock_fallback).toBe(false);
+  });
+
+  // (C) Gemini respondeu: provider efetivo Gemini, sem fallback, sem alarme.
+  it("resposta do Gemini aparece como resposta do Gemini", async () => {
+    await sendWithGemini(
+      chatResponse({ answer: "Resposta real do Gemini.", provider: "gemini" }),
+    );
+
+    expect(await screen.findByText("Resposta real do Gemini.")).toBeInTheDocument();
+    expect(screen.queryByText(/não concluiu a solicitação/)).toBeNull();
+    expect(screen.queryByText(/fallback local usado/)).toBeNull();
+  });
+
+  // (D) Gemini falhou: a UI não pode mentir dizendo que a IA respondeu.
+  it("falha do Gemini é mostrada como falha do Gemini, não como resposta", async () => {
+    await sendWithGemini(
+      chatResponse({
+        answer: "Não foi possível concluir a solicitação com o provider selecionado.",
+        provider: "none",
+        model: "none",
+        fallback_used: false,
+        status: "blocked",
+        error: "falha interna do provider",
+      }),
+    );
+
+    expect(
+      await screen.findByText("Gemini não concluiu a solicitação."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Gemini falhou")).toBeInTheDocument();
+    // Nenhuma afordância de opinião sobre uma resposta que não existiu.
+    expect(screen.queryByRole("button", { name: "Gostei" })).toBeNull();
+  });
+
+  // (H) Chat geral nunca recebe disclaimer financeiro.
+  it("chat geral não exibe disclaimer financeiro na falha", async () => {
+    await sendWithGemini(
+      chatResponse({
+        answer: "Não foi possível concluir a solicitação com o provider selecionado.",
+        provider: "none",
+        model: "none",
+        status: "blocked",
+      }),
+    );
+
+    await screen.findByText("Gemini não concluiu a solicitação.");
+    expect(screen.queryByText(/ação financeira/)).toBeNull();
+    expect(screen.queryByText(/altera seus dados/)).toBeNull();
+  });
+
+  // (A) Sem consentimento não há nem requisição: o envio segue bloqueado, e o
+  // provider interno de desenvolvimento mantém o fallback local disponível.
+  it("provider interno mantém o fallback local permitido", async () => {
+    persistSettings({ provider: "mock", authorizedRealProvider: null });
+    const send = vi.spyOn(api, "sendChatMessage").mockResolvedValue(
+      chatResponse({ provider: "mock", model: "mock-v1", requested_provider: "mock" }),
+    );
+
+    render(<ChatPage />);
+    await waitFor(() => expect(api.getProviders).toHaveBeenCalled());
+
+    fireEvent.change(composer(), { target: { value: "oi" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    expect(send.mock.calls[0][0].allow_mock_fallback).toBe(true);
+  });
+});
+
 describe("ChatPage — anexos", () => {
   beforeEach(() => {
     window.localStorage.clear();

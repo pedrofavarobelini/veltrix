@@ -1,5 +1,18 @@
 # MOC Veltrix
 
+## Final Functional Gate — ESTADO ATUAL DO PRODUTO
+
+- [[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]] —
+  **VELTRIX FINALIZATION = PASS · VELTRIX FUNCTIONAL FREEZE = ACTIVE**.
+  Chat com provider real corrigido (fallback Mock deixou de ser silencioso no
+  chat interativo), mensagens de erro separadas por contexto, cards de provider
+  e Diagnóstico Local sem colisão.
+- Manutenção comum: **encerrada**. Reabertura só mediante ganho justificável de
+  capacidade — o critério está no próprio documento.
+- Gates desta frente: backend `2027 passed, 62 skipped`, Ruff PASS, grafo
+  documental íntegro; frontend `122 passed`, typecheck e build PASS; smoke real
+  Gemini com `fallback=false`.
+
 ## Consumer Elyra textual V1 — ATUAL
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]] —
