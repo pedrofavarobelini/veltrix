@@ -28,14 +28,17 @@ Projeto N ─┘         │
 ```
 
 **Versão de produto:** V5.2.0 · **API:** 0.2.0 · **Status:** operacional para
-uso local e para o ecossistema local.
+uso local e para o ecossistema local · **Repositório:**
+[público no GitHub](https://github.com/pedrofavarobelini/veltrix).
 
 > **Este repositório publica código, não uma API pronta para a internet.** A
 > configuração padrão é voltada ao uso local. Ver [Segurança](#segurança).
 
 ---
 
-## Começar
+## Uso rápido
+
+Depois de concluir [Instalação](#instalação) e [Configuração](#configuração):
 
 ```bash
 cd apps/api
@@ -77,7 +80,12 @@ veltrix risk analyze prompt.txt --json
   métricas oficiais.
 - `POST /api/chat` permanece 100% compatível com requisições antigas e continua sem exigir API key.
 - Frontend e design preservados sem alteração.
-- Cliente HTTP do Assistente no FinGuard e replay local integrado estão implementados. OCR real, QA visual real com provider multimodal, Playwright real, persistência da observabilidade e deploy/push ainda são opcionais e exigem aprovação própria. Bloco 12 (dashboard público/admin) permanece cancelado por decisão de produto.
+- Cliente HTTP do Assistente no FinGuard e replay local integrado estão
+  implementados. OCR real, QA visual real com provider multimodal, Playwright
+  real, persistência da observabilidade e deploy da API ainda são opcionais e
+  exigem aprovação própria. Bloco 12 (dashboard público/admin) permanece
+  cancelado por decisão de produto.
+
 | Camada | Papel |
 | --- | --- |
 | Task Router | Reconhece `task_type`, criticidade e estilo de resposta |
@@ -189,7 +197,7 @@ adiada formalmente para a V2 — ver `Veltrix/20-ux-v1/V2_MULTIMODAL.md`.
 Pré-requisitos: **Python 3.12+**, **Node 22+** e `git`.
 
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/pedrofavarobelini/veltrix.git
 cd veltrix
 ```
 
@@ -390,7 +398,7 @@ Cada frente abaixo foi fechada com o número de testes que era verdade **no
 dia do fechamento**. São checkpoints datados, não o resultado de hoje — o
 estado corrente está em [Testes](#testes) e na CI.
 
-### FRENTE ATUAL — AI RUNTIME & LEARNING CONTROL PLANE
+### ARQUITETURA ATUAL — AI RUNTIME & LEARNING CONTROL PLANE
 
 A frente `CONTROL-PLANE-01` reorganizou o Veltrix em duas fronteiras
 internas declaradas e verificadas por teste, e construiu sobre elas a

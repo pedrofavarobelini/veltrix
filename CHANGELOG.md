@@ -57,6 +57,24 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ---
 
+## Polimento final do GitHub público — 03/09/2026
+
+### Alterado
+
+- O comando de instalação no `README.md` passou a usar diretamente
+  `https://github.com/pedrofavarobelini/veltrix.git`.
+- README, versionamento, status final e MOC foram reconciliados com o estado
+  público: Apache-2.0 presente, `HUMAN_VISUAL_ACCEPTANCE = PASS`, Project
+  Registry concluído e migrations `0001`–`0012`.
+- Métricas de fechamentos anteriores passaram a ser identificadas como
+  snapshots históricos, sem competir com a CI do HEAD corrente.
+- Referências a publicação pendente e aos SHAs anteriores à sanitização do
+  histórico foram substituídas pelo estado público verificável.
+
+Nenhum código funcional, migration, tag ou Release foi alterado.
+
+---
+
 ## Publicação pública — 03/09/2026
 
 O repositório passou a ser público sob **Apache-2.0** em

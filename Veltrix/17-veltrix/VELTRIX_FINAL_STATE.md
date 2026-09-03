@@ -196,7 +196,7 @@ export VELTRIX_PLATFORM_PERSISTENCE=postgresql
 export VELTRIX_PLATFORM_DATABASE_URL="postgresql://..."
 ```
 
-## 8. Estado verificado
+## 8. Checkpoints verificados
 
 Checkpoint deste fechamento (30/08/2026):
 
@@ -236,6 +236,7 @@ dataset artificial
 
 > **Publicação pública: concluída em 03/09/2026.** O repositório saiu de
 > privado e vive em `github.com/pedrofavarobelini/veltrix` sob Apache-2.0.
+> O aceite visual final é **`HUMAN_VISUAL_ACCEPTANCE = PASS`**.
 > Deixou de ser item fora de escopo — está registrado aqui porque este
 > documento descreve o estado real, e o estado real mudou.
 
