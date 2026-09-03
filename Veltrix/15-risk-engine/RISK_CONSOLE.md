@@ -135,6 +135,89 @@ console não executa nada.
 é **recusado com a contagem**, e não cortado em silêncio: truncar mudaria o que
 foi analisado sem você saber.
 
+## 4b. Auto Context — o contexto que o Veltrix resolve sozinho
+
+Preencher onze campos avançados a cada análise inviabiliza o uso diário. O
+**Auto Context** resolve o que dá para resolver e submete o resto a você.
+
+```text
+PROMPT → polaridade → auto context → capabilities → executor → policy
+       → PROPOSTA → revisão humana → CONFIRMAR → análise de risco
+```
+
+### O que ele resolve
+
+Operação, alvos, escopo permitido, escopo proibido, permissões pedidas,
+permissões efetivas, testes exigidos, banco de dados e requisito de rollback —
+**quando houver evidência**. Sem evidência, o campo fica `UNKNOWN`, e não é
+preenchido para completar formulário.
+
+### O princípio que ele nunca quebra
+
+```text
+capacidade pedida  !=  permissão concedida
+
+pedida ∩ executor ∩ projeto ∩ política = efetiva
+```
+
+O prompt pode pedir `git.push`. Isso **não** torna push permitido. Qualquer
+camada que negue produz `FORBIDDEN`; faltando base para decidir, `UNKNOWN` — que
+nunca é tratado como permitido.
+
+Uma capacidade pedida e negada não entra na requisição: ela vira **conflito**,
+e conflito é a informação mais importante da proposta.
+
+### Origem de cada peça
+
+| origem | significado |
+|---|---|
+| `DECLARED` | você digitou |
+| `INFERRED` | derivado do prompt |
+| `POLICY_DERIVED` | a política decidiu |
+| `DEFAULTED` | padrão do console |
+| `UNKNOWN` | ninguém declarou |
+
+`POLICY_DERIVED` existe porque **política não pode ser apresentada como
+declaração sua**. Quem lê precisa distinguir "você disse" de "a regra disse".
+
+Confiança é `HIGH` / `MEDIUM` / `LOW`. Não há percentual: a inferência é
+casamento de vocabulário declarado sobre texto segmentado por polaridade, e
+duas casas decimais dariam uma precisão que o método não sustenta.
+
+### A etapa de revisão
+
+`ANALISAR RISCO` **não** analisa direto: ele propõe. O painel `REVISÃO DE
+CONTEXTO` mostra o que foi declarado, inferido, derivado de política e o que
+ficou desconhecido, com a contagem e os conflitos.
+
+| ação | o que faz |
+|---|---|
+| `CONFIRMAR E ANALISAR` | confirma o contexto e roda a análise |
+| `REVISAR DETALHES` | abre as Configurações Avançadas para editar |
+| `CANCELAR` | descarta a proposta; nada é analisado |
+
+**Confirmar o contexto não é aprovar a execução.** A confirmação diz "o
+contexto é este"; o gate continua sendo do Risk Engine, e confirmar nunca
+produz `APROVADO` automático.
+
+Editar um campo o torna **declarado**, e a inferência não o sobrescreve.
+
+### Fluxo diário
+
+```text
+veltrix risk → Projeto → Ambiente → Executor → cola o Prompt
+            → ANALISAR → REVISÃO DE CONTEXTO → CONFIRMAR → resultado
+```
+
+As Configurações Avançadas continuam recolhidas e disponíveis para quem
+precisar.
+
+### Sem IA
+
+Este caminho é inteiramente determinístico. Um AI Mapper futuro só poderá
+**propor**: a validação determinística continua sendo a autoridade, e a
+ausência de provider mantém o console funcionando por inteiro.
+
 ### Configurações avançadas
 
 Recolhidas ao abrir, e organizadas por pergunta em vez de por ordem de campo:

@@ -57,6 +57,7 @@ As três são regras do Policy Engine com teste negativo próprio.
 | Universal Contracts V1 | 6 contratos congelados por fingerprint |
 | Risk Engine V2 | análise pré-execução, gates, contrato assinado |
 | Risk Console | TUI e CLI em PT-BR sobre o mesmo core |
+| Risk Intake / Auto Context | resolve contexto e propõe; nunca autoriza |
 | Consumer SDK | cliente oficial tipado e neutro |
 | Policy Engine | decisão transversal versionada e explicável |
 | Evaluation Plane V2 | avaliação como evidência reproduzível |
@@ -141,6 +142,30 @@ backup → DROP das tabelas → rebuild_schema → reinserir → verificar
 
 Divergência em **qualquer** store reprova a restauração inteira: restauração
 parcial silenciosa é sistema incompleto se comportando como completo.
+
+## 5b. Auto Context — resolver não é autorizar
+
+Configurações Avançadas deixaram de ser obrigatórias: o prompt é resolvido em
+uma proposta com origem e confiança por campo, revisada por um humano antes da
+análise. Guia em [[15-risk-engine/RISK_CONSOLE]].
+
+Duas frases governam a camada:
+
+```text
+auto context               !=  authorization
+context confirmation       !=  execution approval
+```
+
+A permissão efetiva é a interseção de **pedida ∩ executor ∩ projeto ∩
+política**. Pedir `git.push` não concede push; capacidade negada vira conflito
+visível e não entra na requisição. Sem alvo identificado, nenhuma permissão é
+proposta — ambiguidade bloqueia em vez de virar autorização ampla.
+
+`POLICY_DERIVED` é separado de `INFERRED` porque "a regra disse" e "você disse"
+não podem se confundir. Confiança é categórica: o método não sustenta
+percentual, e número decorativo é pior que categoria honesta.
+
+O caminho é inteiramente determinístico e funciona sem IA.
 
 ## 6. Identidade
 

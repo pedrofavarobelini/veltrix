@@ -13,6 +13,32 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 
 
+
+## Risk Auto Context
+
+Configurações Avançadas deixam de ser obrigatórias no fluxo diário. O prompt é
+resolvido em uma **proposta de contexto** com origem e confiança por campo,
+revisada por um humano antes da análise.
+
+```text
+PROMPT → polaridade → auto context → capabilities → executor → policy
+       → PROPOSTA → revisão → CONFIRMAR → análise
+```
+
+- **Interseção de permissão**: pedida ∩ executor ∩ projeto ∩ política. Pedir
+  `git.push` não concede push; capacidade negada vira conflito visível, e não
+  entra na requisição.
+- **`POLICY_DERIVED`** separado de `INFERRED`: política não é apresentada como
+  declaração do usuário.
+- **Confiança categórica** (`HIGH`/`MEDIUM`/`LOW`) — sem percentual decorativo.
+- **Ambiguidade não vira escopo amplo**: sem alvo identificado, nenhuma
+  permissão é proposta e o motor bloqueia.
+- **Etapa de revisão** com `CONFIRMAR E ANALISAR`, `REVISAR DETALHES` e
+  `CANCELAR`. Confirmar contexto **não** aprova execução.
+- Perfis de executor e superfícies de projeto são **declarações**, não
+  ramificações: projeto novo entra sem tocar em código.
+- Caminho inteiramente determinístico; funciona sem IA.
+
 ## Veltrix — fechamento final
 
 O produto passou a se chamar **Veltrix**. Estado completo em
