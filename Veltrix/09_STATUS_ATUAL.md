@@ -1,6 +1,6 @@
 # Veltrix — Status Atual
 
-Atualizado em: 01/09/2026
+Atualizado em: 03/09/2026
 
 ## VELTRIX — FECHAMENTO FINAL
 
@@ -35,9 +35,23 @@ execucao nunca delegada ao core.
 Contratos V1 congelados: intactos. OpenAPI: aditivo. UI React: nao alterada.
 Rename PedroCore -> Veltrix: CONCLUIDO no fechamento final.
 
-## UX FINAL + PROJECT REGISTRY — READY (aguardando homologacao humana)
+## PUBLICADO — repositorio publico sob Apache-2.0
 
-Ultima frente funcional antes do public-release gate.
+`HUMAN_VISUAL_ACCEPTANCE = PASS`. O design e a UX final foram homologados pelo
+Pedro em 03/09/2026 e o repositorio foi publicado em
+`github.com/pedrofavarobelini/veltrix`.
+
+A publicacao passou por higienizacao de watermark, sanitizacao do historico
+Git e um gate de release verificado: CI verde, grafo documental integro,
+secret scan limpo e Apache-2.0 consistente entre LICENSE, `pyproject.toml` e
+`package.json`. O historico pre-sanitizacao ficou preservado em repositorio
+privado separado e nao e publico.
+
+O Veltrix entra em **manutencao**: nenhuma frente funcional nova esta aberta.
+
+## UX FINAL + PROJECT REGISTRY — HOMOLOGADO
+
+Ultima frente funcional antes do public-release gate. Homologada.
 
 O Risk Console passou a ter tres estados exclusivos — ENTRADA, REVISAO DE
 CONTEXTO e RESULTADO. No resultado a ordem e gate, resumo da operacao,
