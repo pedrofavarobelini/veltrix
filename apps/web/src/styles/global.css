@@ -2438,3 +2438,162 @@ body {
     max-width: none;
   }
 }
+
+/* ==========================================================================
+   VELTRIX FINAL FUNCTIONAL GATE — correções visuais do drawer de Configurações
+   e do estado honesto de falha de provider.
+
+   Este bloco vem POR ÚLTIMO de propósito. `.provider-card-option` e
+   `.provider-icon` já eram declarados duas vezes acima (base e variante
+   compacta), com `grid-template-columns` da segunda vencendo a
+   `grid-template-areas` da primeira. Em vez de desmontar as duas declarações
+   históricas — churn sem ganho —, o layout final é declarado aqui, escopado no
+   painel que de fato usa esses cards.
+   ========================================================================== */
+
+/* --- LOGOS ---------------------------------------------------------------
+   Causa real do "logo estourado" e de parte da colisão nos cards: os SVGs têm
+   apenas `viewBox`, sem width/height intrínsecos, e NÃO existia nenhuma regra
+   para o `<img>` dentro de `.provider-icon`. Sem tamanho declarado o navegador
+   aplica o default de imagem substituída (300x150 px), que transbordava a
+   caixa de 30–38 px e cobria nome e status. */
+.provider-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* --- CARDS DE PROVIDER ---------------------------------------------------
+   O status é uma etiqueta longa ("NÃO CONFIGURADO") e não pode disputar a
+   mesma linha do nome dentro de um drawer de 420 px. Passa a ocupar uma linha
+   própria, o que torna o card independente da largura disponível:
+
+       [ÍCONE] NOME
+               modelo
+       [ STATUS ]
+
+   Uma coluna só de cards: com ~384 px úteis, duas colunas espremiam o nome até
+   o ponto em que ele encostava na etiqueta. */
+.settings-panel .provider-card-grid {
+  grid-template-columns: 1fr;
+}
+
+.settings-panel .provider-card-option {
+  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-areas:
+    "icon name"
+    "icon model"
+    "status status";
+  align-items: center;
+  gap: 2px 12px;
+  padding: 12px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.settings-panel .provider-card-option .provider-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  align-self: center;
+}
+
+/* Nome longo trunca com reticências em vez de vazar por cima do vizinho.
+   `min-width: 0` é obrigatório: sem ele o item de grid usa a largura mínima do
+   conteúdo e o `overflow` nunca chega a agir. */
+.settings-panel .provider-card-option strong,
+.settings-panel .provider-card-option small {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-panel .provider-card-option strong {
+  font-size: 14px;
+}
+
+.settings-panel .provider-card-option small {
+  font-size: 12px;
+}
+
+.settings-panel .provider-card-option em {
+  grid-area: status;
+  justify-self: start;
+  margin-top: 8px;
+  font-size: 10px;
+  padding: 5px 8px;
+  /* A etiqueta pode quebrar em telas muito estreitas; o que ela não pode é
+     transbordar o card. */
+  white-space: normal;
+}
+
+/* --- DIAGNÓSTICO LOCAL ---------------------------------------------------
+   `.dock-label` é `display: block` e o link vinha logo depois como elemento
+   inline: o padding vertical da pílula não cria espaço de linha e ela subia
+   por cima do título. Vira bloco flex com respiro próprio. */
+.settings-panel .observability-link {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 12px;
+  white-space: normal;
+}
+
+/* Mesmo respiro para o restante do painel: rótulo em cima, conteúdo embaixo,
+   nunca sobrepostos. */
+.settings-panel .dock-section > .dock-label + * {
+  margin-top: 10px;
+}
+
+.settings-panel .dock-section .provider-status {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+}
+
+/* --- ÁREA AVANÇADA -------------------------------------------------------
+   Mesmo tratamento de truncamento dos cards públicos. */
+.internal-provider-list button,
+.internal-provider-note {
+  min-width: 0;
+}
+
+.internal-provider-list strong,
+.internal-provider-list small,
+.internal-provider-note strong,
+.internal-provider-note small {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- FALHA DE PROVIDER ---------------------------------------------------
+   A bolha de falha não pode parecer resposta de IA. */
+.message-bubble.provider-failed {
+  border-color: rgba(239, 68, 68, 0.42);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.provider-failure-title {
+  margin: 0 0 6px;
+  color: #fecaca;
+  font-weight: 800;
+}
+
+/* --- DRAWER EM TELA ESTREITA --------------------------------------------- */
+@media (max-width: 480px) {
+  .settings-panel .provider-card-option {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .settings-panel .provider-card-option .provider-icon {
+    width: 32px;
+    height: 32px;
+  }
+}

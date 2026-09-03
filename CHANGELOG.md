@@ -10,6 +10,53 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ---
 
+## Final Functional Gate — 03/09/2026
+
+**VELTRIX FINALIZATION = PASS. VELTRIX FUNCTIONAL FREEZE = ACTIVE.**
+
+Última frente de manutenção comum do Veltrix. Registro completo em
+`Veltrix/19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE.md`.
+
+### Corrigido
+
+- **Chat com provider real deixou de degradar em silêncio para o Mock.** Quando
+  o usuário escolhe explicitamente uma IA real no chat do próprio Veltrix, a
+  requisição passa a enviar `allow_mock_fallback: false` — opt-out restritivo
+  que já existia em `ChatRequest`. Uma falha do Gemini volta como falha
+  (`provider="none"`, `fallback_used=false`, `status="blocked"`), e a interface
+  diz qual IA falhou em vez de exibir texto do Mock como se fosse a resposta.
+  O default do contrato **não** mudou: FinGuard, Elyra e Structa seguem com o
+  fallback seguro.
+- **Disclaimer financeiro fora de contexto.** A resposta de fallback era única e
+  afirmava "não executa nenhuma ação financeira nem altera seus dados" mesmo em
+  perguntas sobre o sistema. `_fallback_answers()` passou a escolher a mensagem
+  pelo contexto da requisição; FinGuard mantém o disclaimer.
+- **Colisão nos cards de provider das Configurações.** O badge de status
+  invadia nome e modelo. O card virou um grid por áreas, com o status em linha
+  própria e uma coluna de cards no drawer. Verificado em Chrome headless de
+  360 px a 1920 px: zero overlap e zero overflow horizontal.
+- **"Observabilidade QA/local" sobrepondo o título "DIAGNÓSTICO LOCAL".** O link
+  passou a ser `inline-flex` com espaçamento vertical real.
+
+### Alterado
+
+- Marcas de OpenAI e Claude redesenhadas: os assets anteriores eram glifos
+  genéricos que não remetiam a nenhuma das duas. Continuam locais, sem CDN e
+  sem dependência nova. Os cinco logos ganharam `display: block`,
+  `object-fit: contain` e dimensão explícita.
+
+### Adicionado
+
+- `apps/api/tests/test_chat_provider_truth.py` — provider real sem
+  consentimento não chega ao adapter; operador local autorizado alcança o
+  Gemini; falha não é disfarçada de resposta; o default do contrato segue
+  degradando para Mock; chat geral sem disclaimer financeiro; FinGuard com o
+  seu; caller ambíguo sem privilégio.
+- Cenários de verdade de provider na suíte do frontend, incluindo a pergunta
+  simples da homologação.
+
+---
+
 ## Publicação pública — 03/09/2026
 
 O repositório passou a ser público sob **Apache-2.0** em

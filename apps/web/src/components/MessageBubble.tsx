@@ -37,6 +37,11 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const isAssistantActionable = message.role === "assistant" && !message.isSystem;
+  // Falha do provider NÃO é resposta de IA: a bolha muda de natureza, e as
+  // ações de opinião (Gostei/Não gostei) somem — não há resposta a avaliar.
+  const providerFailed = Boolean(message.meta?.providerFailed);
+  const failedProviderLabel =
+    message.meta?.requestedProviderLabel ?? message.meta?.provider ?? "";
 
   return (
     <article className={`message-row ${isUser ? "from-user" : "from-assistant"}`}>
@@ -44,20 +49,33 @@ export function MessageBubble({
         <img className="message-avatar brand-logo-image" src={veltrixLogo} alt="Veltrix" />
       )}
 
-      <div className="message-bubble">
+      <div className={`message-bubble ${providerFailed ? "provider-failed" : ""}`}>
         <div className="message-heading">
           <strong>{isUser ? userName : assistantName}</strong>
           <span>{formatTime(message.createdAt)}</span>
         </div>
 
+        {providerFailed && (
+          <p className="provider-failure-title" role="alert">
+            {failedProviderLabel} não concluiu a solicitação.
+          </p>
+        )}
+
         <p>{message.content}</p>
 
         {message.meta && (
           <div className="response-meta">
+            {/* Provider EFETIVO. `none` é o estado honesto de "ninguém
+                respondeu" — nunca o nome da IA que o usuário escolheu. */}
             <span>{message.meta.provider}</span>
             <span>{message.meta.model}</span>
-            {message.meta.fallbackUsed && <span className="warning-pill">fallback usado</span>}
-            {message.meta.error && <span className="error-pill">erro tratado</span>}
+            {providerFailed && (
+              <span className="error-pill">{failedProviderLabel} falhou</span>
+            )}
+            {message.meta.fallbackUsed && <span className="warning-pill">fallback local usado</span>}
+            {!providerFailed && message.meta.error && (
+              <span className="error-pill">erro tratado</span>
+            )}
           </div>
         )}
 
@@ -71,21 +89,25 @@ export function MessageBubble({
               Refazer
             </button>
 
-            <button
-              type="button"
-              className={message.feedback === "like" ? "active-feedback" : ""}
-              onClick={() => onFeedback(message.id, "like")}
-            >
-              Gostei
-            </button>
+            {!providerFailed && (
+              <>
+                <button
+                  type="button"
+                  className={message.feedback === "like" ? "active-feedback" : ""}
+                  onClick={() => onFeedback(message.id, "like")}
+                >
+                  Gostei
+                </button>
 
-            <button
-              type="button"
-              className={message.feedback === "dislike" ? "active-feedback dislike" : ""}
-              onClick={() => onFeedback(message.id, "dislike")}
-            >
-              Não gostei
-            </button>
+                <button
+                  type="button"
+                  className={message.feedback === "dislike" ? "active-feedback dislike" : ""}
+                  onClick={() => onFeedback(message.id, "dislike")}
+                >
+                  Não gostei
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

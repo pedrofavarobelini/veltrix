@@ -255,11 +255,15 @@ IDENTITY_BLOCKED_ANSWER_PREFIX = (
     "Solicitação bloqueada pelo controle de identidade do Veltrix."
 )
 
-# Resposta segura e conservadora usada por _mock_fallback(). Nunca deve conter
-# erro tecnico bruto, nome de classe de provider/exception, nem rotulo de
-# debug (ex.: "MockProvider", "mock-v1", "Modelo solicitado", texto de
+# Respostas seguras e conservadoras usadas por _mock_fallback(). Nunca devem
+# conter erro tecnico bruto, nome de classe de provider/exception, nem rotulo
+# de debug (ex.: "MockProvider", "mock-v1", "Modelo solicitado", texto de
 # arquitetura interna). Detalhes tecnicos ficam apenas em error/error_code/
 # warnings/audit, que ja sao retornados separadamente pelo chamador.
+#
+# A mensagem e escolhida pelo CONTEXTO da requisicao, nao por um texto unico:
+# o disclaimer financeiro e correto para o FinGuard e absurdo para "me fale o
+# que foi feito recentemente no sistema". Ver _fallback_answers().
 SAFE_FALLBACK_ANSWER = (
     "No momento não foi possível obter uma resposta completa do provider "
     "solicitado. Isso não executa nenhuma ação financeira nem altera seus "
@@ -268,6 +272,16 @@ SAFE_FALLBACK_ANSWER = (
 NO_MOCK_FALLBACK_ANSWER = (
     "A solicitação não foi concluída pelo provider solicitado e o fallback "
     "local foi desabilitado explicitamente para esta requisição."
+)
+
+# Chat geral (interface do proprio Veltrix e demais consumers nao financeiros):
+# nenhuma mencao a dinheiro, conta ou dados financeiros.
+GENERAL_FALLBACK_ANSWER = (
+    "O provider selecionado não concluiu a solicitação e foi utilizado o "
+    "fallback local. Tente novamente em instantes ou reformule sua pergunta."
+)
+GENERAL_NO_MOCK_FALLBACK_ANSWER = (
+    "Não foi possível concluir a solicitação com o provider selecionado."
 )
 
 READER_FINGUARD_ORIGIN_WARNING = (
@@ -2551,9 +2565,24 @@ class OrchestrationService:
         representado como sucesso e o chamador recebe provider/model `none`.
         """
         del requested_provider, error, enriched_system_prompt
+        blocked_answer, fallback_answer = self._fallback_answers(payload)
         if not payload.allow_mock_fallback:
-            return NO_MOCK_FALLBACK_ANSWER, "none", "none", False
-        return SAFE_FALLBACK_ANSWER, "mock", "mock-v1", True
+            return blocked_answer, "none", "none", False
+        return fallback_answer, "mock", "mock-v1", True
+
+    @staticmethod
+    def _fallback_answers(payload: ChatRequest) -> tuple[str, str]:
+        """Escolhe (resposta sem fallback, resposta com fallback) pelo contexto.
+
+        O disclaimer financeiro pertence ao fluxo financeiro do FinGuard. Em
+        chat geral ele confunde: o usuario pergunta o que foi feito no sistema
+        e recebe uma garantia sobre movimentacao de dinheiro que nunca esteve
+        em jogo.
+        """
+        origin = (payload.origin_system or "").strip().lower()
+        if origin in FINGUARD_ORIGIN_SYSTEMS:
+            return NO_MOCK_FALLBACK_ANSWER, SAFE_FALLBACK_ANSWER
+        return GENERAL_NO_MOCK_FALLBACK_ANSWER, GENERAL_FALLBACK_ANSWER
 
     def _collect_warnings(
         self,

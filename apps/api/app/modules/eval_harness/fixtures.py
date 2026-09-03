@@ -139,7 +139,9 @@ DEFAULT_EVAL_CASES: list[EvalCase] = [
         task_type="assistant_chat",
         provider="provider_inexistente",
         input="Teste de provider inválido.",
-        expected_requirements=["não foi possível obter uma resposta completa"],
+        # Texto do fallback GERAL (não financeiro). O disclaimer financeiro
+        # deixou de aparecer em chat comum na VELTRIX-FINAL-FUNCTIONAL-GATE.
+        expected_requirements=["não concluiu a solicitação"],
         forbidden_patterns=[
             "traceback",
             "fallback acionado",

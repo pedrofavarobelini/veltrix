@@ -22,6 +22,17 @@ export type ChatRequest = {
   model?: string;
   system_prompt?: string;
   allow_real_provider?: boolean;
+  /**
+   * Opt-out restritivo JÁ existente no backend (`ChatRequest.allow_mock_fallback`,
+   * default `true`). Enviando `false`, uma falha do provider real NÃO é
+   * substituída pelo Mock: o backend devolve `provider="none"`, `model="none"`,
+   * `fallback_used=false` e `status="blocked"`.
+   *
+   * O chat interativo do Veltrix usa isso quando o usuário ESCOLHEU uma IA real.
+   * Consumers integrados (FinGuard, Elyra, Structa) não enviam o campo e seguem
+   * com o fallback seguro — o default do contrato não mudou.
+   */
+  allow_mock_fallback?: boolean;
   artifacts?: ArtifactInput[];
 };
 
@@ -36,6 +47,7 @@ export type ChatResponse = {
   warning_codes?: string[];
   status?: string;
   error?: string | null;
+  blocked_reason?: string | null;
   /** Avisos do processamento de artefatos (truncamento, tipo desconhecido, …). */
   artifact_warnings?: string[];
 };

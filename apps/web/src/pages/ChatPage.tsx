@@ -62,7 +62,8 @@ const UI = {
   feedbackDislike: "Feedback registrado: não gostei.",
   clearConfirm: "Tem certeza que deseja limpar o histórico local desta conversa?",
   historyCleared: "Histórico local limpo.",
-  fallbackToast: "Fallback para MockProvider acionado.",
+  fallbackToast: "Fallback local acionado; a resposta não veio da IA selecionada.",
+  providerFailedToast: "A IA selecionada não concluiu a solicitação.",
   providersError: "Não foi possível carregar providers. Usando lista local.",
   settingsButton: "Configurações",
   settingsTitle: "Configurações",
@@ -382,10 +383,19 @@ export function ChatPage() {
         model,
         system_prompt: systemPrompt,
         allow_real_provider: selectedProviderIsReal && allowRealProvider,
+        // Escolha EXPLÍCITA de uma IA real no chat do próprio Veltrix: degradar
+        // para o Mock em silêncio faria a interface mentir sobre quem
+        // respondeu. `allow_mock_fallback` já existe no contrato do backend e
+        // tem default `true`, então nenhum consumer integrado é afetado.
+        allow_mock_fallback: !allowRealProvider,
         ...(outgoingAttachments.length > 0
           ? { artifacts: toArtifactInputs(outgoingAttachments) }
           : {}),
       });
+
+      // `provider="none"` é o backend dizendo que a IA escolhida não concluiu e
+      // que NADA respondeu no lugar dela. Isso é uma falha, não uma resposta.
+      const providerFailed = response.provider === "none";
 
       const assistantMessage: ChatMessage = {
         ...createMessage("assistant", response.answer),
@@ -394,16 +404,22 @@ export function ChatPage() {
           model: response.model,
           fallbackUsed: response.fallback_used,
           error: response.error,
+          requestedProviderLabel: selectedProvider?.label ?? response.requested_provider,
+          providerFailed,
         },
       };
 
       setMessages((prev) => limitChatHistory([...prev, assistantMessage]));
       // Anexos são limpos apenas no sucesso. Falhando, eles continuam no
       // composer e o usuário pode reenviar sem escolher os arquivos de novo.
-      setAttachments([]);
+      if (!providerFailed) {
+        setAttachments([]);
+      }
 
-      if (response.fallback_used) {
-        showToast(UI.fallbackToast);
+      if (providerFailed) {
+        showToast(UI.providerFailedToast, 4200);
+      } else if (response.fallback_used) {
+        showToast(UI.fallbackToast, 4200);
       } else if (response.artifact_warnings && response.artifact_warnings.length > 0) {
         showToast(response.artifact_warnings[0], 4200);
       }
