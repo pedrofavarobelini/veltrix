@@ -619,7 +619,14 @@ def _drive(entry: ConsoleRequestInput | None, check, size=(140, 45)):
             if entry is not None:
                 _fill(app, entry)
                 await pilot.pause()
+                # O fluxo passou a ter duas etapas: ANALISAR propoe o contexto,
+                # e CONFIRMAR roda a analise. Preencher contexto e analisar no
+                # mesmo clique faria o usuario descobrir o que foi inferido
+                # depois de o resultado existir.
                 app.query_one("#analisar", Button).press()
+                await pilot.pause()
+                await pilot.pause()
+                app.query_one("#revisao-confirmar", Button).press()
                 await pilot.pause()
                 await pilot.pause()
             return await check(app, pilot)
@@ -759,6 +766,11 @@ def test_reanalysing_after_an_edit_restores_a_valid_binding():
         app.query_one("#acao-reanalisar", Button).press()
         await pilot.pause()
         await pilot.pause()
+        # Reanalisar tambem passa pela revisao de contexto: o formulario mudou,
+        # entao a proposta pode ter mudado com ele.
+        app.query_one("#revisao-confirmar", Button).press()
+        await pilot.pause()
+        await pilot.pause()
         assert not app.query_one("#acao-copiar", Button).disabled
         return True
 
@@ -822,6 +834,9 @@ def test_the_export_action_writes_a_sanitised_file(tmp_path):
             _fill(app, _clean(prompt="Ler o billing com api_key=ABCDEFGHIJKLMNOPQRSTUV"))
             await pilot.pause()
             app.query_one("#analisar", Button).press()
+            await pilot.pause()
+            await pilot.pause()
+            app.query_one("#revisao-confirmar", Button).press()
             await pilot.pause()
             await pilot.pause()
             app.query_one("#acao-exportar", Button).press()
@@ -1143,6 +1158,11 @@ def test_the_keyboard_shortcut_runs_the_analysis():
         )
         await pilot.pause()
         await pilot.press("ctrl+r")
+        await pilot.pause()
+        await pilot.pause()
+        from textual.widgets import Button as _Button
+
+        app.query_one("#revisao-confirmar", _Button).press()
         await pilot.pause()
         await pilot.pause()
         assert app.result is not None

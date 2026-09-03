@@ -123,6 +123,10 @@ _RUNTIME_MODULES = frozenset(
         # Durabilidade das registries de plataforma. Runtime: guarda o
         # estado que o runtime produz, e nao governa aprendizado.
         "platform_persistence",
+        # Risk Intake: resolve contexto antes da analise. Runtime, e nao
+        # Consumer Capability — atende qualquer projeto que declare
+        # superficie, e nao pertence a consumidor nenhum.
+        "risk_intake",
         # Safe Reuse
         "safe_reuse",
         # QA e avaliacao operacional do runtime

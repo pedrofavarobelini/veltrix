@@ -68,6 +68,7 @@ from textual.widgets import (
     TextArea,
 )
 
+from app.modules.risk_console.auto_context import apply, propose, render_review
 from app.modules.risk_console.analysis import (
     ConsoleAnalysis,
     ConsoleOperationError,
@@ -95,6 +96,7 @@ from app.modules.risk_console.domain import (
     ConsoleInputError,
     ConsoleRequestInput,
     available_projects,
+    build_request,
     split_list,
 )
 from app.modules.risk_console.export import as_json
@@ -228,6 +230,9 @@ class RiskConsoleApp(App):
        entre paineis empurravam o ultimo para fora da tela, comendo a borda
        direita. `fr` divide o que sobra DEPOIS das margens. */
     #linha-detalhe > Vertical {{ height: auto; }}
+    #painel-revisao {{ height: auto; }}
+    #acoes-revisao {{ height: 3; margin: 1 0 0 0; }}
+    #acoes-revisao Button {{ margin: 0 2 0 0; }}
     #painel-contexto {{ width: 3fr; }}
     #painel-cenarios {{ width: 3fr; }}
     #painel-historico {{ width: 2fr; }}
@@ -304,6 +309,8 @@ class RiskConsoleApp(App):
     def __init__(self, *, export_dir: Path | None = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.result: ConsoleAnalysis | None = None
+        self._proposal = None
+        self._pending_entry = None
         self._export_dir = export_dir or Path.cwd()
         self._contract_id: str | None = None
 
@@ -337,6 +344,16 @@ class RiskConsoleApp(App):
                 yield from self._compose_analise()
 
             yield Static("", classes="painel", id="painel-dimensoes")
+
+            # Etapa intermediaria: proposta de contexto para revisao humana.
+            # Confirmar aqui autoriza a ANALISE, nunca a execucao.
+            with Vertical(classes="painel", id="painel-revisao"):
+                yield Static("", id="revisao-texto")
+                with Horizontal(id="acoes-revisao"):
+                    yield Button("CONFIRMAR E ANALISAR", id="revisao-confirmar", variant="primary")
+                    yield Button("REVISAR DETALHES", id="revisao-detalhes")
+                    yield Button("CANCELAR", id="revisao-cancelar")
+
             yield Static("", id="painel-gate")
 
             with Horizontal(id="linha-detalhe"):
@@ -469,6 +486,7 @@ class RiskConsoleApp(App):
             ("#painel-resumo", "ANÁLISE DE RISCO"),
             ("#painel-alcance", "RAIO DE IMPACTO"),
             ("#painel-dimensoes", "DIMENSÕES DE RISCO"),
+            ("#painel-revisao", "REVISÃO DE CONTEXTO"),
             ("#painel-gate", "GATE FINAL"),
             ("#painel-contexto", "CONTEXTO"),
             ("#painel-cenarios", "CENÁRIOS"),
@@ -479,6 +497,7 @@ class RiskConsoleApp(App):
             self.query_one(selector).border_title = title
         self._reset_actions()
         self._show_result_areas(False)
+        self.query_one("#painel-revisao").display = False
         self._apply_width(self.size.width)
 
     # --- responsividade ---------------------------------------------------
@@ -645,12 +664,51 @@ class RiskConsoleApp(App):
     # --- acoes ------------------------------------------------------------
 
     async def action_analisar(self) -> None:
+        """Propoe o contexto. A analise so roda depois da confirmacao humana.
+
+        Duas etapas de proposito: preencher contexto sozinho e analisar no
+        mesmo clique faria o usuario descobrir o que foi inferido DEPOIS de o
+        resultado existir — que e como a contaminacao anterior passou.
+        """
         try:
-            result = analyze(self._collect())
+            entrada = self._collect()
+            # Valida ANTES de propor: prompt vazio, projeto sem capability e
+            # ambiente invalido precisam falhar aqui, e nao depois de o
+            # usuario revisar uma proposta que nunca poderia ser analisada.
+            build_request(entrada)
+            proposta = propose(entrada)
         except (ConsoleInputError, ConsoleOperationError) as error:
             self._message(str(error), "erro")
             return
 
+        self._proposal = proposta
+        self._pending_entry = entrada
+        painel = self.query_one("#painel-revisao")
+        painel.display = True
+        self.query_one("#revisao-texto", Static).update(render_review(proposta))
+        self._show_result_areas(False)
+        self._message(
+            f"{proposta.review_count} item(ns) inferido(s) para revisar. "
+            "Confirmar autoriza apenas a análise.",
+            "aviso",
+        )
+
+    async def action_confirmar(self) -> None:
+        """Confirma o contexto e roda a analise.
+
+        A confirmacao diz "o contexto e este". Ela nao diz "pode executar", e
+        nao produz PASS: o gate continua sendo do Risk Engine.
+        """
+        if self._proposal is None or self._pending_entry is None:
+            return
+        try:
+            entrada = apply(self._pending_entry, self._proposal)
+            result = analyze(entrada)
+        except (ConsoleInputError, ConsoleOperationError) as error:
+            self._message(str(error), "erro")
+            return
+
+        self.query_one("#painel-revisao").display = False
         self.result = result
         await self._paint(result)
         self._apply_gate_to_actions(result)
@@ -671,6 +729,26 @@ class RiskConsoleApp(App):
     @on(Button.Pressed, "#acao-reanalisar")
     async def _pressed_analyze(self) -> None:
         await self.action_analisar()
+
+    @on(Button.Pressed, "#revisao-confirmar")
+    async def _pressed_confirm(self) -> None:
+        await self.action_confirmar()
+
+    @on(Button.Pressed, "#revisao-cancelar")
+    def _pressed_cancel(self) -> None:
+        self.query_one("#painel-revisao").display = False
+        self._proposal = None
+        self._pending_entry = None
+        self._message("Proposta descartada. Nada foi analisado.", "aviso")
+
+    @on(Button.Pressed, "#revisao-detalhes")
+    def _pressed_details(self) -> None:
+        """Abre as Configuracoes Avancadas com a proposta a vista."""
+        self.query_one("#avancadas", Collapsible).collapsed = False
+        self._message(
+            "Configurações Avançadas abertas. Editar um campo o torna declarado.",
+            "aviso",
+        )
 
     @on(Button.Pressed, "#acao-sair")
     def _pressed_exit(self) -> None:

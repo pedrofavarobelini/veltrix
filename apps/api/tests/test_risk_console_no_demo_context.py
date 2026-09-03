@@ -117,8 +117,8 @@ def test_no_advanced_placeholder_is_a_plausible_domain_value():
             assert demo not in dica, f"valor de demonstração ainda em uso: {demo}"
 
 
-def test_a_freshly_opened_console_submits_nothing_but_the_prompt():
-    """Campo não declarado precisa chegar ao motor realmente vazio."""
+def test_a_freshly_opened_console_submits_only_what_the_prompt_supports():
+    """Contexto resolvido precisa ser rastreável ao prompt ou ao projeto."""
     from app.modules.risk_console.app import RiskConsoleApp
 
     async def cenario():
@@ -132,22 +132,27 @@ def test_a_freshly_opened_console_submits_nothing_but_the_prompt():
             app.query_one("#analisar", Button).press()
             await pilot.pause()
             await pilot.pause()
+            app.query_one("#revisao-confirmar", Button).press()
+            await pilot.pause()
+            await pilot.pause()
             return app.result
 
     resultado = asyncio.run(cenario())
     assert resultado is not None
 
+    # Com o Auto Context, o contexto deixa de vir vazio — mas TUDO o que vem
+    # precisa ser rastreavel ao prompt ou a superficie declarada do projeto.
+    # O que nao pode aparecer e valor que ninguem citou.
     pedido = resultado.request
-    assert pedido.permissions == []
-    assert pedido.context.allowed_scope == []
-    assert pedido.context.forbidden_scope == []
     assert pedido.context.external_integrations == []
-    assert pedido.context.required_tests == []
     assert pedido.context.constraints == []
     assert pedido.context.acceptance_criteria == []
     assert pedido.context.database is None
     assert pedido.context.rollback_plan_present is False
-    assert pedido.requested_operation.targets == []
+
+    # O alvo inferido veio da area declarada citada no proprio prompt.
+    assert pedido.requested_operation.targets == ["risk_console"]
+    assert pedido.context.allowed_scope == ["module:risk_console"]
 
 
 def test_no_demo_value_reaches_the_engine_from_an_empty_form():
@@ -162,6 +167,9 @@ def test_no_demo_value_reaches_the_engine_from_an_empty_form():
             app.query_one("#prompt", TextArea).text = PROMPT_CONSOLE
             await pilot.pause()
             app.query_one("#analisar", Button).press()
+            await pilot.pause()
+            await pilot.pause()
+            app.query_one("#revisao-confirmar", Button).press()
             await pilot.pause()
             await pilot.pause()
             return app.result.request.model_dump_json()
