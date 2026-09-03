@@ -72,6 +72,11 @@ CAPABILITY_TERMS: dict[TechnicalCapability, tuple[str, ...]] = {
         "atualize", "atualizar", "escreva", "escrever", "crie", "criar",
         "refatore", "refatorar", "corrija", "corrigir", "ajuste", "ajustar",
         "remova", "remover", "delete", "deletar", "apague", "apagar",
+        # "Melhorar o espacamento" e uma alteracao. A lacuna apareceu quando a
+        # classificacao passou a depender do verbo: sem "melhorar" na tabela,
+        # nenhum verbo de mutacao precedia a area, e o alvo sumia.
+        "melhore", "melhorar", "implemente", "implementar",
+        "adicione", "adicionar", "renomeie", "renomear",
     ),
     TechnicalCapability.TERMINAL: (
         "execute", "executar", "rode", "rodar", "comando", "terminal", "shell",

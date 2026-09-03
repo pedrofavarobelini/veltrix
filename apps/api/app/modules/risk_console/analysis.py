@@ -75,6 +75,9 @@ class ConsoleAnalysis:
     # console e indistinguivel de um valor declarado pelo humano — que foi
     # exatamente como a contaminacao passou despercebida.
     provenance: dict[str, Provenance] = field(default_factory=dict)
+    # Campos revisados e confirmados pelo humano. SEPARADO da proveniencia:
+    # "de onde veio" e "foi revisado" sao duas perguntas diferentes.
+    confirmed: frozenset[str] = field(default_factory=frozenset)
 
     @property
     def blocked(self) -> bool:
@@ -96,6 +99,7 @@ def analyze(entry: ConsoleRequestInput) -> ConsoleAnalysis:
     request = build_request(entry)
     resultado = analyze_request(request)
     resultado.provenance = context_provenance(entry)
+    resultado.confirmed = entry.confirmed_fields
     return resultado
 
 

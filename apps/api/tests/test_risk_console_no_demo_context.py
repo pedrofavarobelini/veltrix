@@ -400,5 +400,20 @@ def test_an_unrecognisable_prompt_stays_unknown_instead_of_guessing():
     """Não saber a operação é um fato; inventá-la seria pior que bloquear."""
     from app.modules.risk_engine.schemas import OperationKind
 
-    pedido = build_request(_console_entry(prompt="Melhorar o espaçamento dos painéis"))
+    pedido = build_request(_console_entry(prompt="O painel da direita, ontem."))
     assert pedido.requested_operation.kind is OperationKind.UNKNOWN
+
+
+def test_improving_something_is_recognised_as_writing():
+    """"Melhorar o espaçamento" É uma alteração.
+
+    A lacuna apareceu quando a classificação de alvo passou a depender do
+    verbo: sem "melhorar" na tabela, nenhum verbo de mutação precedia a área,
+    e o alvo sumia — o oposto de inventar escopo, mas errado do mesmo jeito.
+    """
+    from app.modules.risk_engine.schemas import OperationKind
+
+    pedido = build_request(
+        _console_entry(prompt="Melhorar o espaçamento dos painéis do Risk Console")
+    )
+    assert pedido.requested_operation.kind is OperationKind.WRITE

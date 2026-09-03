@@ -77,28 +77,46 @@ def apply(entry: ConsoleRequestInput, proposal: ContextProposal) -> ConsoleReque
     import dataclasses
 
     atualizacao: dict = {}
+    # A origem de cada campo resolvido viaja junto. Sem isto, o painel de
+    # contexto so via "tem valor" e concluia "foi declarado" — e confirmar uma
+    # inferencia passava a parecer que o humano a tinha digitado.
+    origens: dict[str, str] = {}
+    confirmados: set[str] = set()
+
+    def _registrar(campo: str, nome_proposta: str) -> None:
+        proposto = proposal.field(nome_proposta)
+        if proposto is None:
+            return
+        origens[campo] = proposto.origin.value
+        confirmados.add(campo)
 
     operacao = proposal.field("operation")
     if operacao and operacao.values and entry.operation is None:
         atualizacao["operation"] = OperationKind(operacao.values[0])
+        _registrar("operation", "operation")
 
     alvos = proposal.field("targets")
     if alvos and alvos.values and not entry.targets:
         atualizacao["targets"] = list(alvos.values)
+        _registrar("targets", "targets")
 
     escopo = proposal.field("allowed_scope")
     if escopo and escopo.values and not entry.allowed_scope:
         atualizacao["allowed_scope"] = list(escopo.values)
+        _registrar("allowed_scope", "allowed_scope")
 
     proibido = proposal.field("forbidden_scope")
     if proibido and proibido.values:
         atualizacao["forbidden_scope"] = list(
             dict.fromkeys([*entry.forbidden_scope, *proibido.values])
         )
+        if not entry.forbidden_scope:
+            _registrar("forbidden_scope", "forbidden_scope")
 
     testes = proposal.field("required_tests")
     if testes and testes.values and not entry.required_tests:
         atualizacao["required_tests"] = list(testes.values)
+        _registrar("required_tests", "required_tests")
 
     if not entry.permissions:
         # So o que a interseccao concedeu. Uma capacidade pedida e negada NAO
@@ -116,6 +134,10 @@ def apply(entry: ConsoleRequestInput, proposal: ContextProposal) -> ConsoleReque
             atualizacao["permissions"] = sorted(
                 {f"{_permission_prefix(item)}:{alvos[0]}" for item in concedidas}
             )
+            # Permissao efetiva e decisao de POLITICA, e nao declaracao do
+            # humano nem inferencia do texto.
+            origens["permissions"] = "POLICY_DERIVED"
+            confirmados.add("permissions")
         # Sem alvo identificado, NENHUMA permissao e proposta. Inventar um
         # escopo amplo — `write:projeto` — para um pedido como "corrija tudo"
         # seria fabricar autorizacao ampla a partir de ambiguidade. Sem
@@ -124,8 +146,13 @@ def apply(entry: ConsoleRequestInput, proposal: ContextProposal) -> ConsoleReque
     banco = proposal.field("database")
     if banco and banco.values and not entry.database:
         atualizacao["database"] = banco.values[0]
+        _registrar("database", "database")
 
-    return dataclasses.replace(entry, **atualizacao) if atualizacao else entry
+    if not atualizacao:
+        return entry
+    atualizacao["resolved_origins"] = {**entry.resolved_origins, **origens}
+    atualizacao["confirmed_fields"] = frozenset(entry.confirmed_fields | confirmados)
+    return dataclasses.replace(entry, **atualizacao)
 
 
 def _permission_prefix(capability: str) -> str:

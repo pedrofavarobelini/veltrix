@@ -40,7 +40,8 @@ _OPERATION_TERMS: tuple[tuple[OperationKind, tuple[str, ...]], ...] = (
         (
             "write", "change", "edit", "alterar", "modificar",
             "altere", "modifique", "edite", "ajuste", "atualize",
-            "escreva", "refatore", "corrija",
+            "escreva", "refatore", "corrija", "melhore", "melhorar",
+            "implemente", "adicione", "renomeie",
         ),
     ),
     (OperationKind.EXECUTE, ("execute", "run", "executar", "rodar", "rode")),

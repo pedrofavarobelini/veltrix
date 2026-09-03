@@ -162,6 +162,13 @@ class ConsoleRequestInput:
     rollback_plan_present: bool = False
     request_id: str | None = None
 
+    # Origem de cada campo resolvido pelo Auto Context, por nome de campo.
+    # Confirmar uma proposta NAO transforma inferencia em declaracao: a origem
+    # original continua sendo a origem, e a confirmacao e registrada a parte.
+    resolved_origins: dict[str, str] = field(default_factory=dict)
+    # Campos que o humano revisou e confirmou na tela de revisao.
+    confirmed_fields: frozenset[str] = field(default_factory=frozenset)
+
 
 def prompt_limit() -> int:
     """Limite real de `request_text` no contrato V1, lido do proprio schema."""
@@ -262,6 +269,8 @@ class Provenance(str, Enum):
     INFERRED = "INFERRED"
     # O console supriu por ter um default de formulario.
     DEFAULTED = "DEFAULTED"
+    # A politica decidiu. Nao e declaracao do usuario nem inferencia do texto.
+    POLICY_DERIVED = "POLICY_DERIVED"
     # Ninguem declarou. Ausencia e um fato, e aparece como tal.
     UNKNOWN = "UNKNOWN"
 
@@ -272,6 +281,7 @@ PROVENANCE_LABELS: dict[Provenance, str] = {
     Provenance.DECLARED: "declarado",
     Provenance.INFERRED: "inferido",
     Provenance.DEFAULTED: "padrão",
+    Provenance.POLICY_DERIVED: "política",
     Provenance.UNKNOWN: "—",
 }
 
@@ -346,7 +356,26 @@ def context_provenance(entry: ConsoleRequestInput) -> dict[str, Provenance]:
     proveniencia["rollback_plan_present"] = (
         Provenance.DECLARED if entry.rollback_plan_present else Provenance.UNKNOWN
     )
+
+    # A origem RESOLVIDA pelo Auto Context vence a heuristica de "tem valor,
+    # logo foi declarado". Confirmar uma inferencia nao a torna declaracao: o
+    # humano revisou o que o sistema deduziu, e isso e outra coisa.
+    for campo, origem in entry.resolved_origins.items():
+        try:
+            proveniencia[campo] = Provenance(origem)
+        except ValueError:
+            proveniencia[campo] = Provenance.UNKNOWN
     return proveniencia
+
+
+def confirmed_fields(entry: ConsoleRequestInput) -> frozenset[str]:
+    """Campos que o humano revisou e confirmou.
+
+    Metadado SEPARADO da proveniencia, de proposito. "De onde veio" e "foi
+    revisado" sao duas perguntas, e responder as duas com o mesmo campo
+    apagaria a primeira.
+    """
+    return entry.confirmed_fields
 
 
 def declared_context_fields(entry: ConsoleRequestInput) -> list[str]:
