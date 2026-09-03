@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from pydantic_core import to_jsonable_python
 
 from app.modules.caller_identity.schemas import AuthenticatedCallerContext
+from app.modules.risk_engine.scope import canonical_scopes
 from app.modules.risk_engine.execution_contract_schemas import (
     ContractValidation,
     ContractValidationRequest,
@@ -170,8 +171,11 @@ class ExecutionContractService:
             dimensions[RiskDimensionName.DATA.value] >= 0.8
             or dimensions[RiskDimensionName.MIGRATION.value] >= 0.8
         )
-        allowed_scope = sorted(set(analysis.foundation.scope.targets_in_scope))
-        forbidden_scope = sorted(set(request.context.forbidden_scope))
+        # O contrato e comparado com a evidencia depois da execucao. As duas
+        # pontas precisam falar a mesma lingua, ou o desvio de escopo vira
+        # ruido de grafia.
+        allowed_scope = sorted(set(canonical_scopes(analysis.foundation.scope.targets_in_scope)))
+        forbidden_scope = sorted(set(canonical_scopes(request.context.forbidden_scope)))
         forbidden_operations = ["scope_expansion", "unsigned_override"]
         if gate is RiskGate.BLOCK:
             forbidden_operations.append(request.requested_operation.kind.value)

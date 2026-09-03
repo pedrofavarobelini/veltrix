@@ -182,7 +182,9 @@ def test_running_tests_does_not_make_tests_a_mutation_target():
 def test_the_mutation_scope_excludes_the_verification_target():
     """Escopo de mutação é autorização: executar não amplia o que se pode alterar."""
     aplicada = _confirmed()
-    assert aplicada.targets == ["risk_console"]
+    # Alvo e escopo na MESMA representacao: era a divergencia de grafia
+    # entre estas duas linhas que produzia o conflito falso de escopo.
+    assert aplicada.targets == ["module:risk_console"]
     assert aplicada.allowed_scope == ["module:risk_console"]
     assert "module:testes" not in aplicada.allowed_scope
 
@@ -298,4 +300,4 @@ def test_the_full_flow_preserves_provenance_through_the_ui():
     assert "inferido ✓" in contexto
     assert "0 campo(s) declarado(s)" in contexto
     assert resultado.provenance["targets"] is Provenance.INFERRED
-    assert resultado.request.requested_operation.targets == ["risk_console"]
+    assert resultado.request.requested_operation.targets == ["module:risk_console"]
