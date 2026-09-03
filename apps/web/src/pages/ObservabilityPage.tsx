@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+import veltrixLogo from "../assets/veltrix-logo-icon.png";
 import {
   getExecutionDetail,
   getExecutions,
@@ -154,7 +154,7 @@ export function ObservabilityPage() {
     <main className="observability-shell">
       <header className="obs-brandbar">
         <div className="obs-brand">
-          <img src={pedrocoreLogo} alt="Logo Veltrix" />
+          <img src={veltrixLogo} alt="Logo Veltrix" />
           <div>
             <strong>Veltrix <span>IA</span></strong>
             <small>Observabilidade técnica</small>

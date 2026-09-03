@@ -6,7 +6,7 @@ Aplicar a logo oficial escolhida para o Veltrix sem alterar o design aprovado da
 
 ## Escopo aplicado
 
-- Logo oficial adicionada em `apps/web/src/assets/pedrocore-logo-icon.png`.
+- Logo oficial adicionada em `apps/web/src/assets/veltrix-logo-icon.png`.
 - Favicon atualizado em `apps/web/public/favicon-32.png`.
 - Ícone de aplicativo atualizado em `apps/web/public/logo192.png`.
 - Sidebar passou a usar a logo oficial no bloco da marca.
@@ -16,7 +16,7 @@ Aplicar a logo oficial escolhida para o Veltrix sem alterar o design aprovado da
 ## Arquivos principais
 
 ```txt
-apps/web/src/assets/pedrocore-logo-icon.png
+apps/web/src/assets/veltrix-logo-icon.png
 apps/web/public/favicon-32.png
 apps/web/public/logo192.png
 apps/web/src/components/ChatSidebar.tsx

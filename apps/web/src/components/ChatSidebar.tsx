@@ -1,4 +1,4 @@
-import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+import veltrixLogo from "../assets/veltrix-logo-icon.png";
 import type { ChatMessage } from "../types/chat";
 
 type ChatSidebarProps = {
@@ -47,7 +47,7 @@ export function ChatSidebar({
   return (
     <aside className="chat-sidebar" aria-label="Navegação e histórico local do Veltrix">
       <div className="sidebar-brand">
-        <img className="sidebar-logo brand-logo-image" src={pedrocoreLogo} alt="Logo oficial do Veltrix" />
+        <img className="sidebar-logo brand-logo-image" src={veltrixLogo} alt="Logo oficial do Veltrix" />
         <div>
           <strong>Veltrix <span>IA</span></strong>
           <small>{versionLabel}</small>

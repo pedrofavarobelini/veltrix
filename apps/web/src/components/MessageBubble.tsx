@@ -1,4 +1,4 @@
-import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+import veltrixLogo from "../assets/veltrix-logo-icon.png";
 import type { ChatMessage, FeedbackType } from "../types/chat";
 
 type MessageBubbleProps = {
@@ -41,7 +41,7 @@ export function MessageBubble({
   return (
     <article className={`message-row ${isUser ? "from-user" : "from-assistant"}`}>
       {!isUser && (
-        <img className="message-avatar brand-logo-image" src={pedrocoreLogo} alt="Veltrix" />
+        <img className="message-avatar brand-logo-image" src={veltrixLogo} alt="Veltrix" />
       )}
 
       <div className="message-bubble">

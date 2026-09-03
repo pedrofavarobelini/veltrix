@@ -86,3 +86,58 @@ def real_provider_guard(monkeypatch, request):
         f"{calls}. A chamada foi bloqueada pelo guard (nenhuma rede real), "
         "mas o teste não pode depender de provider real."
     )
+
+
+# ---------------------------------------------------------------------------
+# Guard de taxonomia de skips
+# ---------------------------------------------------------------------------
+# A documentacao ja prometeu tres numeros diferentes de skip (21, 30, 62) e os
+# tres ficaram para tras conforme a suite crescia. Um numero e fragil: cada
+# teste novo de PostgreSQL o quebra sem que nada esteja errado. O que precisa
+# ser estavel nao e a CONTAGEM, e a TAXONOMIA — todo skip pertence a uma de
+# duas categorias declaradas, e um skip fora delas e exatamente o "skip novo"
+# que CONTRIBUTING.md manda investigar.
+#
+# Este guard falha a sessao quando aparece um skip que ninguem declarou, em vez
+# de deixa-lo passar despercebido no meio de dezenas de skips legitimos.
+
+SKIP_CATEGORIES = {
+    "postgres": ("PEDROCORE_TEST_POSTGRES_URL", "VELTRIX_TEST_POSTGRES_URL"),
+    "real_optin": ("PEDROCORE_RUN_REAL_", "teste real opt-in"),
+}
+
+_unexpected_skips: list[str] = []
+
+
+def _skip_reason(report) -> str:
+    longrepr = getattr(report, "longrepr", None)
+    if isinstance(longrepr, tuple) and len(longrepr) == 3:
+        return str(longrepr[2])
+    return str(longrepr or "")
+
+
+def pytest_runtest_logreport(report):
+    if not report.skipped:
+        return
+    reason = _skip_reason(report)
+    for marcadores in SKIP_CATEGORIES.values():
+        if any(m in reason for m in marcadores):
+            return
+    _unexpected_skips.append(f"{report.nodeid}: {reason}")
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if not _unexpected_skips:
+        return
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    if reporter is not None:
+        reporter.write_sep("=", "SKIP FORA DA TAXONOMIA DECLARADA", red=True)
+        for linha in _unexpected_skips:
+            reporter.write_line(linha)
+        reporter.write_line(
+            "Todo skip deve exigir PostgreSQL de teste "
+            "(PEDROCORE_TEST_POSTGRES_URL) ou ser opt-in de recurso real "
+            "(PEDROCORE_RUN_REAL_*). Um skip fora disso e um teste que parou "
+            "de rodar sem ninguem decidir isso."
+        )
+    session.exitstatus = 1

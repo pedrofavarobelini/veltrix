@@ -1,9 +1,9 @@
-import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+import veltrixLogo from "../assets/veltrix-logo-icon.png";
 
 export function LoadingBubble() {
   return (
     <article className="message-row from-assistant loading-row">
-      <img className="message-avatar brand-logo-image" src={pedrocoreLogo} alt="Veltrix" />
+      <img className="message-avatar brand-logo-image" src={veltrixLogo} alt="Veltrix" />
       <div className="message-bubble loading-bubble">
         <div className="message-heading">
           <strong>Veltrix</strong>

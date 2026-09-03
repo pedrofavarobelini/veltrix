@@ -55,13 +55,15 @@ jobs:
 
       - name: Suíte de testes
         working-directory: apps/api
-        # Os 30 skips são esperados: 22 exigem PostgreSQL de teste e 8 são
-        # opt-in de recurso real. `-rs` os lista para que um skip NOVO fique
-        # visível no log em vez de passar despercebido.
+        # A CI não provisiona PostgreSQL, então os testes de integração ficam
+        # `skip` — um skip é honesto, um PASS sem banco não seria. Eles são
+        # executados contra banco real antes de cada fechamento.
         #
-        # Os 22 de PostgreSQL foram executados contra banco real no fechamento
-        # do Risk Engine V2; aqui continuam `skip` porque a CI não provisiona
-        # banco — um skip é honesto, um PASS sem banco não seria.
+        # Nenhum número de skip é afirmado aqui de propósito: contagem
+        # envelhece a cada teste novo. `tests/conftest.py` falha a sessão se
+        # aparecer um skip fora das duas categorias declaradas em
+        # CONTRIBUTING.md (integração PostgreSQL e opt-in de recurso real), e
+        # `-rs` os lista para que a razão fique visível no log.
         run: uv run --frozen python -m pytest -q -rs
 
       - name: Grafo documental

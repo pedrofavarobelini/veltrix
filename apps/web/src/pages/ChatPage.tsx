@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import pedrocoreLogo from "../assets/pedrocore-logo-icon.png";
+import veltrixLogo from "../assets/veltrix-logo-icon.png";
 import { ChatComposer } from "../components/ChatComposer";
 import { ChatSidebar } from "../components/ChatSidebar";
 import { ErrorBanner } from "../components/ErrorBanner";
@@ -465,7 +465,7 @@ export function ChatPage() {
 
       <header className="reference-brandbar" aria-label="Marca Veltrix">
         <div className="reference-brand">
-          <img src={pedrocoreLogo} alt="Logo oficial do Veltrix" />
+          <img src={veltrixLogo} alt="Logo oficial do Veltrix" />
           <div>
             <strong>Veltrix <span>IA</span></strong>
           </div>

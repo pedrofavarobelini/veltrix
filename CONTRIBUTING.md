@@ -41,17 +41,32 @@ Rode isto antes de abrir um PR. São os mesmos comandos da CI:
 
 ```bash
 cd apps/api
-uv run python -m pytest -q          # 1340 passed, 21 skipped
+uv run python -m pytest -q          # tudo verde, skips apenas nas duas categorias abaixo
 uv run python -m ruff check .       # All checks passed!
 
 cd ../web
 npm run build                                  # tsc -b && vite build
 ```
 
-Os **21 skips são esperados**: 13 exigem um PostgreSQL de teste
-(`PEDROCORE_TEST_POSTGRES_URL`) e 8 são opt-in de recurso real
-(`PEDROCORE_RUN_REAL_*`, todos default `false` por segurança). Se aparecer um
-skip novo, investigue — não normalize.
+### Os skips esperados
+
+Não decore um número — ele envelhece a cada teste novo, e esta seção já
+prometeu 21 quando a suíte tinha 30 e 30 quando tinha 62. O que é estável é a
+**taxonomia**: todo skip pertence a uma destas duas categorias, e nenhuma
+outra é aceita.
+
+| Categoria | Como sair do skip | Por que existe |
+|---|---|---|
+| **Integração PostgreSQL** | defina `PEDROCORE_TEST_POSTGRES_URL` apontando para um banco de teste descartável | são testes de durabilidade real; um `PASS` sem banco não provaria nada |
+| **Recurso real opt-in** | defina o `PEDROCORE_RUN_REAL_*` correspondente | fazem chamada externa de verdade; default `false` para que a suíte nunca gaste credencial sozinha |
+
+Com um PostgreSQL de teste configurado, a primeira categoria some inteira e
+sobram apenas os opt-in de recurso real.
+
+Um skip **fora** dessas duas categorias é um teste que parou de rodar sem
+ninguém decidir isso. `tests/conftest.py` falha a sessão quando isso acontece,
+em vez de deixar o skip novo passar despercebido no meio dos legítimos — então
+o guard, e não esta tabela, é a fonte de verdade.
 
 ## As quatro invariantes
 
