@@ -66,53 +66,133 @@ Se o comando não for encontrado, o ambiente não foi sincronizado; rode
 
 ## 4. A tela
 
-Em terminal largo, um painel de duas colunas:
+A interface tem **três estados**, e eles nunca dividem a tela. Antes tudo
+convivia — formulário, gate vazio, dimensões sem valor, cenários, histórico e
+detalhes técnicos, todos abertos ao mesmo tempo. Havia informação suficiente e
+ordem nenhuma.
+
+```text
+ESTADO 1  ENTRADA      →  ESTADO 2  REVISÃO    →  ESTADO 3  RESULTADO
+```
+
+Nada foi removido. O que mudou foi **quanto aparece antes de alguém pedir**.
+
+### Estado 1 — Entrada
 
 ```text
  VELTRIX RISK ENGINE  ·  Console de Risco Pré-Execução
-╭─ ENTRADA ─────────────╮ ╭─ ANÁLISE DE RISCO ──────────────────────────╮
-│ Projeto               │ │ Intenção · Modifica · Ambiente · Executor   │
-│ Ambiente              │ │ Qualidade · Ambiguidade · Confiança         │
-│ Executor              │ ╰─────────────────────────────────────────────╯
-│ Prompt                │ ╭─ RAIO DE IMPACTO ───────────────────────────╮
-│                       │ │ contagens          │ amplitude · magnitude  │
-│ ▶ CONFIG. AVANÇADAS   │ ╰─────────────────────────────────────────────╯
-│    ANALISAR RISCO     │
-╰───────────────────────╯
-╭─ DIMENSÕES DE RISCO ─────────────────────────────────────────────────╮
-│ Escopo  Dados  Segurança  Migração  Regressão  Operacional           │
+╭─ ENTRADA ────────────────────────────────────────────────────────────╮
+│ Projeto    [ Veltrix ▼ ] [+]                                         │
+│ Veltrix · Manifesto: disponível · Local: não configurado             │
+│ GERENCIAR PROJETOS                                                   │
+│ Ambiente   [ Desenvolvimento ▼ ]                                     │
+│ Executor   [ Claude Code ▼ ]                                         │
+│ Prompt     ┌────────────────────────────────────────────────────┐    │
+│            └────────────────────────────────────────────────────┘    │
+│ ▶ CONFIGURAÇÕES AVANÇADAS                                            │
+│                     ANALISAR RISCO                                   │
 ╰──────────────────────────────────────────────────────────────────────╯
+```
+
+Só o que descreve o pedido. Nenhum gate vazio, nenhuma dimensão sem valor,
+nenhum painel de resultado esperando um resultado que ainda não existe.
+
+### Estado 2 — Revisão de contexto
+
+Depois de `ANALISAR RISCO` o resultado ainda **não** aparece. O que aparece é a
+proposta de contexto com a origem de cada campo, a interseção de permissões, os
+conflitos, e a frase que governa a etapa:
+
+> A confirmação autoriza somente a análise de risco; nenhuma operação será
+> executada.
+
+Detalhado em [[#4b. Auto Context]].
+
+### Estado 3 — Resultado
+
+A ordem da tela é a ordem da leitura:
+
+```text
 ┏━ GATE FINAL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃                     REVISÃO OBRIGATÓRIA                              ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-╭─ CENÁRIOS ──╮ ╭─ HISTÓRICO ─╮ ╭─ ACHADOS ────╮ ╭─ RECOMENDAÇÕES ────╮
-▶ DETALHES TÉCNICOS
- Análise concluída. Nenhuma operação foi executada.
- EDITAR  REANALISAR  EMITIR CONTRATO  COPIAR  EXPORTAR          SAIR
+╭─ RESUMO DA OPERAÇÃO ─────────╮ ╭─ PRINCIPAIS RISCOS ────────────────╮
+│ Operação · Alvo · Projeto    │ │ Escopo ....... ALTO                │
+│ Ambiente · Executor          │ │ Operacional .. MÉDIO               │
+╰──────────────────────────────╯ ╰────────────────────────────────────╯
+╭─ POR QUÊ? ───────────────────────────────────────────────────────────╮
+│ ALTO  Um ou mais alvos não pertencem ao escopo permitido conhecido   │
+│ + 4 achados — ver aba DETALHES TÉCNICOS                              │
+╰──────────────────────────────────────────────────────────────────────╯
+╭─ O QUE FAZER? ───────────────────────────────────────────────────────╮
+╰──────────────────────────────────────────────────────────────────────╯
+ RAIO DE IMPACTO │ DIMENSÕES │ CENÁRIOS │ HISTÓRICO │ CONTEXTO │ TÉCNICOS
 ```
 
-A coluna de análise ocupa ~62% da largura; a de entrada, ~38%. Os painéis de
-análise ficam **empilhados** e não lado a lado, para que cada um use a coluna
-inteira — lado a lado eles usavam metade dela e sobrava uma faixa vazia à
-direita.
+**GATE FINAL primeiro**, sempre — em qualquer largura. É a resposta que se
+procura ao abrir a ferramenta.
 
-`DIMENSÕES DE RISCO` distribui as seis dimensões em uma linha quando há
-largura, três em terminal médio e duas em estreito. `RAIO DE IMPACTO` usa duas
-colunas quando há largura.
+`POR QUÊ?` e `O QUE FAZER?` mostram no máximo **cinco** itens e dizem quantos
+sobraram (`+ N — ver aba`). `PRINCIPAIS RISCOS` mostra apenas as dimensões
+materialmente relevantes, ordenadas pela severidade real. Códigos de razão não
+aparecem aqui: eles vivem em `DETALHES TÉCNICOS`.
 
-O **Gate Final** fica acima dos painéis de detalhe, e não no fim. É a
-resposta que se procura ao abrir a ferramenta; enterrá-la depois de vários
-cenários faria o console responder por último a pergunta que veio primeiro.
+### Detalhes sob demanda
 
-Em terminal estreito (menos de 100 colunas) as duas colunas viram uma, os
-painéis empilham e a barra de ações vira uma grade de dois níveis. Nada
-desaparece.
+Seis abas, **uma renderizada por vez**:
+
+| aba | conteúdo |
+|---|---|
+| `RAIO DE IMPACTO` | contagens, amplitude, magnitude |
+| `DIMENSÕES` | todas as dimensões reais |
+| `CENÁRIOS` | resumo; cada cenário abre com trigger, efeito, contenção, rollback, verificação, risco residual e confiança |
+| `HISTÓRICO` | análises comparáveis, ou a frase de ausência |
+| `CONTEXTO` | proveniência completa — DECLARED / INFERRED / POLICY_DERIVED / DEFAULTED / UNKNOWN, e os campos confirmados |
+| `DETALHES TÉCNICOS` | reason codes, políticas, fingerprints, scores, identificadores |
+
+Nenhuma abre em `DETALHES TÉCNICOS` por padrão. Recolher não é esconder: tudo
+continua a um toque, e nada é descartado.
+
+### Responsividade
+
+| largura | comportamento |
+|---|---|
+| 140 | duas colunas onde é útil |
+| 110 | duas colunas, mais estreitas |
+| 78–80 | uma coluna; a barra de ações vira grade |
+
+O gate continua sendo o primeiro elemento nas três, e nenhuma ação sai da tela.
+
+### Acessibilidade
+
+Severidade sempre em **texto** — `INFORMATIVO`, `BAIXO`, `MÉDIO`, `ALTO`,
+`CRÍTICO`, `BLOQUEADO` — nunca só em cor. Tudo é alcançável por teclado; mouse
+é secundário.
+
+| atalho | ação |
+|---|---|
+| `Ctrl+J` | avança o estado atual: analisar, ou confirmar a análise |
+| `Ctrl+R` | analisar |
+| `Esc` | voltar / cancelar |
+| `Ctrl+D` | configurações avançadas |
+| `Tab` | navegar |
+| `Ctrl+Q` | sair |
+
+Não existe atalho que sugira **executar** a operação analisada. O Risk Engine
+não executa nada, e um atalho lido como "executar" seria uma promessa que o
+produto inteiro existe para não fazer.
 
 ### Projeto
 
-Lista derivada do **Capability Manifest**: aparecem os projetos que declaram a
-capability `risk_analysis`. O console não tem lista fixa de projetos e não sabe
-o nome de nenhum em particular — um projeto novo aparece por declarar o que faz.
+Lista vinda do **Project Registry** — veja [[PROJECT_REGISTRY]].
+
+`[+]` cria um projeto; `GERENCIAR PROJETOS` edita metadata e arquiva. O badge
+abaixo do seletor diz o nome, se há manifesto e se há caminho configurado — sem
+despejar o caminho completo na tela.
+
+Um projeto **sem** Capability Manifest funciona normalmente: os fatos que o
+manifesto traria ficam `UNKNOWN`, nunca deduzidos do nome. A guarda que existe
+é de identidade — um projeto não registrado, ou arquivado, é recusado.
 
 ### Ambiente
 
@@ -433,3 +513,10 @@ Registrado para que fique claro o que **não** mudou:
   a edição de um módulo, e não uma caçada a `grep`.
 - As 12 evoluções de plataforma e as evoluções futuras seguem documentadas em
   [[RISK_ENGINE_V2_BASELINE]] e **não implementadas**.
+- O redesenho de UX **não mudou decisão de risco**. Para a mesma requisição
+  confirmada, gate, dimensões, raio de impacto, cenários, achados,
+  recomendações e elegibilidade de contrato permanecem idênticos — há teste de
+  paridade comparando os dois caminhos.
+- O Project Registry guarda **identidade**, não capacidade. Não há
+  sincronização com GitHub: `repository_url` é metadado, e nenhuma rede é
+  tocada. Veja [[PROJECT_REGISTRY]].

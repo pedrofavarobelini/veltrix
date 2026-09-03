@@ -480,7 +480,7 @@ def _drive(prompt: str, check, size=(140, 45)):
 
 def test_analysing_opens_the_review_step_before_any_result():
     async def check(app, _pilot):
-        assert app.query_one("#painel-revisao").display is True
+        assert app.state == "revisao"
         assert app.result is None, "a análise rodou sem confirmação humana"
         return True
 
@@ -516,7 +516,7 @@ def test_confirming_runs_the_analysis():
         await pilot.pause()
         await pilot.pause()
         assert app.result is not None
-        assert app.query_one("#painel-revisao").display is False
+        assert app.state != "revisao"
         return True
 
     assert _drive("Atualize o Risk Console.", check)
@@ -529,7 +529,7 @@ def test_cancelling_discards_the_proposal_without_analysing():
         app.query_one("#revisao-cancelar", Button).press()
         await pilot.pause()
         assert app.result is None
-        assert app.query_one("#painel-revisao").display is False
+        assert app.state != "revisao"
         assert "descartada" in str(app.query_one("#mensagem").content)
         return True
 
@@ -586,7 +586,7 @@ def test_editing_after_an_analysis_still_invalidates_the_binding():
 
 def test_an_empty_prompt_is_refused_before_any_proposal():
     async def check(app, _pilot):
-        assert app.query_one("#painel-revisao").display is False
+        assert app.state != "revisao"
         assert "Prompt vazio" in str(app.query_one("#mensagem").content)
         return True
 

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 from rich.markup import escape
 
+from app.modules.risk_engine.schemas import RiskSeverity
 from app.modules.risk_console.analysis import ConsoleAnalysis
 from app.modules.risk_console.branding import (
     COLOR_ACCENT,
@@ -35,7 +36,12 @@ from app.modules.risk_console.branding import (
     PRODUCT_NAME,
     PRODUCT_SUBTITLE,
 )
-from app.modules.risk_console.domain import environment_label, executor_label, operation_label
+from app.modules.risk_console.domain import (
+    environment_label,
+    executor_label,
+    operation_label,
+    project_display_name,
+)
 from app.modules.risk_console.presentation import (
     ambiguity_label,
     humanize_finding,
@@ -562,3 +568,145 @@ def render_analysis(result: ConsoleAnalysis) -> str:
         _title("DETALHES TÉCNICOS") + render_technical_details(result),
     ]
     return "\n".join(block for block in blocks if block)
+
+
+# ===========================================================================
+# Visao primaria — o que cabe nos primeiros dez segundos
+# ===========================================================================
+#
+# A tela anterior mostrava tudo ao mesmo tempo: gate, dimensoes, alcance,
+# cenarios, historico, contexto, achados, recomendacoes e detalhes tecnicos,
+# todos abertos. Nenhum dado foi removido daqui — o que mudou foi a ORDEM em
+# que ele aparece, e quanto dele aparece antes de alguem pedir.
+#
+# Cada funcao abaixo responde UMA das perguntas de abertura. O restante da
+# evidencia continua inteiro, nas abas.
+
+# Quantos itens entram na visao primaria antes de virar "ver detalhes".
+PRIMARY_LIMIT = 3
+PRIMARY_MAX = 5
+
+
+def render_operation_summary(result: ConsoleAnalysis) -> str:
+    """O QUE e ONDE, em cinco linhas: operacao, alvo, projeto, ambiente, executor."""
+    intent = result.analysis.foundation.intent
+    width = 18
+    alvos = list(intent.targets)
+    if not alvos:
+        principal = "não identificado"
+    elif len(alvos) == 1:
+        principal = alvos[0]
+    else:
+        principal = f"{alvos[0]}  [+{len(alvos) - 1}]"
+
+    linhas = [
+        _row("Operação", operation_label(intent.operation).upper(), COLOR_ACCENT, width),
+        _row("Alvo principal", principal, None, width),
+        _row("Projeto", project_display_name(result.request.project_id), None, width),
+        _row("Ambiente", environment_label(result.request.environment), None, width),
+        _row("Executor", _executor_of(result.request), None, width),
+    ]
+    return "\n".join(linhas)
+
+
+def render_top_risks(result: ConsoleAnalysis) -> str:
+    """As dimensoes que importam, ordenadas pela severidade real.
+
+    So as relevantes. A lista completa continua na aba DIMENSOES — mostrar
+    catorze dimensoes das quais onze sao INFORMATIVO enterra as tres que nao
+    sao.
+    """
+    itens = result.analysis.risk_dimensions
+    if not itens:
+        return _muted("  Nenhuma dimensão avaliada.")
+
+    ordem = {
+        RiskSeverity.CRITICAL: 0,
+        RiskSeverity.HIGH: 1,
+        RiskSeverity.MEDIUM: 2,
+        RiskSeverity.LOW: 3,
+        RiskSeverity.INFO: 4,
+    }
+    ordenadas = sorted(itens, key=lambda item: (ordem.get(item.severity, 9), dimension_label(item.dimension)))
+    relevantes = [item for item in ordenadas if item.severity is not RiskSeverity.INFO]
+    # Nenhuma dimensao acima de INFORMATIVO ainda e um fato: mostra-se o topo
+    # da lista em vez de um painel vazio que pareceria ausencia de avaliacao.
+    visiveis = relevantes[:PRIMARY_MAX] or ordenadas[:PRIMARY_LIMIT]
+
+    linhas = [
+        _row(
+            dimension_label(item.dimension),
+            severity_label(item.severity),
+            severity_color(item.severity),
+            22,
+        )
+        for item in visiveis
+    ]
+    restantes = len(itens) - len(visiveis)
+    if restantes > 0:
+        linhas.append(_muted(f"  + {restantes} dimensão(ões) — ver aba DIMENSÕES"))
+    return "\n".join(linhas)
+
+
+def render_key_findings(result: ConsoleAnalysis) -> str:
+    """POR QUE? — no maximo cinco achados, o resto sob demanda."""
+    achados = result.analysis.findings
+    if not achados:
+        return _muted("  Nenhum achado registrado.")
+
+    visiveis = achados[:PRIMARY_MAX]
+    linhas = [
+        f"  [{severity_color(item.severity)}]{escape(severity_label(item.severity))}[/]  "
+        f"{escape(humanize_finding(item.title))}"
+        for item in visiveis
+    ]
+    restantes = len(achados) - len(visiveis)
+    if restantes > 0:
+        linhas.append(_muted(f"  + {restantes} achado(s) — ver aba DETALHES TÉCNICOS"))
+    return "\n".join(linhas)
+
+
+def render_key_recommendations(result: ConsoleAnalysis) -> str:
+    """O QUE FAZER? — as principais, o resto sob demanda."""
+    itens = result.recommendations
+    if not itens:
+        return _muted("  Nenhuma recomendação adicional.")
+    visiveis = itens[:PRIMARY_MAX]
+    linhas = [f"  • {escape(item.text)}" for item in visiveis]
+    restantes = len(itens) - len(visiveis)
+    if restantes > 0:
+        linhas.append(_muted(f"  + {restantes} recomendação(ões) — ver aba DETALHES TÉCNICOS"))
+    return "\n".join(linhas)
+
+
+def render_all_recommendations(result: ConsoleAnalysis) -> str:
+    """Todas, para a aba. Nada some por caber na visao primaria."""
+    if not result.recommendations:
+        return _muted("  Nenhuma recomendação adicional.")
+    return "\n".join(f"  • {escape(item.text)}" for item in result.recommendations)
+
+
+def render_project_badge(project_id: str) -> str:
+    """Identidade do projeto na entrada: nome, manifesto, caminho.
+
+    Discreto de proposito. Diz o que o Veltrix sabe sobre o projeto — e diz
+    quando nao sabe, em vez de deixar a ausencia parecer configuracao pronta.
+    """
+    from app.modules.project_registry.service import project_registry
+
+    registro = project_registry().get(project_id)
+    if registro is None:
+        return _muted("  Projeto não registrado.")
+
+    manifesto = (
+        "disponível" if registro.capability_manifest_reference else "não configurado"
+    )
+    local = "configurado" if registro.local_path else "não configurado"
+    partes = [
+        f"[{COLOR_ACCENT}]{escape(registro.display_name)}[/]",
+        _muted(f"Manifesto: {manifesto}"),
+        _muted(f"Local: {local}"),
+    ]
+    if registro.status.value == "ARCHIVED":
+        partes.insert(1, "[bold]ARQUIVADO[/]")
+    return "  " + "  ·  ".join(partes)

@@ -75,20 +75,50 @@ class ConsoleInputError(ValueError):
     """Entrada recusada antes de chegar ao motor, com mensagem em PT-BR."""
 
 
-def available_projects() -> tuple[str, ...]:
-    """Projetos que DECLARAM a capability de analise de risco.
+def available_projects(*, include_archived: bool = False) -> tuple[str, ...]:
+    """Projetos que o Veltrix conhece, vindos do Project Registry.
 
-    Derivado do Capability Manifest, nunca de uma lista fixa no console. Um
-    projeto novo aparece aqui por declarar o que faz — e o console continua
-    sem saber o nome de nenhum projeto em particular.
+    Antes esta lista saia do Capability Manifest, o que amarrava "aparecer no
+    console" a "ter manifesto declarado no codigo" — e deixava o usuario sem
+    como analisar um projeto proprio.
+
+    O manifesto continua importando, mas para outra pergunta: ele ENRIQUECE o
+    contexto de quem o tem. Um projeto sem manifesto aparece e funciona; os
+    fatos que o manifesto traria ficam `UNKNOWN`, nunca inventados a partir do
+    nome.
+
+        estar na lista  !=  ter capacidade
+        ter nome        !=  ter manifesto
     """
+    from app.modules.project_registry.service import project_registry
+
     return tuple(
-        sorted(
-            project_id
-            for project_id, manifest in PROJECT_MANIFESTS.items()
-            if manifest.declares(ProjectCapability.RISK_ANALYSIS)
-        )
+        item.project_id
+        for item in project_registry().list_projects(include_archived=include_archived)
     )
+
+
+def project_display_name(project_id: str) -> str:
+    """Nome legivel do projeto, ou o proprio id quando ele nao esta no catalogo.
+
+    Devolver o id cru e deliberado: inventar um nome bonito para um projeto
+    desconhecido esconderia justamente o caso que precisa aparecer.
+    """
+    from app.modules.project_registry.service import project_registry
+
+    registro = project_registry().get(project_id)
+    return registro.display_name if registro else project_id
+
+
+def project_declares_risk_analysis(project_id: str) -> bool:
+    """O projeto DECLARA a capability de analise de risco no manifesto?
+
+    Continua sendo pergunta de manifesto, e nao de catalogo. Um projeto pode
+    estar registrado sem declarar nada — e a resposta correta ai e `False`,
+    nao um padrao generoso.
+    """
+    manifesto = PROJECT_MANIFESTS.get(project_id)
+    return bool(manifesto and manifesto.declares(ProjectCapability.RISK_ANALYSIS))
 
 
 def environment_value(label: str) -> str:
@@ -192,11 +222,21 @@ def build_request(entry: ConsoleRequestInput) -> RiskRequest:
     if not prompt:
         raise ConsoleInputError("Prompt vazio: descreva a operação a ser analisada.")
 
+    # O projeto precisa estar REGISTRADO e ATIVO.
+    #
+    # Antes a exigencia era declarar a capability `risk_analysis` no manifesto,
+    # o que amarrava "poder ser analisado" a "ter manifesto escrito no codigo"
+    # — e deixava o usuario sem como analisar um projeto proprio.
+    #
+    # A guarda que fica e a de IDENTIDADE: um id que o catalogo nao conhece nao
+    # vira projeto por ser digitado, e um projeto arquivado nao volta ao fluxo
+    # por alguem informar o id dele. Capacidade continua sendo outra pergunta,
+    # respondida pelo manifesto — e `UNKNOWN` quando nao ha manifesto.
     projects = available_projects()
     project_id = (entry.project_id or "").strip().lower()
     if project_id not in projects:
         raise ConsoleInputError(
-            f"Projeto {entry.project_id!r} não declara a capability 'risk_analysis'. "
+            f"Projeto {entry.project_id!r} não está registrado ou está arquivado. "
             "Projetos disponíveis: " + (", ".join(projects) or "nenhum")
         )
 
