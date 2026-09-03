@@ -151,7 +151,7 @@ def test_a_freshly_opened_console_submits_only_what_the_prompt_supports():
     assert pedido.context.rollback_plan_present is False
 
     # O alvo inferido veio da area declarada citada no proprio prompt.
-    assert pedido.requested_operation.targets == ["risk_console"]
+    assert pedido.requested_operation.targets == ["module:risk_console"]
     assert pedido.context.allowed_scope == ["module:risk_console"]
 
 

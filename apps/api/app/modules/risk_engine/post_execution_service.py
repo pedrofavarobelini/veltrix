@@ -28,6 +28,7 @@ from app.modules.risk_engine.execution_contract_schemas import (
 from app.modules.risk_engine.execution_contract_service import execution_contract_service
 from app.modules.risk_engine.persistence_service import risk_persistence_service
 from app.modules.risk_engine.repository import RiskRepositoryError
+from app.modules.risk_engine.scope import canonical_scopes
 from app.modules.risk_engine.post_execution_schemas import (
     ExecutionComparison,
     ExecutionEvidence,
@@ -94,10 +95,12 @@ class PostExecutionService:
     @staticmethod
     def _compare(evidence: ExecutionEvidence) -> ExecutionComparison:
         contract = evidence.contract
+        # `file:` aqui ja era canonicalizacao — feita a mao, so para arquivo,
+        # e so deste lado. Agora os dois lados passam pela mesma funcao.
         actual_files = sorted({f"file:{item}" for item in evidence.files_changed})
-        actual_targets = sorted(set(actual_files) | set(evidence.scope_changes))
-        allowed_scope = set(contract.allowed_scope)
-        unexpected_files = sorted(set(actual_files) - set(contract.allowed_files))
+        actual_targets = sorted(set(actual_files) | set(canonical_scopes(evidence.scope_changes)))
+        allowed_scope = set(canonical_scopes(contract.allowed_scope))
+        unexpected_files = sorted(set(actual_files) - set(canonical_scopes(contract.allowed_files)))
         scope_deviation = sorted(set(actual_targets) - allowed_scope)
         allowed_commands = set(contract.allowed_commands)
         forbidden_commands = sorted(

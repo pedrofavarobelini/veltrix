@@ -40,6 +40,7 @@ from app.modules.policy_engine.schemas import (
     PolicyRequest,
 )
 from app.modules.policy_engine.service import policy_engine_service
+from app.modules.risk_engine.scope import canonical_scopes
 from app.modules.risk_engine.polarity import (
     affirmative_text,
     forbidden_text,
@@ -468,7 +469,10 @@ class AutoContextBuilder:
         return ProposedField(
             field="targets",
             label="Alvos",
-            values=tuple(dict.fromkeys(encontradas)),
+            # Canonico desde a origem. Emitir `risk_console` aqui e
+            # `module:risk_console` no escopo permitido — duas grafias do
+            # mesmo recurso — foi o que produziu o conflito falso de escopo.
+            values=tuple(canonical_scopes(encontradas)),
             origin=ContextOrigin.INFERRED,
             confidence=Confidence.HIGH if len(encontradas) == 1 else Confidence.MEDIUM,
             reason="Áreas que o prompt pede para ALTERAR.",
@@ -492,7 +496,7 @@ class AutoContextBuilder:
         return ProposedField(
             field="allowed_scope",
             label="Escopo permitido",
-            values=tuple(f"module:{item}" for item in alvos.values),
+            values=tuple(canonical_scopes(alvos.values)),
             origin=ContextOrigin.INFERRED,
             confidence=alvos.confidence,
             reason="Derivado dos alvos identificados; nada além deles.",

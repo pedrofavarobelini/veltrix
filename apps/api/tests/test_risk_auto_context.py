@@ -89,7 +89,7 @@ def test_case_a_update_the_console_run_tests_do_not_push():
     operacao = proposta.field("operation")
     assert operacao.values[0] in {"WRITE", "EXECUTE"}
 
-    assert "risk_console" in proposta.field("targets").values
+    assert "module:risk_console" in proposta.field("targets").values
 
     push = _permission(proposta, TechnicalCapability.GIT_PUSH)
     assert push.forbidden_by_prompt is True
@@ -131,7 +131,7 @@ def test_case_c_docs_only_nothing_else():
     proposta = _build(
         "Atualize apenas documentação. Não altere código, banco ou migrations."
     )
-    assert "documentação" in proposta.field("targets").values
+    assert "module:documentação" in proposta.field("targets").values
 
     for capacidade in (TechnicalCapability.DATABASE, TechnicalCapability.MIGRATION):
         decisao = _permission(proposta, capacidade)

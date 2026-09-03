@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from app.modules.risk_engine.polarity import affirmative_text, forbidden_terms
+from app.modules.risk_engine.scope import canonical_scopes
 from app.modules.risk_engine.schemas import (
     AmbiguityAnalysis,
     ExecutionIntent,
@@ -38,10 +39,24 @@ _OPERATION_TERMS: tuple[tuple[OperationKind, tuple[str, ...]], ...] = (
     (
         OperationKind.WRITE,
         (
-            "write", "change", "edit", "alterar", "modificar",
-            "altere", "modifique", "edite", "ajuste", "atualize",
-            "escreva", "refatore", "corrija", "melhore", "melhorar",
-            "implemente", "adicione", "renomeie",
+            "write",
+            "change",
+            "edit",
+            "alterar",
+            "modificar",
+            "altere",
+            "modifique",
+            "edite",
+            "ajuste",
+            "atualize",
+            "escreva",
+            "refatore",
+            "corrija",
+            "melhore",
+            "melhorar",
+            "implemente",
+            "adicione",
+            "renomeie",
         ),
     ),
     (OperationKind.EXECUTE, ("execute", "run", "executar", "rodar", "rode")),
@@ -188,10 +203,21 @@ class AmbiguityDetector:
 
 
 class ScopeAnalyzer:
+    """Compara alvo e escopo na MESMA representacao.
+
+    Antes, alvo e escopo eram comparados como strings cruas, e o mesmo recurso
+    escrito de duas formas — `risk_console` e `module:risk_console` — produzia
+    conflito falso: `SCOPE_UNBOUNDED` e risco de escopo ALTO.
+
+    A canonicalizacao nao afrouxa a verificacao. Ela iguala grafias do mesmo
+    recurso; recursos diferentes continuam diferentes, e a comparacao segue
+    sendo igualdade exata — `file:a/b.py` nao passa a pertencer a `module:a`.
+    """
+
     def analyze(self, intent: ExecutionIntent, context: ResolvedContext) -> ScopeAnalysis:
-        allowed = set(context.allowed_scope)
-        forbidden = set(context.forbidden_scope)
-        targets = set(intent.targets)
+        allowed = set(canonical_scopes(context.allowed_scope))
+        forbidden = set(canonical_scopes(context.forbidden_scope))
+        targets = set(canonical_scopes(intent.targets))
         forbidden_targets = sorted(targets & forbidden)
         in_scope = sorted(targets & allowed)
         outside = sorted(targets - allowed) if allowed else []
