@@ -34,7 +34,7 @@ O Veltrix esta finalizado localmente como core operacional seguro. O estado tecn
 - Último commit técnico da série: Etapa 7, fallback real controlado.
 - Tag final local `v7.0.0`: aponta para `33b2c0489c19776ef460fc85dea3c24298b46a3c`.
 - `v6.0.0`: tag do MVP backend, apontando para `ee2ac68679feea6ac108abba8726d11da101576c`.
-- Working tree inicial: sem arquivos alterados no `git status --short`; o Git exibiu apenas warning de permissao ao ler `C:\Users\USUARIO/.config/git/ignore`.
+- Working tree inicial: sem arquivos alterados no `git status --short`; o Git exibiu apenas warning de permissao ao ler `%USERPROFILE%\.config\git\ignore`.
 - Push: nao realizado.
 - Testes finais do core `v7.0.0`: `216 passed`, `6 skipped`, `2 warnings`.
 - Testes integrais mais recentes: `570 passed`, `7 skipped`, `2 warnings`.
