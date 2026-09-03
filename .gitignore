@@ -41,13 +41,10 @@ Thumbs.db
 # TypeScript incremental build
 *.tsbuildinfo
 
-# Obsidian local config
-docs/.obsidian/
-/PedroCore IA/.obsidian/app.json
-/PedroCore IA/.obsidian/appearance.json
-/PedroCore IA/.obsidian/core-plugins.json
-/PedroCore IA/.obsidian/graph.json
-/PedroCore IA/.obsidian/workspace.json
+# Config local do Obsidian. E estado do editor de quem clonou (layout de
+# paineis, escala do grafo, plugins ligados), nao fonte do projeto: versionar
+# faria cada clone sobrescrever o workspace do outro.
+.obsidian/
 
 # Estado operacional em disco (Final Hardening). Gerado em runtime pelo outbox
 # duravel e pelo Dataset Registry quando a persistencia local esta ligada.

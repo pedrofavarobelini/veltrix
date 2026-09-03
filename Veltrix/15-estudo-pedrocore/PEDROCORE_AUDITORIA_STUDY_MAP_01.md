@@ -35,7 +35,7 @@ Resultado:
 - Tempo: 2.57s.
 - Resultado esperado confirmado: `296 passed, 6 skipped, 2 warnings`.
 
-Observacao operacional: o `uv run` precisou rodar fora do sandbox porque o cache do uv fica em `C:\Users\USUARIO\AppData\Local\uv\cache`. Nao houve provider real.
+Observacao operacional: o `uv run` precisou rodar fora do sandbox porque o cache do uv fica em `%LOCALAPPDATA%\uv\cache`. Nao houve provider real.
 
 ## 3. Eval harness
 
