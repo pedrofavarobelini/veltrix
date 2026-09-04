@@ -2,6 +2,34 @@
 
 Atualizado em: 03/09/2026
 
+## ESTADO CORRENTE — CONGELADO
+
+```text
+VELTRIX FINALIZATION      = PASS
+VELTRIX FUNCTIONAL FREEZE = ACTIVE
+GITHUB PUBLICATION        = CONFIRMED
+HUMAN_VISUAL_ACCEPTANCE   = PASS
+HUMAN_RUNTIME_ACCEPTANCE  = PASS
+```
+
+Fechamento canônico: [[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]].
+
+O Veltrix **não está em uma frente ativa de manutenção**. Ele está
+**congelado**. Correção trivial, ajuste cosmético, redesign e refatoração sem
+ganho concreto não reabrem o projeto. Uma reabertura precisa responder *sim* a:
+a mudança aumenta uma capacidade real do Veltrix, ou é necessária para ele
+operar como núcleo de outro sistema?
+
+O Final Functional Gate corrigiu o último defeito funcional observado em
+homologação: no chat interativo, uma falha do provider real deixou de ser
+substituída silenciosamente por uma resposta do Mock. Depois dele, o Pedro
+exercitou o produto em execução e registrou `HUMAN_RUNTIME_ACCEPTANCE = PASS`
+— Gemini selecionado, autorizado, respondendo de verdade, exibido como Gemini,
+e o drawer de Configurações sem colisões.
+
+Todas as seções abaixo permanecem: são o histórico acumulado das frentes, cada
+uma verdadeira sobre a data em que foi escrita.
+
 ## VELTRIX — FECHAMENTO FINAL
 
 O produto se chama **Veltrix**. Estado completo em
@@ -48,7 +76,8 @@ secret scan limpo e Apache-2.0 consistente entre LICENSE, `pyproject.toml` e
 `package.json`. O historico pre-sanitizacao ficou preservado em repositorio
 privado separado e nao e publico.
 
-O Veltrix entra em **manutencao**: nenhuma frente funcional nova esta aberta.
+O Veltrix entrou em **manutencao** naquele momento; apos o Final Functional
+Gate ele passou a **FUNCTIONAL FREEZE = ACTIVE**. Ver a secao "ESTADO CORRENTE" no topo.
 
 ## UX FINAL + PROJECT REGISTRY — HOMOLOGADO
 
@@ -668,7 +697,17 @@ aprovação. A publicação do código no GitHub já foi concluída.
 
 - **Documentação histórica duplicada:** ainda existem pares em `Veltrix/` (ex.: `03_ROADMAP.md` vs `03-versoes/ROADMAP.md`, `09-status/STATUS_ATUAL.md` desatualizado). Foram preservados por prudência; o status canônico é este arquivo.
 - **Provider real autorizado explicitamente:** qualquer execução manual com provider real, chave/configuração disponível e `allow_real_provider=true` pode gerar chamada externa/custo. Testes padrão devem usar `mock` ou `local_qa`.
-- **Fallback Mock silencioso:** o fallback automático para `MockProvider` evita quebrar a interface, mas pode mascarar falhas reais de provider se o consumidor não checar explicitamente o campo `fallback_used` — especialmente relevante para futuros consumidores externos e para qualquer caso de uso de QA (ver Decisão Técnica 014).
+- **Fallback Mock — semântica por boundary (corrigida no Final Functional Gate):**
+  o comportamento deixou de ser único.
+  *Consumers integrados* (FinGuard, Elyra, Structa e demais) mantêm o contrato
+  original: `allow_mock_fallback` continua `true` por padrão e o fallback seguro
+  segue existindo para não deixar o consumidor sem resposta — o consumidor
+  continua responsável por checar `fallback_used` (ver Decisão Técnica 014).
+  *Chat interativo do próprio Veltrix*, quando o usuário escolhe explicitamente
+  uma IA real: a requisição envia `allow_mock_fallback=false`, e uma falha do
+  provider volta como falha (`provider="none"`, `fallback_used=false`,
+  `status="blocked"`), com a interface nomeando qual IA falhou. Uma resposta do
+  Mock não é mais apresentada como se fosse da IA selecionada.
 - **Structured response parcial:** `/api/orchestrate` já retorna `qa`, `release_gate`, `visual_qa_analysis`, `exploration`, `warnings` e `audit`, mas `answer` continua texto livre; otimização dinâmica por custo/qualidade/task ainda não existe.
 
 ## Próximos passos opcionais

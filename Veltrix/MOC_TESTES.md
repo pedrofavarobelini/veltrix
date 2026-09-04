@@ -2,7 +2,30 @@
 
 Mapa de comandos, testes padrao e testes opt-in.
 
-## Resultado atual — 2026-08-25
+## RESULTADO CORRENTE — 2026-09-03
+
+Frente: [[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]].
+
+| Gate | Resultado |
+|---|---|
+| Backend `pytest` | **`2027 passed, 62 skipped`** |
+| Backend `ruff check .` | **PASS** |
+| Frontend `vitest` | **`122 passed`** |
+| Frontend `tsc -b` | **PASS** |
+| Frontend `vite build` | **PASS** |
+| Smoke real Gemini | `provider=gemini`, `fallback=false`, resposta obtida |
+| Grafo documental | 179 documentos, 1103 links, zero órfãos, zero quebrados |
+
+Os 62 skips pertencem às duas categorias declaradas em `CONTRIBUTING.md`:
+integração PostgreSQL sem banco de teste e opt-in de recurso real. Nenhuma
+contagem de skip é afirmada como invariante — `tests/conftest.py` falha a
+sessão se aparecer um skip fora dessas categorias.
+
+Tudo abaixo desta seção é **snapshot de checkpoint**: era verdade na data
+indicada e não descreve o resultado de hoje. Nenhum resultado histórico foi
+removido.
+
+## SNAPSHOT DO CHECKPOINT — 2026-08-25
 
 - Frente: [[17-multi-provider-safe-evolution/PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
 - Gate: [[17-multi-provider-safe-evolution/GATE_PEDROCORE_ELYRA_ONBOARDING_V1_TEXTUAL]].
@@ -15,8 +38,8 @@ Mapa de comandos, testes padrao e testes opt-in.
 - Smoke real Elyra: opt-in exclusivo, skipped por padrão.
 - Grafo documental: 155 documentos, 822 links resolvidos, zero violações.
 
-## Resultado atual — 2026-08-14
-## Resultado atual disponível — 2026-08-20
+## SNAPSHOT DO CHECKPOINT — 2026-08-14
+## SNAPSHOT DO CHECKPOINT — 2026-08-20
 
 Frente: [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]].
 
@@ -71,7 +94,7 @@ Detalhamento da stack, versões fixas e cobertura por arquivo:
 - Ruff integral conserva um F401 preexistente em `test_report_memory.py`, fora
   do diff desta frente.
 
-## Resultado atual — 2026-07-27
+## SNAPSHOT DO CHECKPOINT — 2026-07-27
 
 - Fechamento: [[18-provider-output-budget-cancellation/PEDROCORE_ASSISTANT_FINAL_CLOSURE_01]].
 - Backend integral: `721 passed, 7 skipped, 2 warnings`.

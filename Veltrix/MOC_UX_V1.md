@@ -9,6 +9,29 @@ Estado: **homologado**. Versão de produto V5.2.0; frontend `117 passed`.
 
 Voltar para a entrada do vault: [[MOC_VELTRIX]].
 
+
+## Correções finais de UX — Final Functional Gate (03/09/2026)
+
+Posterior às frentes mapeadas abaixo. Canônico:
+[[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]].
+
+- **Provider truth**: com uma IA real escolhida explicitamente, o chat envia
+  `allow_mock_fallback=false`; uma falha volta como falha e a bolha nomeia qual
+  IA falhou, em vez de exibir texto do Mock como se fosse a resposta.
+- **Cards de provider**: grid por áreas — o badge de status deixou de invadir
+  nome e modelo; uma coluna de cards no drawer.
+- **Status `CONFIGURADO` / `NÃO CONFIGURADO`**: linha própria, sem colisão.
+- **Diagnóstico local**: "Observabilidade QA/local" deixou de sobrepor o
+  título.
+- **Logos**: marcas de OpenAI e Claude redesenhadas; os cinco com dimensão e
+  `object-fit` explícitos.
+
+Medido em navegador headless de 360 px a 1920 px: zero overlap, zero overflow
+horizontal. Frontend `122 passed`.
+
+Depois disso: **`HUMAN_RUNTIME_ACCEPTANCE = PASS`** — o fluxo real foi
+exercitado em uso humano, não só em teste.
+
 ## Fechamento da frente
 
 - [[20-ux-v1/PEDROCORE_V1_FINAL_CLOSURE_01]] — relatório final, veredito,

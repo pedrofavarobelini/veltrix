@@ -1,6 +1,29 @@
 # MOC Versoes Status
 
-## Checkpoint atual — 2026-08-20
+## ESTADO CORRENTE — 2026-09-03
+
+Fechamento canônico: [[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]].
+
+| Eixo | Valor |
+|---|---|
+| Produto / UI | **V5.2.0** |
+| API / backend | **0.2.0** |
+| Tags Git | `v2.0.0` … `v7.0.0` — linha **independente**, não acompanha o produto |
+| Final Functional Gate | **PASS** |
+| Functional Freeze | **ACTIVE** |
+| Publicação | **confirmada** — `github.com/pedrofavarobelini/veltrix`, Apache-2.0 |
+| Aceite visual | `HUMAN_VISUAL_ACCEPTANCE = PASS` |
+| Aceite em uso real | `HUMAN_RUNTIME_ACCEPTANCE = PASS` |
+
+Nenhuma versão, tag ou release foi criada pelo Final Functional Gate: ele
+corrigiu defeitos dentro de contratos já congelados.
+
+Taxonomia completa dos três eixos: `VERSION.md` na raiz do repositório.
+
+Tudo abaixo desta seção é **snapshot de checkpoint**: era verdade na data
+indicada e não descreve o estado de hoje.
+
+## SNAPSHOT DO CHECKPOINT — 2026-08-20
 
 - [[19-encerramento-final/PEDROCORE_FECHAMENTO_DOCUMENTAL_FINAL_ERAS_1_A_3]]
 - Era 1 PASS; Era 2 PASS; Era 3 FOUNDATION PASS / TRAINING DEFERRED.
@@ -8,7 +31,7 @@
 - `924 passed, 7 skipped, 2 warnings`; Ruff global PASS; Pyright Era 3 sem erros.
 - Fechamento documental sem alteração de versão, tag ou Git.
 
-## Frente anterior — 2026-08-14
+## SNAPSHOT DO CHECKPOINT — 2026-08-14
 
 - [[17-multi-provider-safe-evolution/PEDROCORE_STRUCTA_CONSUMER_01]]
 - [[17-multi-provider-safe-evolution/GATE_PEDROCORE_STRUCTA_CONSUMER_01]]
@@ -17,12 +40,14 @@
 
 Mapa de versao, status, changelog e fechamento.
 
-## Estado atual
+## Documentos de estado
 
 - `VERSION.md` (raiz do repositório)
 - `README.md` (raiz do repositório)
 - [[09_STATUS_ATUAL]]
 - [[08_CHANGELOG]]
+- [[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]] — fechamento canônico atual
+- [[17-veltrix/VELTRIX_FINAL_STATE]] — descrição arquitetural consolidada
 - [[13-fechamento/FECHAMENTO_PEDROCORE_FINAL]]
 - [[16-qa-safety-hardening/FECHAMENTO_PEDROCORE_QA_SAFETY_HARDENING_01]]
 - [[00_MAPEAMENTO_GERAL_PEDROCORE]]

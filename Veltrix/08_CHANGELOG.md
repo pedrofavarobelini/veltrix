@@ -201,8 +201,8 @@ Status: **reorganização documental validada, sem reabrir o core funcional**.
   conteúdo byte a byte idêntico antes desta reconciliação; zero perda.
 - [[MANIFESTO_REORGANIZACAO_20260802]] acrescentado e ligado ao MOC raiz.
 - `app.modules.docs_graph` e seus testes passaram a usar a nova raiz.
-- Resultado atual: 128 documentos, 697 links resolvidos, zero órfãos, zero
-  links quebrados; teste direcionado `15 passed, 1 warning`.
+- Resultado naquele checkpoint: 128 documentos, 697 links resolvidos, zero
+  órfãos, zero links quebrados; teste direcionado `15 passed, 1 warning`.
 - `README.md`, `VERSION.md` e [[09_STATUS_ATUAL]] reconciliados com o caminho
   atual. Referências históricas internas a `docs/` foram preservadas quando
   descrevem fielmente uma frente anterior.

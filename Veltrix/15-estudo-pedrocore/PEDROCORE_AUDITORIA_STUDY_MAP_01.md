@@ -1,6 +1,25 @@
 # Veltrix Audit Study Map 01
 
-Atualizado em: 09/07/2026
+> **HISTÓRICO — AUDITORIA DE 09/07/2026.** Este documento registra uma auditoria
+> local executada naquela data, quando o produto ainda se chamava PedroCore. A
+> evidência abaixo (HEAD `e0ff8e3`, `296 passed`, eval `11/11`, 7 providers em
+> `/api/providers`) era **verdadeira naquele dia** e está preservada sem
+> alteração — auditoria não se reescreve.
+>
+> Ela **não** descreve o Veltrix de hoje. Depois dela vieram QA Safety
+> Hardening, observabilidade local, as Etapas 1–7 de multi-provider, os
+> consumers Elyra e Structa, UX V1, Control Plane Eras 1–10, Platform
+> Evolution, o rename para Veltrix, Risk Engine V1 e V2, Risk Console, Project
+> Registry, a publicação pública e o Final Functional Gate.
+>
+> Estudo atual: [[PEDROCORE_RESUMO_EXECUTIVO]] e [[VELTRIX_LINHA_DO_TEMPO]].
+> Estado corrente: [[../19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]].
+>
+> Os caminhos `docs/...` citados adiante referem-se à árvore documental daquela
+> época, substituída por `Veltrix/` em 02/08/2026
+> ([[../MANIFESTO_REORGANIZACAO_20260802]]).
+
+Atualizado em: 09/07/2026 · **HISTÓRICO**
 Frente: `PEDROCORE-AUDIT-STUDY-MAP-01`
 Escopo: auditoria, validacao local e documentacao de estudo. Sem codigo novo.
 

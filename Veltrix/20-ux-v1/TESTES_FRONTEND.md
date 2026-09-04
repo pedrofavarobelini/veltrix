@@ -34,7 +34,12 @@ npm run typecheck # tsc -b
 npm run build     # tsc -b && vite build
 ```
 
-## Resultado atual — 2026-08-16
+## Resultado corrente — 2026-09-03
+
+`122 passed` (6 arquivos), typecheck e build PASS. Resultado do Final
+Functional Gate; a fonte corrente é a CI do HEAD e [[../MOC_TESTES]].
+
+## SNAPSHOT DO CHECKPOINT — 2026-08-16
 
 ```text
 Test Files  6 passed (6)

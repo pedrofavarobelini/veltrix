@@ -1,6 +1,28 @@
-# Veltrix - Veredito Final
+# Veltrix — Veredito Final (SUPERSEDED)
 
-Atualizado em: 09/07/2026
+> **SUPERSEDED / HISTÓRICO — veredito de 09/07/2026.** Este documento respondeu
+> "o Veltrix está finalizado?" com a informação disponível **naquele dia**, e
+> continua verdadeiro sobre aquele escopo. Ele **não** é o veredito atual.
+>
+> O que ele lista como *futuro* e hoje já **aconteceu**:
+> deploy/push/publicação (o repositório é público sob Apache-2.0 desde
+> 03/09/2026) e o commit do pacote documental (feito há meses).
+>
+> O que ele **não podia conhecer**: Risk Engine V1 e V2, Risk Console, Project
+> Registry, Control Plane Eras 1–10, Universal Contracts, Evidence Platform,
+> Platform Evolution, o rename PedroCore → Veltrix, o produto V5.2.0, o Final
+> Functional Gate e o Functional Freeze.
+>
+> **Veredito atual:**
+> [[../19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]] —
+> `VELTRIX FINALIZATION = PASS`, `VELTRIX FUNCTIONAL FREEZE = ACTIVE`,
+> `HUMAN_RUNTIME_ACCEPTANCE = PASS`.
+>
+> Estudo atual: [[PEDROCORE_RESUMO_EXECUTIVO]] · [[VELTRIX_LINHA_DO_TEMPO]].
+>
+> Preservado sem alteração de conteúdo.
+
+Atualizado em: 09/07/2026 · **SUPERSEDED**
 
 ## Veltrix esta finalizado localmente?
 

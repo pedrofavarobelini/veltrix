@@ -27,9 +27,17 @@ Projeto N ─┘         │
                      └── política · identidade · safe mode · fallback · audit
 ```
 
-**Versão de produto:** V5.2.0 · **API:** 0.2.0 · **Status:** operacional para
-uso local e para o ecossistema local · **Repositório:**
-[público no GitHub](https://github.com/pedrofavarobelini/veltrix).
+**Versão de produto:** V5.2.0 · **API:** 0.2.0 · **Status:** **FINALIZADO /
+FROZEN** — operacional para uso local e para o ecossistema local ·
+**Repositório:** [público no GitHub](https://github.com/pedrofavarobelini/veltrix).
+
+> **O Veltrix está funcionalmente congelado.** O Final Functional Gate fechou o
+> produto em 03/09/2026 (`VELTRIX FINALIZATION = PASS`,
+> `VELTRIX FUNCTIONAL FREEZE = ACTIVE`, `HUMAN_RUNTIME_ACCEPTANCE = PASS`).
+> Uma nova frente só se justifica se a mudança **aumentar uma capacidade real**
+> do Veltrix ou for necessária para ele operar como núcleo de outro sistema.
+> Registro completo em
+> [Veltrix/19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE.md](Veltrix/19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE.md).
 
 > **Este repositório publica código, não uma API pronta para a internet.** A
 > configuração padrão é voltada ao uso local. Ver [Segurança](#segurança).
@@ -387,6 +395,11 @@ Política de reporte de vulnerabilidade: [`SECURITY.md`](SECURITY.md).
   não há prova de que a geração remota parou. Tratado como conclusão ambígua.
 - **QA local** é heurística determinística, não IA — não substitui validação
   humana e não executa testes.
+- **Fallback é por boundary, não global**: consumers integrados mantêm o
+  fallback seguro para Mock (`allow_mock_fallback` continua `true` por padrão);
+  o chat interativo do Veltrix, com uma IA real escolhida explicitamente, envia
+  `allow_mock_fallback=false` e mostra a falha do provider em vez de disfarçá-la
+  de resposta.
 - O Veltrix **não é um modelo treinado**: não há fine-tuning, autoaprendizado
   nem RAG. Relatórios técnicos não treinam IA.
 
@@ -507,6 +520,8 @@ alterou código, configuração ou Git.
 A documentação canônica vive em `Veltrix/`, como vault Obsidian navegável.
 
 - **Entrada principal:** [`Veltrix/MOC_VELTRIX.md`](Veltrix/MOC_VELTRIX.md)
+- **Fechamento canônico:** [`Veltrix/19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE.md`](Veltrix/19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE.md)
+- Estudo do zero: `Veltrix/MOC_ESTUDO_PEDROCORE.md`
 - Interface atual: `Veltrix/MOC_UX_V1.md`
 - Arquitetura: `Veltrix/MOC_ARQUITETURA.md`
 - Segurança: `Veltrix/MOC_SEGURANCA.md`
@@ -516,8 +531,9 @@ A documentação canônica vive em `Veltrix/`, como vault Obsidian navegável.
 - Changelog: `Veltrix/08_CHANGELOG.md`
 - Versionamento: [`VERSION.md`](VERSION.md)
 
-Documentos históricos são preservados e identificados como tal; o estado
-corrente está sempre em `09_STATUS_ATUAL.md`.
+Documentos históricos são preservados e identificados como tal. O estado
+corrente está no topo de `09_STATUS_ATUAL.md`, e o fechamento canônico do
+produto é o Final Functional Gate.
 
 ---
 
