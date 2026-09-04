@@ -9,12 +9,23 @@ Voltar para a entrada do grafo: [[MOC_VELTRIX]].
 Cada fechamento descreve o encerramento de **uma** frente, na data em que ela
 foi encerrada. Fechamento antigo continua verdadeiro sobre o próprio escopo e
 **não** descreve o estado atual do sistema. O estado atual está em
-[[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] e em
+[[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]] e em
 [[09_STATUS_ATUAL]].
 
-## Encerramento final do core
+## Fechamento canônico atual
 
-- [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] — **CANÔNICO ATUAL**: core operacional concluído.
+- [[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]] — **CANÔNICO ATUAL**:
+  `VELTRIX FINALIZATION = PASS`, `VELTRIX FUNCTIONAL FREEZE = ACTIVE`,
+  `HUMAN_RUNTIME_ACCEPTANCE = PASS`. Chat com provider real corrigido,
+  mensagens de erro por contexto e correções finais de UX. Este é o fechamento
+  que descreve o produto de hoje; todos os abaixo descrevem o dia em que foram
+  escritos.
+
+## Encerramento do core — fechamento histórico anterior
+
+- [[19-encerramento-final/PEDROCORE_ENCERRAMENTO_FINAL_01]] — core operacional
+  concluído. Verdadeiro sobre o próprio escopo; **superado** como estado
+  corrente pelo Final Functional Gate acima.
 
 ## Assistente IA e orçamento de saída
 

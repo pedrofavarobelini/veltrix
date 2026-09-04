@@ -1,154 +1,224 @@
-# Veltrix - Flashcards
+# Veltrix — Flashcards
 
-Atualizado em: 09/07/2026
+Atualizado em: 03/09/2026 · **ESTUDO ATUAL**
 
-Pergunta: O que e o Veltrix?
-Resposta: Um core/orquestrador local de IA para centralizar providers, policy, contexto, memoria tecnica, QA e audit.
+Revisão ativa. Priorizam **conceitos duráveis** — números que envelhecem estão
+isolados na última seção e explicitamente datados.
 
-Pergunta: Veltrix e um modelo treinado?
-Resposta: Nao. Ele orquestra IA e aplica regras; nao treina pesos.
+---
 
-Pergunta: Qual e o endpoint operacional principal?
-Resposta: `POST /api/orchestrate`.
+## Produto e história
 
-Pergunta: Qual endpoint preserva compatibilidade de chat?
-Resposta: `POST /api/chat`.
+P: O que é o Veltrix?
+R: Um AI Runtime & Learning Control Plane: fica entre um agente de IA e a
+execução; analisa, decide, governa e registra. Não executa.
 
-Pergunta: Qual endpoint lista providers?
-Resposta: `GET /api/providers`.
+P: O Veltrix é um modelo treinado?
+R: Não. Não há fine-tuning, autoaprendizado, RAG vetorial nem modelo próprio.
 
-Pergunta: Quais rotas de memoria tecnica existem?
-Resposta: `POST /api/reports/analyze`, `POST /api/reports/ingest` e `GET /api/project-memory/{project_id}/summary`.
+P: O que mudou de PedroCore para Veltrix?
+R: O nome do **produto**. Identificadores técnicos minúsculos (`pedrocore_*`,
+`project_id="pedrocore"`, contratos) foram preservados de propósito.
 
-Pergunta: O que e `allow_real_provider`?
-Resposta: Flag do payload que autoriza provider real. Default e `false`.
+P: `pedrocore` minúsculo no código é erro?
+R: Não. É identificador técnico preservado. `PedroCore` maiúsculo é que virou
+Veltrix.
 
-Pergunta: O que acontece se provider real e pedido sem autorizacao?
-Resposta: Safe mode bloqueia e aplica fallback Mock.
+P: O que é Functional Freeze?
+R: A manutenção comum está encerrada. Reabrir exige aumentar uma capacidade real
+ou ser necessário para outro sistema usar o Veltrix como núcleo.
 
-Pergunta: O que e `mock`?
-Resposta: Provider local simulado usado como default/fallback seguro.
+## Arquitetura
 
-Pergunta: O que e `local_qa`?
-Resposta: Pseudo-provider deterministico para QA textual e release gate.
+P: Quais são os dois planos?
+R: Runtime Plane (responder agora) e Learning Plane (aprender depois).
 
-Pergunta: `local_qa` chama rede?
-Resposta: Nao.
+P: O que separa os dois planos?
+R: Evidência e contratos. E a fronteira é **verificada por teste**: import de
+topo do Runtime para o Learning reprova a suíte.
 
-Pergunta: O que e `local_model`?
-Resposta: Provider generativo local futuro, registrado opt-in default-off, sem transport real.
+P: O que é a Evidence Platform?
+R: Ingestão fail-closed com validação de contrato; a ponte entre os planos.
 
-Pergunta: `local_model` aprova release gate?
-Resposta: Nao. Release gate confia somente em `local_qa`.
+P: Quantos Universal Contracts V1 existem?
+R: Cinco, mais o envelope de integração. Congelados por fingerprint de schema.
 
-Pergunta: O que e `allow_local_model`?
-Resposta: Flag explicita para permitir tentativa de uso do `local_model`.
+P: O que acontece se alguém alterar a forma de um contrato congelado?
+R: O build quebra.
 
-Pergunta: O que acontece sem `allow_local_model=true`?
-Resposta: `LOCAL_MODEL_NOT_AUTHORIZED` e fallback Mock.
+P: Quantas Eras tem o Control Plane, e qual o resultado?
+R: Eras 1–10, todas PASS. Estado arquitetural `CONTROL_PLANE_READY`.
 
-Pergunta: O que e `context_from_memory`?
-Resposta: Flag para tentar anexar snapshot de memoria tecnica ao prompt. Default `false`.
+## Risk Engine
 
-Pergunta: Report Memory e default on?
-Resposta: Nao. Default off.
+P: O Risk Engine executa alguma coisa?
+R: Não. Emite um Execution Contract; a execução acontece fora, pelo Agent.
 
-Pergunta: Relatorios treinam IA?
-Resposta: Nao. Eles viram sinais e memoria tecnica.
+P: Quantas dimensões de risco existem, e por quê?
+R: Seis independentes — dados, segurança, migração, escopo, regressão, operação.
+Para não colapsar risco em um número opaco.
 
-Pergunta: Report Memory e RAG?
-Resposta: Nao. RAG/embeddings ainda nao existem.
+P: O que é BLOCK?
+R: O gate mais restritivo. Intransponível **por construção**, com teste negativo
+provando que não há bypass.
 
-Pergunta: O que e Task Router?
-Resposta: Modulo que classifica task, criticidade, estilo de resposta e permissao de mock.
+P: O que protege o Execution Contract?
+R: HMAC sobre todos os campos, prazo de validade, e registro de override humano
+autorizado.
 
-Pergunta: O que e Project Context?
-Resposta: Modulo que define limites por sistema consumidor, como Veltrix ou FinGuard.
+P: O que é blast radius?
+R: O alcance estimado de uma operação, com unidade explícita.
 
-Pergunta: Como FinGuard e tratado?
-Resposta: Como consumidor read-only; Veltrix nao le nem altera o repositorio FinGuard.
+P: O que P1 a P5 tinham em comum?
+R: Eram problemas objetivos do Risk Engine V1, todos fechados no V2 (R0–R5).
 
-Pergunta: O que e Policy Enforcement?
-Resposta: Camada que bloqueia comandos, escrita, delecao, deploy, push e fluxos criticos indevidos.
+P: P4 — qual era o problema?
+R: O gate era calculado, mas não intransponível por construção.
 
-Pergunta: O que e Prompt Builder?
-Resposta: Modulo que monta o prompt enriquecido com contexto, artefatos, inteligencia e memoria opcional.
+P: O que é o Project Registry?
+R: O catálogo de projetos. **Identidade, não capacidade.**
 
-Pergunta: O que e Intelligence Layer?
-Resposta: Plano deterministico de resposta e seguranca antes do provider.
+P: Um projeto sem Capability Manifest pode ser analisado?
+R: Sim. Os fatos ausentes ficam `UNKNOWN`; o que ele não ganha é permissão.
 
-Pergunta: Intelligence Layer chama provider?
-Resposta: Nao.
+P: Quantos estados de tela tem o Risk Console?
+R: Três exclusivos: entrada, revisão de contexto, resultado.
 
-Pergunta: O que e Eval Harness?
-Resposta: Executor deterministico de casos que valida invariantes de seguranca.
+## Providers
 
-Pergunta: Eval Harness e benchmark de LLM?
-Resposta: Nao.
+P: Quais são os seis estados de um provider?
+R: Conhecido, configurado, homologado, autorizado, executável, executado.
 
-Pergunta: Quantos casos o eval harness atual validou na auditoria?
-Resposta: 11 casos, todos passaram.
+P: Provider selecionado é provider executado?
+R: Não. Executado significa que o adapter foi chamado **e respondeu**.
 
-Pergunta: Qual foi o resultado do pytest na auditoria?
-Resposta: `296 passed, 6 skipped, 2 warnings`.
+P: Qual provider real está homologado?
+R: Apenas Gemini, com `gemini-3.5-flash`.
 
-Pergunta: O que e release gate?
-Resposta: Avaliacao assistida para decidir se algo pode avancar, com regras conservadoras.
+P: Por que `auto` sempre resolve para o Gemini?
+R: Porque é o único homologado. Decisão de homologação, não pendência técnica.
 
-Pergunta: Quando release gate pode aprovar?
-Resposta: Com evidencia textual limpa, risco baixo, confianca suficiente, sem fallback/safe mode e provider `local_qa`.
+P: O que é `allow_real_provider`?
+R: Flag do payload que autoriza provider real. Default `false` (safe mode).
 
-Pergunta: Provider real pode aprovar release gate sozinho?
-Resposta: Nao.
+P: O que é `allow_mock_fallback`?
+R: Opt-out restritivo, default `true`. Quando `false`, uma falha do provider não
+é substituída pelo Mock.
 
-Pergunta: Mock pode aprovar release gate?
-Resposta: Nao.
+P: Quem envia `allow_mock_fallback=false`?
+R: O chat interativo do próprio Veltrix, quando o usuário escolhe explicitamente
+uma IA real.
 
-Pergunta: O que e Artifact Reader?
-Resposta: Leitor opt-in e allowlisted de arquivos; default off e proibido para FinGuard.
+P: Gemini falhou no chat com IA real escolhida — o que a resposta traz?
+R: `provider="none"`, `model="none"`, `fallback_used=false`, `status="blocked"`.
 
-Pergunta: O que acontece com path em artifact por default?
-Resposta: E rejeitado sem leitura.
+P: E o que a interface mostra nesse caso?
+R: "Gemini não concluiu a solicitação." Nunca uma resposta do Mock disfarçada.
 
-Pergunta: `.env` foi tracked na auditoria?
-Resposta: Nao. Apenas `apps/api/.env.example` apareceu tracked.
+P: O contrato mudou para os consumers integrados?
+R: Não. O default continua `true` e o fallback seguro continua existindo.
 
-Pergunta: Qual branch foi auditada?
-Resposta: `main`.
+P: `local_qa` e `local_model` são a mesma coisa?
+R: Não. `local_qa` é heurística determinística sem rede; `local_model` seria um
+LLM local, e está default-off sem transport real.
 
-Pergunta: Qual HEAD foi auditado?
-Resposta: `e0ff8e3`.
+P: Qual provider o release gate aceita?
+R: Somente `local_qa`, com evidência textual limpa. Nem Mock nem provider real
+aprovam sozinhos.
 
-Pergunta: Qual tag representa o core operacional seguro finalizado localmente?
-Resposta: `v7.0.0`.
+P: O que a matriz de autorização combina?
+R: `identity_strength + project_id + caller_role + environment + provider`.
+Default: negar.
 
-Pergunta: Qual tag representa o MVP backend?
-Resposta: `v6.0.0`.
+P: Credencial compartilhada alcança provider real?
+R: Nunca. Identidade `ambiguous` não aparece em regra nenhuma.
 
-Pergunta: O Veltrix ja esta integrado ao Assistente FinGuard real?
-Resposta: Nao. Essa integracao e frente futura separada.
+## Learning e Dataset
 
-Pergunta: O Veltrix baixa modelo local?
-Resposta: Nao.
+P: `CONTROL_PLANE_READY` significa dataset pronto?
+R: Não. São independentes.
 
-Pergunta: O Veltrix instala Ollama, llama.cpp ou LM Studio?
-Resposta: Nao.
+P: Qual o readiness atual do dataset?
+R: `DATASET_NOT_READY`.
 
-Pergunta: O que significa `REPORT_MEMORY_IS_NOT_TRAINING`?
-Resposta: Aviso de que relatorios nao treinam IA; geram apenas sinais/memoria tecnica.
+P: Isso é um erro?
+R: Não. É a resposta correta: não existe população real autorizada, e nada foi
+fabricado.
 
-Pergunta: O que significa `FINANCIAL_DISCLAIMER`?
-Resposta: Aviso obrigatorio de resposta financeira conservadora, sem acao financeira.
+P: Quantos Training Candidates reais autorizados existem?
+R: Zero.
 
-Pergunta: O que significa `INTERNAL_AUTH_NOT_CONFIGURED`?
-Resposta: API interna sem chave configurada, operando em modo local/dev.
+P: A Candidate Acquisition Foundation existe?
+R: Sim, implementada. O que não existe é população autorizada.
 
-Pergunta: O que significa `LOCAL_MODEL_NOT_AUTHORIZED`?
-Resposta: `local_model` foi pedido sem `allow_local_model=true`.
+P: Report Memory é RAG?
+R: Não. E também não é treinamento.
+
+P: `automatic_collection` é `true`?
+R: Não. É invariante executável no Policy Engine: `false`.
+
+## Segurança
+
+P: O Veltrix executa comandos?
+R: Não. O Policy Engine recusa execução, escrita, deleção, deploy e push, com
+teste negativo.
+
+P: A suíte padrão pode chamar provider real?
+R: Não. O guard de `conftest.py` bloqueia estruturalmente e falha o teste.
+
+P: Como o FinGuard é tratado?
+R: Como consumer registrado de menor privilégio. O Veltrix não lê nem altera o
+repositório dele.
+
+P: Quais consumers existem?
+R: FinGuard, Elyra e Structa.
+
+## Versões
+
+P: Qual a versão de produto?
+R: V5.2.0.
+
+P: Qual a versão da API/backend?
+R: 0.2.0.
+
+P: A tag `v6.0.0` é a versão 6 do produto?
+R: Não. É o MVP backend. Produto, API e tags são três eixos independentes.
+
+P: O que o Final Functional Gate mudou de versão?
+R: Nada. Corrigiu defeitos dentro de contratos já congelados.
+
+P: Qual a diferença entre `HUMAN_VISUAL_ACCEPTANCE` e
+`HUMAN_RUNTIME_ACCEPTANCE`?
+R: O primeiro aprova a aparência; o segundo aprova o fluxo funcional real em
+uso. Uma tela correta pode estar mentindo sobre quem respondeu.
+
+---
+
+## Números — CHECKPOINT 03/09/2026
+
+> Estes cartões envelhecem. Só valem como snapshot desta data; a fonte corrente
+> é a CI do HEAD e [[../MOC_TESTES]].
+
+P: Suíte backend no checkpoint de 03/09/2026?
+R: `2027 passed, 62 skipped`.
+
+P: Suíte frontend no mesmo checkpoint?
+R: `122 passed`.
+
+P: Superfície HTTP no mesmo checkpoint?
+R: 43 paths.
+
+P: Migrations no mesmo checkpoint?
+R: `0001`–`0012`, todas aditivas.
+
+> **Snapshot histórico de 09/07/2026**, preservado para contraste: naquela data
+> a suíte era `296 passed, 6 skipped` e o HEAD auditado era `e0ff8e3`. Esses
+> números descrevem o PedroCore de julho e **não** são o estado atual — a
+> auditoria daquele dia está em [[PEDROCORE_AUDITORIA_STUDY_MAP_01]].
 
 ## Links relacionados
 
 - [[../MOC_ESTUDO_PEDROCORE]]
-- [[../MOC_VELTRIX]]
 - [[PEDROCORE_GLOSSARIO]]
 - [[PEDROCORE_PERGUNTAS_E_RESPOSTAS]]
+- [[PEDROCORE_FLUXO_COMPLETO]]

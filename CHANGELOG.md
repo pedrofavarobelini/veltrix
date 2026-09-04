@@ -10,6 +10,75 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
 ---
 
+## Reconciliação documental final — 03/09/2026
+
+Frente **exclusivamente documental**. Zero alteração em código, migrations,
+contratos, versão de produto, versão de API ou tags.
+
+Uma auditoria read-only do vault concluiu `DOCUMENTATION STATE =
+CURRENT_WITH_DRIFT` e `STUDY PACK = STALE`: o grafo estava íntegro (zero órfãos,
+zero links quebrados), mas o Final Functional Gate existia em apenas quatro
+documentos e a pasta de estudos estava congelada em 09/07/2026 — dois meses e
+quinze subsistemas atrás.
+
+### Corrigido
+
+- **Hierarquia de fechamentos.** `MOC_FECHAMENTOS` apontava
+  `PEDROCORE_ENCERRAMENTO_FINAL_01` como "CANÔNICO ATUAL"; o canônico passou a
+  ser o Final Functional Gate, e o anterior foi rotulado como fechamento
+  histórico. Nenhum fechamento foi removido.
+- **Rótulos "atual" incorretos.** `MOC_VERSOES_STATUS` chamava o checkpoint de
+  20/08 de atual; `MOC_TESTES` tinha quatro seções "Resultado atual" com datas
+  diferentes. Ambos ganharam uma seção corrente real e os antigos viraram
+  `SNAPSHOT DO CHECKPOINT`.
+- **`09_STATUS_ATUAL`** ganhou o estado corrente no topo e deixou de descrever o
+  projeto como em "manutenção" — está congelado.
+- **Fallback Mock silencioso** deixou de ser listado como risco presente sem
+  qualificação: o texto passou a distinguir consumers integrados (contrato
+  original, `allow_mock_fallback=true`) do chat interativo (`false`, falha não
+  disfarçada).
+- **`VELTRIX_FINAL_STATE`** chamava UX + Project Registry de "última frente
+  funcional"; ganhou a seção 12 com o Final Functional Gate, provider truth,
+  correções de UX, homologação humana e freeze.
+- **Roadmap.** Duas entradas diziam "commit pendente de autorização" para
+  frentes commitadas em `689e50a` e `e0ff8e3`; viraram `DONE`. O
+  `03_ROADMAP.md` original foi rotulado `HISTÓRICO / SUPERSEDED`.
+- **`README`** passou a declarar o freeze, a semântica do fallback por boundary
+  e o fechamento canônico.
+- **Roteiro NotebookLM**: as 14 fontes apontavam para a árvore `docs/`, que não
+  existe desde 02/08/2026. Substituídas por 19 fontes do vault atual,
+  verificadas uma a uma.
+
+### Adicionado
+
+- `HUMAN_RUNTIME_ACCEPTANCE = PASS` (03/09/2026) registrado no Final Functional
+  Gate, no status, nos MOCs e no study pack — com a distinção explícita entre
+  aceite **visual** (aparência) e aceite em **runtime** (fluxo real em uso).
+- `Veltrix/15-estudo-pedrocore/VELTRIX_RISK_ENGINE_ESTUDO.md` — o maior
+  subsistema em forma didática: pipeline, P1–P5, Console, Project Registry.
+- `Veltrix/15-estudo-pedrocore/VELTRIX_LINHA_DO_TEMPO.md` — como um chat com
+  providers virou um control plane, em doze fases comprovadas pelo Git.
+- Navegação direta no `MOC_VELTRIX` para Risk Engine V2, Risk Console, Project
+  Registry, Control Plane, Universal Contracts e Platform Evolution.
+
+### Alterado
+
+- **Study pack reconciliado** (resumo executivo, mapa mental, fluxo completo,
+  glossário, perguntas e respostas, flashcards, roteiros): passou a ensinar o
+  Veltrix que existe hoje — dois planos, Risk Engine, Control Plane, Evidence,
+  os seis estados de provider, `DATASET_NOT_READY` sem exagero, o rename e o
+  freeze.
+- Os flashcards deixaram de memorizar `296 passed` e `e0ff8e3` como estado
+  atual; números frágeis ficaram isolados e datados como checkpoint.
+- `PEDROCORE_AUDITORIA_STUDY_MAP_01` rotulado **HISTÓRICO** e
+  `PEDROCORE_VEREDITO_FINAL` rotulado **SUPERSEDED**, ambos com o conteúdo
+  preservado sem alteração e apontando para o material atual.
+
+Nenhum documento foi apagado. O objetivo não era limpar história — era impedir
+que história pareça presente.
+
+---
+
 ## Final Functional Gate — 03/09/2026
 
 **VELTRIX FINALIZATION = PASS. VELTRIX FUNCTIONAL FREEZE = ACTIVE.**

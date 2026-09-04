@@ -7,11 +7,30 @@
   Chat com provider real corrigido (fallback Mock deixou de ser silencioso no
   chat interativo), mensagens de erro separadas por contexto, cards de provider
   e Diagnóstico Local sem colisão.
+- **`HUMAN_RUNTIME_ACCEPTANCE = PASS`** — o fluxo real foi exercitado em uso
+  humano, não só em teste. Diferente de `HUMAN_VISUAL_ACCEPTANCE`, que é sobre
+  aparência.
 - Manutenção comum: **encerrada**. Reabertura só mediante ganho justificável de
   capacidade — o critério está no próprio documento.
 - Gates desta frente: backend `2027 passed, 62 skipped`, Ruff PASS, grafo
   documental íntegro; frontend `122 passed`, typecheck e build PASS; smoke real
   Gemini com `fallback=false`.
+
+## Navegação direta — os subsistemas de hoje
+
+- [[15-risk-engine/RISK_ENGINE_V2_BASELINE]] — motor de risco V2: P1–P5
+  fechados em R0–R5.
+- [[15-risk-engine/RISK_CONSOLE]] — guia de uso do console (TUI/CLI).
+- [[15-risk-engine/PROJECT_REGISTRY]] — catálogo de projetos; identidade, não
+  capacidade.
+- [[20-control-plane/PEDROCORE_CONTROL_PLANE_FINAL_STATE]] — Control Plane,
+  Eras 1–10, Runtime Plane e Learning Plane.
+- [[20-control-plane/PEDROCORE_UNIVERSAL_CONTRACTS_REFERENCE]] — os cinco
+  contratos universais V1 congelados.
+- [[16-plataforma/PLATFORM_EVOLUTION_FINAL_STATE]] — as doze evoluções de
+  plataforma.
+- [[MOC_ESTUDO_PEDROCORE]] — **Study Pack atual**, para reaprender o Veltrix do
+  zero.
 
 ## Estado público atual
 

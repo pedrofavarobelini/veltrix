@@ -274,7 +274,10 @@ Indicador sem medição não vira saudável. Configuração ambígua não vira e
 
 ---
 
-## 11. Última frente funcional: UX final e Project Registry
+## 11. UX final e Project Registry — última frente de produto
+
+> Esta foi a última frente de **produto**. Depois dela vieram o Public Release
+> Gate e o Final Functional Gate, que fecharam o projeto — ver a seção 12.
 
 Depois do fechamento acima, duas coisas ficaram claras no uso real.
 
@@ -318,3 +321,75 @@ pergunta errada.** Exigir manifesto para analisar parecia segurança e era
 acoplamento. A guarda correta era de identidade: projeto desconhecido ou
 arquivado é recusado; projeto sem manifesto é analisado com `UNKNOWN` onde não
 há fato.
+
+---
+
+## 12. Final Functional Gate — fechamento e congelamento
+
+Documento canônico desta seção:
+[[19-encerramento-final/VELTRIX_FINAL_FUNCTIONAL_GATE]].
+
+Depois do Public Release Gate, uma homologação humana encontrou o último
+defeito funcional do produto: **a interface mentia sobre quem tinha
+respondido.**
+
+### Provider truth
+
+Com o Gemini configurado, homologado, autorizado e explicitamente selecionado,
+uma falha externa e transitória do provider — quota, indisponibilidade,
+timeout — fazia o pipeline responder com o Mock e apresentar isso como resposta
+normal (`provider="mock"`, `fallback_used=true`, `status="ok"`), enquanto a
+interface continuava exibindo "Gemini".
+
+O trace de uma requisição real provou que identidade, autorização, binding e
+catálogo estavam corretos e que o adapter era alcançado. O defeito não era a
+falha: era o **disfarce** da falha, em `_mock_fallback`.
+
+A correção usou o contrato que já existia. No chat interativo do próprio
+Veltrix, quando o usuário escolhe explicitamente uma IA real, a requisição
+envia `allow_mock_fallback=false` — opt-out restritivo já presente em
+`ChatRequest`. Uma falha volta como falha (`provider="none"`,
+`fallback_used=false`, `status="blocked"`) e a interface nomeia quem falhou.
+
+**O default do contrato não mudou.** `allow_mock_fallback` continua `true`, e
+consumers integrados seguem com o fallback seguro. A mudança é de boundary, não
+global.
+
+Junto, as mensagens de fallback passaram a ser escolhidas pelo contexto: o
+disclaimer financeiro pertence ao FinGuard e saiu do chat geral.
+
+### Correções finais de UX
+
+- cards de provider em grid por áreas — o badge de status deixou de invadir
+  nome e modelo;
+- "Observabilidade QA/local" deixou de sobrepor o título "Diagnóstico local";
+- marcas de OpenAI e Claude redesenhadas; os cinco logos com dimensão e
+  `object-fit` explícitos.
+
+Medido em navegador headless de 360 px a 1920 px: zero overlap, zero overflow
+horizontal.
+
+### Homologação humana e publicação
+
+```text
+HUMAN_VISUAL_ACCEPTANCE  = PASS   (aparência — antes do Public Release Gate)
+HUMAN_RUNTIME_ACCEPTANCE = PASS   (fluxo real em uso — 03/09/2026)
+GITHUB PUBLICATION       = CONFIRMED
+```
+
+O aceite em runtime é o que faltava: uma tela correta pode estar mentindo sobre
+quem respondeu, e só o uso real prova o contrário. O Pedro exercitou o fluxo
+completo — Gemini selecionado, autorizado, respondendo de verdade, exibido como
+Gemini, com o drawer de Configurações sem colisões.
+
+### Freeze
+
+```text
+VELTRIX FINALIZATION      = PASS
+VELTRIX FUNCTIONAL FREEZE = ACTIVE
+```
+
+A manutenção comum está encerrada. Reabrir exige que a mudança aumente uma
+capacidade real do Veltrix ou seja necessária para ele operar como núcleo de
+outro sistema. Correção trivial, ajuste cosmético e refatoração sem ganho
+concreto não reabrem o projeto.

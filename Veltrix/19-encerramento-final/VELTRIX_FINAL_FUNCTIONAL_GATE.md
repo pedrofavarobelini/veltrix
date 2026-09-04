@@ -3,6 +3,7 @@
 Data: 03/09/2026
 Resultado: **VELTRIX FINALIZATION = PASS**
 Estado: **VELTRIX FUNCTIONAL FREEZE = ACTIVE**
+Homologação humana em uso real: **HUMAN_RUNTIME_ACCEPTANCE = PASS**
 
 Este é o registro do último gate de manutenção comum do Veltrix. Ele corrige os
 defeitos concretos observados na homologação humana e declara o congelamento
@@ -137,6 +138,42 @@ Regressões protegidas e verificadas: upload de arquivo, áudio/transcrição, n
 conversa, histórico local, persistência de preferências, seleção de provider,
 modos, prompt base, copiar, feedback, refazer, observabilidade, Mock, Local QA,
 Local Model, Auto, contratos, FinGuard, Elyra, Structa.
+
+---
+
+## 4b. Homologação humana em uso real
+
+**`HUMAN_RUNTIME_ACCEPTANCE = PASS` — 03/09/2026.**
+
+Fato posterior ao commit desta frente: o Pedro exercitou o produto em execução,
+não apenas a suíte. É a única evidência de que o gate funciona **em uso**, e não
+somente em teste.
+
+Observado por ele na interface:
+
+- Gemini selecionado e indicado como configurado;
+- uso real autorizado no navegador;
+- resposta real retornada pelo Gemini;
+- provider exibido como **Gemini**, não como Mock;
+- modelo `gemini-3.5-flash`;
+- nenhuma resposta Mock apresentada como se fosse da IA selecionada;
+- cards de provider sem sobreposição;
+- `CONFIGURADO` / `NÃO CONFIGURADO` sem invadir nome nem modelo;
+- logos visíveis;
+- layout de Configurações corrigido.
+
+### Os dois aceites são coisas diferentes
+
+| Aceite | O que prova | Quando |
+|---|---|---|
+| `HUMAN_VISUAL_ACCEPTANCE = PASS` | a **aparência** do produto foi aprovada — design, identidade, UX | antes do Public Release Gate |
+| `HUMAN_RUNTIME_ACCEPTANCE = PASS` | o **fluxo funcional real** foi exercitado por uma pessoa e se comportou como a interface promete | após o Final Functional Gate |
+
+O primeiro não implica o segundo: uma tela correta pode estar mentindo sobre
+quem respondeu — foi exatamente esse o defeito que esta frente corrigiu.
+
+Não há screenshot, hash ou artefato de evidência arquivado. A evidência é a
+observação humana registrada acima, e este documento é o registro dela.
 
 ---
 

@@ -264,7 +264,7 @@ Resultado: core operacional seguro finalizado localmente — recursos reais 100%
 
 ## PEDROCORE-MODEL-FOUNDATION-01 — Fundação de inteligência própria
 
-Status: **implementada e validada; commit pendente de autorização**. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01.md` e `docs/14-intelligence-layer/`.
+Status: **DONE** — implementada, validada e commitada em `689e50a`. Ver [[13-fechamento/FECHAMENTO_PEDROCORE_MODEL_FOUNDATION_01]] e `Veltrix/14-intelligence-layer/`.
 
 Primeira frente pós-`v7.0.0`. Prepara o Veltrix para evoluir de orquestrador multi-provider para **núcleo de inteligência operacional do ecossistema**, sem virar modelo treinado:
 
@@ -286,7 +286,7 @@ Testes: `257 passed, 6 skipped, 2 warnings` (41 novos, zero regressões). Contra
 
 ## PEDROCORE-ECOSYSTEM-INTELLIGENCE-SUITE-01 — Inteligência de ecossistema (pacote)
 
-Status: **implementada e validada; commit pendente de autorização**. Ver `docs/13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01.md`.
+Status: **DONE** — implementada, validada e commitada em `e0ff8e3`. Ver [[13-fechamento/FECHAMENTO_PEDROCORE_ECOSYSTEM_INTELLIGENCE_SUITE_01]].
 
 Consolidou quatro trilhas do roadmap anterior em uma frente:
 
