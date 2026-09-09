@@ -1,0 +1,7 @@
+# Fixtures de paridade de contrato: bytes estaveis, obrigatoriamente.
+#
+# Elas sao geradas pela Elyra e conferidas aqui por sha256 do arquivo. Se o Git
+# converter LF para CRLF no checkout, os bytes mudam, o digest diverge e o teste
+# de paridade falha num clone limpo do Windows sem que nada de errado tenha
+# acontecido com o contrato.
+apps/api/tests/fixtures/elyra-multimodal-v2/*.json text eol=lf
