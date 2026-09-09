@@ -39,7 +39,10 @@ from app.modules.elyra_multimodal.service import (
 from app.modules.elyra_multimodal.service import (
     PROVIDER_MISMATCH_REASON as MULTIMODAL_PROVIDER_MISMATCH_REASON,
 )
-from app.modules.elyra_multimodal.service import elyra_multimodal_service
+from app.modules.elyra_multimodal.service import (
+    ElyraMultimodalInput,
+    elyra_multimodal_service,
+)
 from app.modules.elyra_learning.schemas import (
     ELYRA_LEARNING_TASK_TYPE,
     REVOKE_OPERATION,
@@ -537,7 +540,7 @@ class OrchestrationService:
 
         # Stage 12: capability multimodal propria. Um payload textual jamais
         # satisfaz este contrato e vice-versa; as duas validacoes sao exclusivas.
-        multimodal_request: ElyraMultimodalInputV1 | None = None
+        multimodal_request: ElyraMultimodalInput | None = None
         if strategy.task_type == ELYRA_MULTIMODAL_TASK_TYPE:
             multimodal_validation = elyra_multimodal_service.validate_input(
                 payload, caller
@@ -684,7 +687,7 @@ class OrchestrationService:
                 system_prompt=(
                     elyra_textual_service.system_prompt()
                     if elyra_request is not None
-                    else elyra_multimodal_service.system_prompt()
+                    else elyra_multimodal_service.system_prompt(multimodal_request)
                     if multimodal_request is not None
                     else payload.system_prompt
                 ),

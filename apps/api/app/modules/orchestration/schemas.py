@@ -4,6 +4,7 @@ from app.modules.audit.schemas import AuditMetadata
 from app.modules.contracts.codes import WarningItem
 from app.modules.elyra_learning.schemas import ElyraLearningOutputV1
 from app.modules.elyra_multimodal.schemas import ElyraMultimodalOutputV1
+from app.modules.elyra_multimodal.schemas_v2 import ElyraMultimodalOutputV2
 from app.modules.elyra_textual.schemas import ElyraTextualOutputV1
 from app.modules.exploration.schemas import ExplorationPlan
 from app.modules.intelligence_layer.schemas import IntelligencePlan
@@ -48,7 +49,7 @@ class OrchestrationOutcome(BaseModel):
     correlation_id: str | None = None
     idempotency_replayed: bool = False
     elyra: ElyraTextualOutputV1 | None = None
-    elyra_multimodal: ElyraMultimodalOutputV1 | None = None
+    elyra_multimodal: ElyraMultimodalOutputV1 | ElyraMultimodalOutputV2 | None = None
     elyra_learning: ElyraLearningOutputV1 | None = None
     # PEDROCORE-MODEL-FOUNDATION-01: plano interno da Intelligence Layer.
     # Não é exposto em ChatResponse/OrchestrateResponse nesta frente.
@@ -91,7 +92,7 @@ class OrchestrateResponse(BaseModel):
     correlation_id: str | None = None
     idempotency_replayed: bool = False
     elyra: ElyraTextualOutputV1 | None = None
-    elyra_multimodal: ElyraMultimodalOutputV1 | None = None
+    elyra_multimodal: ElyraMultimodalOutputV1 | ElyraMultimodalOutputV2 | None = None
     elyra_learning: ElyraLearningOutputV1 | None = None
     project_id: str = "pedrocore"
     task_allowed_for_project: bool = True
