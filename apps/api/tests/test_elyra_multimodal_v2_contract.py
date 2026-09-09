@@ -237,8 +237,35 @@ class TestContractRejection:
     """Mutacoes que DEVEM derrubar a validacao."""
 
     def test_campo_obrigatorio_removido_e_recusado(self) -> None:
-        payload = read_fixture("full-multimodal")
+        """A cobertura por modalidade e obrigatoria, por si.
+
+        A fixture aqui e a `microphone-only` de proposito. Com a
+        `full-multimodal`, remover `modalityCoverage` tambem quebra a regra "sinal
+        visual precisa da cobertura da sua modalidade" - e o teste passaria pelo
+        motivo errado, sem nunca verificar que o campo e exigido. Uma mutacao que
+        tornasse `modalityCoverage` opcional sobrevivia exatamente por isso.
+
+        Nesta sessao nao ha sinal visual: se o payload for recusado, foi porque o
+        campo e obrigatorio, e por nada mais.
+        """
+        payload = read_fixture("microphone-only")
+        assert not any(
+            signal["name"] in VISUAL_SIGNAL_NAMES
+            for signal in payload["session"]["signals"]
+        )
         del payload["session"]["modalityCoverage"]
+        with pytest.raises(ValidationError):
+            ElyraMultimodalInputV2.model_validate(payload)
+
+    def test_cobertura_vazia_e_recusada(self) -> None:
+        """Lista vazia nao e "sem cobertura declarada": e cobertura ausente.
+
+        Aceita-la deixaria um sinal viajar sem nada dizendo sobre quanto da
+        sessao ele descreve - o engano que `PARTIAL_CAPTURE != FULL_CAPTURE`
+        existe para fechar.
+        """
+        payload = read_fixture("microphone-only")
+        payload["session"]["modalityCoverage"] = []
         with pytest.raises(ValidationError):
             ElyraMultimodalInputV2.model_validate(payload)
 
