@@ -35,6 +35,7 @@ from app.modules.elyra_multimodal.schemas import (
     ObservableSignalV1,
 )
 from app.modules.elyra_multimodal.schemas_v2 import (
+    EVIDENCE_PATHS_V2,
     ELYRA_MULTIMODAL_CONTRACT_VERSION_V2,
     ELYRA_MULTIMODAL_OUTPUT_SCHEMA_VERSION_V2,
     FEATURE_EXTRACTOR_VERSION_V2,
@@ -239,15 +240,23 @@ class ElyraMultimodalService:
         return ElyraMultimodalInputValidation(value=value)
 
     @staticmethod
-    def system_prompt(request: ElyraMultimodalInput | None = None) -> str:
+    def system_prompt(
+        request: ElyraMultimodalInput | None = None,
+        correlation_id: str | None = None,
+    ) -> str:
         """Prompt na versao do contrato que entrou.
 
         Pedir saida `output/v1` para uma pergunta `input/v2` produziria uma
         resposta que a validacao recusaria depois - gastando uma chamada de
         provider real para falhar na borda.
+
+        `correlation_id` chega ate aqui porque a validacao de saida EXIGE que a
+        resposta o repita. Sem ele no prompt o modelo nao tem como saber o valor:
+        na primeira execucao real ele devolveu um UUID de zeros, e a resposta foi
+        recusada por uma informacao que ninguem tinha dado a ele.
         """
         if isinstance(request, ElyraMultimodalInputV2):
-            return ElyraMultimodalService._system_prompt_v2()
+            return ElyraMultimodalService._system_prompt_v2(request, correlation_id)
         return ElyraMultimodalService._system_prompt_v1()
 
     @staticmethod
@@ -275,7 +284,25 @@ populationNormComparison.
 O disclaimer deve ser exatamente: {ELYRA_MULTIMODAL_DISCLAIMER}"""
 
     @staticmethod
-    def _system_prompt_v2() -> str:
+    def _system_prompt_v2(
+        request: ElyraMultimodalInputV2 | None = None,
+        correlation_id: str | None = None,
+    ) -> str:
+        """Prompt da V2.
+
+        A primeira execucao contra provider real mostrou que listar as CHAVES nao
+        basta: o modelo devolveu JSON bem formado com valores inventados -
+        `operation` abreviada, versoes de schema trocadas, `correlationId` de
+        zeros, `category` e `evidencePath` fora do vocabulario e `limitations`
+        como objeto em vez de lista.
+
+        Nenhum desses valores e opiniao do modelo: sao constantes do contrato ou
+        vocabularios fechados. Agora eles vao ditados, com o valor exato a repetir.
+        A validacao continua recusando o que nao bater - o prompt nao afrouxa
+        nada, so para de esconder do modelo o que ele precisa saber.
+        """
+        echo_correlation = correlation_id or "(o correlation_id recebido na requisicao)"
+        evidence_paths = ", ".join(f"`{path}`" for path in EVIDENCE_PATHS_V2)
         return f"""Você executa exclusivamente o contrato {ELYRA_MULTIMODAL_CONTRACT_VERSION_V2}.
 Você recebe SOMENTE sinais observáveis já calculados pela Elyra, cobertura por
 modalidade, janelas temporais, autorrelato da própria pessoa e, quando houver
@@ -304,16 +331,33 @@ literal perfeita. Se `provenance.humanCorrected` for true, o texto foi revisado
 por quem falou.
 `confidence` ALTERA o que você afirma: com `low`, recue na afirmação em vez de
 manter uma frase categórica com ressalva.
-Responda SOMENTE com JSON válido, sem Markdown, no schema
-{ELYRA_MULTIMODAL_OUTPUT_SCHEMA_VERSION_V2}, com estas chaves exatas:
-contractVersion, outputSchemaVersion, operation, correlationId,
-sourceSignalsSchemaVersion, sourceFeatureExtractorVersion, language, summary,
-confidence, observations, limitations, disclaimer e safety.
-Cada observation exige category, evidencePath e text. safety deve declarar false
-para diagnosticClaim, prescription, causalClaim, facialEmotionAsFact,
-fictitiousEmotionPercentage, emotionInferredFromSignal, rawMediaAccessed,
-populationNormComparison e selfReportContradictedBySignal.
-O disclaimer deve ser exatamente: {ELYRA_MULTIMODAL_DISCLAIMER}"""
+Responda SOMENTE com JSON válido, sem Markdown, sem cercas ``` e sem texto
+antes ou depois. Use EXATAMENTE estes valores nos campos constantes — eles não
+são escolha sua, são identidade do contrato:
+
+  "contractVersion": "{ELYRA_MULTIMODAL_CONTRACT_VERSION_V2}"
+  "outputSchemaVersion": "{ELYRA_MULTIMODAL_OUTPUT_SCHEMA_VERSION_V2}"
+  "operation": "{ELYRA_MULTIMODAL_OPERATION}"
+  "correlationId": "{echo_correlation}"
+  "sourceSignalsSchemaVersion": "{SIGNALS_SCHEMA_VERSION_V2}"
+  "sourceFeatureExtractorVersion": "{FEATURE_EXTRACTOR_VERSION_V2}"
+  "language": "pt-BR"
+
+`summary`: uma string, até 1000 caracteres.
+`confidence`: exatamente uma de "low", "moderate", "high".
+`observations`: LISTA de 1 a 6 objetos, cada um com exatamente três campos —
+  "category": uma de "observable_signal", "transcript", "capture_quality";
+  "evidencePath": uma de {evidence_paths};
+  "text": string de até 320 caracteres.
+  Só cite `evidencePath` de sinal que foi realmente enviado nesta sessão.
+`limitations`: LISTA de 2 a 5 strings, cada uma de até 320 caracteres. É uma
+  lista de textos — nunca um objeto, nunca uma string única.
+`safety`: objeto com estas nove chaves, todas com o valor booleano false —
+  diagnosticClaim, prescription, causalClaim, facialEmotionAsFact,
+  fictitiousEmotionPercentage, emotionInferredFromSignal, rawMediaAccessed,
+  populationNormComparison, selfReportContradictedBySignal.
+`disclaimer`: exatamente este texto, sem alterar nenhuma palavra:
+{ELYRA_MULTIMODAL_DISCLAIMER}"""
 
     def deterministic_mock(
         self,

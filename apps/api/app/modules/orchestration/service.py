@@ -687,7 +687,9 @@ class OrchestrationService:
                 system_prompt=(
                     elyra_textual_service.system_prompt()
                     if elyra_request is not None
-                    else elyra_multimodal_service.system_prompt(multimodal_request)
+                    else elyra_multimodal_service.system_prompt(
+                        multimodal_request, payload.correlation_id
+                    )
                     if multimodal_request is not None
                     else payload.system_prompt
                 ),

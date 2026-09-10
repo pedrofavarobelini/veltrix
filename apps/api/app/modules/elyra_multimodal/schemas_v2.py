@@ -34,7 +34,7 @@ Storage ou identificador de pessoa.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import Field, model_validator
 
@@ -475,6 +475,14 @@ EvidencePathV2 = Literal[
     "timeline",
     "selfReport",
 ]
+
+
+# Os mesmos caminhos do `Literal` acima, em forma iteravel.
+#
+# Derivado com `get_args`, e nao redigitado: uma segunda lista escrita a mao
+# divergiria do `Literal` no primeiro caminho novo, e o prompt passaria a ditar
+# ao modelo um vocabulario que o schema ja nao aceita.
+EVIDENCE_PATHS_V2: tuple[str, ...] = get_args(EvidencePathV2)
 
 
 class ElyraMultimodalObservationV2(StrictContractModel):
