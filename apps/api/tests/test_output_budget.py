@@ -206,3 +206,34 @@ def test_transport_timeout_respects_the_ratio_ceiling_on_tiny_timeouts():
 
     assert transport_ms == int(0.05 * TRANSPORT_TIMEOUT_MAX_RATIO * 1_000)
     assert MIN_TRANSPORT_TIMEOUT_SECONDS == 1.0
+
+def test_multimodal_interpretation_budget_fits_a_reasoning_model():
+    """A task multimodal precisa de teto acima do que ja truncou de verdade.
+
+    `gemini-3.5-flash` raciocina antes de responder, e `max_output_tokens` cobre
+    pensamento MAIS saida: medido, o pensamento e ~4x a resposta util. A task
+    nao estava catalogada e caia no teto conservador de 2048, onde a geracao
+    termina em `MAX_TOKENS` e o Veltrix recusa por `PROVIDER_OUTPUT_TRUNCATED`.
+
+    No caminho real de orquestracao, 3072 e 4096 tambem truncaram. Este teste
+    guarda o limite inferior **medido** - nao o numero exato, que so uma
+    execucao com cota disponivel pode confirmar.
+    """
+    cap = output_budget_service.task_cap("multimodal_session_signal_interpretation")
+
+    assert cap > 4096, "4096 truncou no caminho real; o teto precisa ser maior"
+    assert cap <= output_budget_service.global_cap()
+
+
+def test_multimodal_interpretation_is_catalogued():
+    """Cair no default conservador aqui e o defeito, e nao o comportamento."""
+    from app.modules.output_budget.service import (
+        DEFAULT_TASK_OUTPUT_CAP,
+        _TASK_OUTPUT_CAPS,
+    )
+
+    assert "multimodal_session_signal_interpretation" in _TASK_OUTPUT_CAPS
+    assert (
+        _TASK_OUTPUT_CAPS["multimodal_session_signal_interpretation"]
+        != DEFAULT_TASK_OUTPUT_CAP
+    )

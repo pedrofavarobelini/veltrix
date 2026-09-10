@@ -54,6 +54,27 @@ GLOBAL_OUTPUT_SAFETY_CAP = 8192
 _ASSISTANT_CAP = 4096
 _STRUCTURED_CAP = 3072
 _CONSERVATIVE_CAP = 2048
+# Estruturado servido por modelo que RACIOCINA antes de responder.
+#
+# `max_output_tokens` cobre pensamento MAIS resposta. Medido em `usage_metadata`
+# de `gemini-3.5-flash`: 1684-1847 tokens de pensamento para 333-446 de saida
+# util - o pensamento e ~4x a resposta.
+#
+# O que foi medido no caminho REAL de orquestracao (prompt com contexto de
+# sessao, maior que a sonda isolada):
+#
+#   2048  -> termina em `MAX_TOKENS`, saida cortada  (teto anterior desta task)
+#   3072  -> `PROVIDER_OUTPUT_TRUNCATED`
+#   4096  -> `PROVIDER_OUTPUT_TRUNCATED`
+#   6144  -> nao truncou nas tentativas observadas
+#
+# O limite inferior e medido: precisa ser MAIOR que 4096. O 6144 ainda **nao**
+# foi confirmado por uma resposta completa ponta a ponta - a cota diaria de
+# free tier do modelo se esgotou durante a investigacao, antes de fechar a
+# prova. Confirmar na primeira execucao real com cota disponivel.
+#
+# Continua abaixo de `GLOBAL_OUTPUT_SAFETY_CAP` (8192).
+_REASONING_STRUCTURED_CAP = 6144
 
 # Teto aplicado a qualquer task fora do catálogo abaixo.
 DEFAULT_TASK_OUTPUT_CAP = _CONSERVATIVE_CAP
@@ -94,6 +115,26 @@ _TASK_OUTPUT_CAPS: dict[str, int] = {
     "project_status": _STRUCTURED_CAP,
     "report_memory_query": _STRUCTURED_CAP,
     "evaluation_run": _STRUCTURED_CAP,
+    # Interpretacao multimodal da Elyra. Mesma natureza estruturada de
+    # `wellbeing_report_interpretation`: resumo, observacoes ancoradas em
+    # evidencia e limitacoes - enumerativa e limitada pelo esqueleto.
+    #
+    # Ela nao estava catalogada e caia no teto conservador de 2048, que e MENOR
+    # do que o modelo precisa. `gemini-3.5-flash` raciocina antes de responder, e
+    # `max_output_tokens` cobre pensamento MAIS saida: medido em
+    # `usage_metadata`, 1762-1847 tokens de pensamento e 367-397 de resposta,
+    # ~2250 no total.
+    #
+    # Com 2048 a chamada nao estoura: ela COMPLETA em `MAX_TOKENS`, com a
+    # resposta cortada no meio. O Veltrix entao recusa por
+    # `PROVIDER_OUTPUT_TRUNCATED` e nao publica conteudo parcial - o
+    # comportamento certo, sobre um teto errado.
+    #
+    # (Durante a investigacao, o 503 intermitente do provider parecia
+    # correlacionado ao teto. Nao e: sondas diretas com o mesmo prompt e o mesmo
+    # teto alternam 200 e 503, e o 429 posterior mostrou que o pano de fundo era
+    # cota. As duas coisas sao independentes.)
+    "multimodal_session_signal_interpretation": _REASONING_STRUCTURED_CAP,
     # Task desconhecida normalizada pelo task_router.
     "unknown": _CONSERVATIVE_CAP,
 }
