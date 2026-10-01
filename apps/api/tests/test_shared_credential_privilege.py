@@ -32,7 +32,7 @@ from app.modules.caller_identity.service import (
 )
 from app.modules.contracts import codes
 from app.modules.orchestration.schemas import AssistantResponsePayload
-from app.modules.orchestration.service import AUTO_REAL_PROVIDER_CANDIDATES
+from app.modules.orchestration.service import auto_real_provider_candidates
 from app.modules.providers.base import ProviderExecutionError, ProviderResponse
 from app.modules.providers.claude_provider import ClaudeProvider
 from app.modules.providers.deepseek_provider import DeepSeekProvider
@@ -334,7 +334,7 @@ def test_auto_remains_gemini_only_for_authorized_callers(
 
     data = _post(FINGUARD_REGISTERED_KEY, provider="auto").json()
 
-    assert AUTO_REAL_PROVIDER_CANDIDATES == ("gemini",)
+    assert auto_real_provider_candidates() == ("gemini",)
     assert data["provider_used"] == "gemini"
     assert calls == ["gemini"]
     assert "claude" not in calls and "openai" not in calls

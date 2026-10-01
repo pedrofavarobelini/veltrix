@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from app.core.config import settings
 from app.modules.orchestration.service import (
-    AUTO_REAL_PROVIDER_CANDIDATES,
+    auto_real_provider_candidates,
     LOCAL_PROVIDER_MODEL,
     LOCAL_PROVIDER_NAME,
 )
@@ -149,9 +149,9 @@ def test_model_catalog_rejects_alias_collision_globally():
         _validate_model_catalog(duplicated)
 
 
-def test_catalog_auto_authorization_matches_frozen_pipeline_list():
-    """O catálogo descreve o automático atual; não o expande."""
-    assert AUTO_REAL_PROVIDER_CANDIDATES == ("gemini",)
+def test_pipeline_auto_candidates_are_derived_from_catalog():
+    """O pipeline não mantém lista paralela: lê o catálogo."""
+    assert auto_real_provider_candidates() == ("gemini",)
     assert provider_catalog_service.authorized_auto_ids() == ("gemini",)
 
 

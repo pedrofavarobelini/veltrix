@@ -23,7 +23,7 @@ from app.modules.caller_identity.service import (
 from app.modules.contracts import codes
 from app.modules.orchestration.schemas import AssistantResponsePayload
 from app.modules.orchestration.service import (
-    AUTO_REAL_PROVIDER_CANDIDATES,
+    auto_real_provider_candidates,
     LOCAL_PROVIDER_MODEL,
 )
 from app.modules.provider_binding.schemas import BindingValidation, ModelSource
@@ -420,7 +420,7 @@ def test_auto_remains_gemini_only_with_internal_model(registry, all_configured, 
 
     data = _post(PEDROCORE_TOOL_KEY, provider="auto").json()
 
-    assert AUTO_REAL_PROVIDER_CANDIDATES == ("gemini",)
+    assert auto_real_provider_candidates() == ("gemini",)
     assert data["provider_used"] == "gemini"
     assert calls == [("gemini", settings.gemini_model)]
 

@@ -393,10 +393,14 @@ def test_execution_record_carries_shadow_decision_with_eliminated_candidates(
     assert shadow["enabled"] is True
     assert shadow["policy_version"]
     assert shadow["provider_effective"] == "mock"
+    # O universo vem do catálogo: os cinco providers externos reais aparecem,
+    # inclusive DeepSeek e Grok, cada um com o motivo da eliminação.
     assert [item["provider_id"] for item in shadow["candidates_considered"]] == [
         "gemini",
         "claude",
         "openai",
+        "deepseek",
+        "grok",
     ]
     # Todo candidato eliminado carrega um motivo determinístico e sanitizado.
     for item in shadow["candidates_eliminated"]:

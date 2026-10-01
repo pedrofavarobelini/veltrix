@@ -29,7 +29,7 @@ from app.modules.caller_identity.service import (
     credential_fingerprint,
 )
 from app.modules.contracts import codes
-from app.modules.orchestration.service import AUTO_REAL_PROVIDER_CANDIDATES
+from app.modules.orchestration.service import auto_real_provider_candidates
 from app.modules.provider_authorization.service import provider_authorization_service
 from app.modules.provider_catalog.service import provider_catalog_service
 from app.modules.providers.base import ProviderExecutionError, ProviderResponse
@@ -536,7 +536,7 @@ def test_auto_remains_gemini_only_under_authorization(
 
     data = _post(FINGUARD_CREDENTIAL).json()
 
-    assert AUTO_REAL_PROVIDER_CANDIDATES == ("gemini",)
+    assert auto_real_provider_candidates() == ("gemini",)
     assert data["provider_used"] == "gemini"
     assert calls == ["gemini"]
 

@@ -19,9 +19,10 @@ from app.main import app
 from app.modules.chat.schemas import ChatRequest
 from app.modules.contracts import codes
 from app.modules.orchestration.service import (
-    AUTO_REAL_PROVIDER_CANDIDATES,
+    auto_real_provider_candidates,
     orchestration_service,
 )
+from app.modules.provider_catalog.service import provider_catalog_service
 from app.modules.providers.base import ProviderExecutionError, ProviderResponse
 from app.modules.providers.claude_provider import ClaudeProvider
 from app.modules.providers.deepseek_provider import DeepSeekProvider
@@ -124,8 +125,12 @@ def _configure(monkeypatch, **keys) -> None:
         monkeypatch.setattr(settings, attribute, value)
 
 
-def test_auto_candidate_list_is_frozen_as_gemini_only():
-    assert AUTO_REAL_PROVIDER_CANDIDATES == ("gemini",)
+def test_auto_candidates_come_from_catalog_and_are_gemini_only_today():
+    """Gemini-only por DADO do catálogo (homologação), não por tupla fixa."""
+    assert auto_real_provider_candidates() == ("gemini",)
+    assert auto_real_provider_candidates() == (
+        provider_catalog_service.authorized_auto_ids()
+    )
 
 
 def test_auto_with_gemini_configured_uses_gemini(monkeypatch, real_provider_spy):

@@ -21,7 +21,7 @@ from app.modules.caller_identity.service import (
     caller_identity_service,
 )
 from app.modules.orchestration.schemas import AssistantResponsePayload, OrchestrateResponse
-from app.modules.orchestration.service import AUTO_REAL_PROVIDER_CANDIDATES
+from app.modules.orchestration.service import auto_real_provider_candidates
 from app.modules.provider_catalog import service as provider_catalog_module
 from app.modules.providers.base import ProviderExecutionError, ProviderResponse
 from app.modules.providers.claude_provider import ClaudeProvider
@@ -249,7 +249,7 @@ def test_auto_remains_gemini_only_with_shadow_enabled(
 
     data = _post(FINGUARD_KEY).json()
 
-    assert AUTO_REAL_PROVIDER_CANDIDATES == ("gemini",)
+    assert auto_real_provider_candidates() == ("gemini",)
     assert data["provider_used"] == "gemini"
     assert calls == [("gemini", settings.gemini_model)]
 
@@ -465,21 +465,26 @@ def test_known_but_non_homologated_model_is_eliminated_explicitly(
 # ---------------------------------------------------------------------------
 # Determinismo
 # ---------------------------------------------------------------------------
+ALL_REAL_BY_CATALOG_PRIORITY = ("gemini", "claude", "openai", "deepseek", "grok")
+
+
 def test_static_priority_is_declared_and_deterministic():
+    """Preferência declarada primeiro; o restante do catálogo nunca some.
+
+    Antes desta frente, DeepSeek e Grok não eram sequer considerados: a lista
+    fixa limitava o universo. Agora ela só ordena.
+    """
     assert shadow_routing_service.priority_for("finguard", "assistant_chat") == (
-        "gemini",
-        "claude",
-        "openai",
+        ALL_REAL_BY_CATALOG_PRIORITY
     )
     assert shadow_routing_service.priority_for("finguard", "task-desconhecida") == (
-        "gemini",
-        "claude",
-        "openai",
+        ALL_REAL_BY_CATALOG_PRIORITY
     )
     assert shadow_routing_service.priority_for("projeto-novo", "qualquer") == (
-        "gemini",
-        "claude",
-        "openai",
+        ALL_REAL_BY_CATALOG_PRIORITY
+    )
+    assert shadow_routing_service.priority_for("elyra", "wellbeing_report_interpretation") == (
+        ALL_REAL_BY_CATALOG_PRIORITY
     )
 
 
@@ -513,8 +518,8 @@ def test_candidate_order_does_not_depend_on_dict_or_set_iteration(
     considered = [item.provider_id for item in decision.candidates_considered]
     priorities = [item.priority for item in decision.candidates_considered]
 
-    assert considered == ["gemini", "claude", "openai"]
-    assert priorities == sorted(priorities) == [0, 1, 2]
+    assert considered == list(ALL_REAL_BY_CATALOG_PRIORITY)
+    assert priorities == sorted(priorities) == [0, 1, 2, 3, 4]
 
 
 def test_tie_break_selects_the_first_surviving_candidate_in_static_order(
