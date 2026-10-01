@@ -13,7 +13,9 @@ Frente conjunta Veltrix + Elyra, 01/10/2026. Base: `feat/elyra-multimodal-v2`
 | Gemini | homologado, autorizado no auto (inalterado) |
 | Claude / OpenAI / Grok / DeepSeek | **não homologados** — `PENDING_REAL_SMOKE` |
 | Elyra provider-agnostic | sim (ADR-0034 da Elyra, reaplicada sobre a Stage 29 em `feat/elyra-provider-agnostic-current`) |
-| `REAL_PROVIDER_INTERNET_EXPOSURE` | **BLOCKED** |
+| `REAL_PROVIDER_INTERNET_EXPOSURE` | ~~**BLOCKED**~~ → ver *Correção 01/10/2026* abaixo |
+| `CURRENT_STAGING_NETWORK_GATE` | **PASS_BY_NETWORK_ISOLATION** |
+| `PUBLIC_EXPOSURE_HARDENING` | **PENDING** |
 | Deploy real | **NOT EXECUTED**; chamadas externas reais: **0** |
 
 ## Problema real encontrado
@@ -65,6 +67,25 @@ payload nem rate limit; chave interna compartilhada comparada com `!=`;
 gate de observabilidade depende de `FORWARDED_ALLOW_IPS`. Com caller registry
 configurado, `/api/chat` não alcança provider real (identidade `ambiguous`).
 Gate `BLOCKED` até private networking **ou** hardening comprovado.
+
+### Correção 01/10/2026 — evidência operacional do staging
+
+O achado acima permanece válido **para o código**. A evidência do Railway
+fornecida pelo owner mostra que, neste staging, o Veltrix **não tem**
+`serviceDomains` públicos, é consumido pela Elyra via `RAILWAY_PRIVATE_DOMAIN`
+e não tem `FORWARDED_ALLOW_IPS` configurado. Portanto:
+
+```text
+CURRENT_STAGING_NETWORK_GATE = PASS_BY_NETWORK_ISOLATION
+PUBLIC_EXPOSURE_HARDENING    = PENDING
+```
+
+Backlog obrigatório antes de qualquer domínio público do Veltrix: autenticar
+`/api/chat`; proteger `/api/providers`; desabilitar ou proteger `/docs`; rate
+limiting; limite de payload; `hmac.compare_digest` na chave interna (hoje
+`!=` em `orchestration/router.py`); revisão de proxy trust (uvicorn confia em
+`FORWARDED_ALLOW_IPS`, default `127.0.0.1`). Espelho na Elyra: `L-454`,
+`L-456`, `L-457`.
 
 ## Homologação de um provider (processo)
 
