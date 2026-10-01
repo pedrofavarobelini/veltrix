@@ -158,21 +158,52 @@ class ElyraTextualService:
         return ElyraInputValidation(value=value)
 
     @staticmethod
-    def system_prompt() -> str:
+    def system_prompt(correlation_id: str | None = None) -> str:
+        """Prompt textual V1 com todos os literais fechados do contrato.
+
+        O provider real precisa receber os valores que a validacao exige repetir.
+        Listar apenas os nomes das chaves deixa correlation/versionamento/enums para
+        o modelo adivinhar e transforma uma resposta semanticamente boa em output
+        invalido. O schema continua estrito e fail-closed; este prompt apenas expoe
+        os valores canônicos que já fazem parte do contrato.
+        """
+        echo_correlation = correlation_id or "(o correlation_id recebido na requisicao)"
         return f"""Você executa exclusivamente o contrato {ELYRA_CONTRACT_VERSION}.
 Interprete somente as métricas já calculadas no relatório estruturado enviado.
 Não recalcule métricas, não invente score e não use conhecimento clínico.
 Não diagnostique, não prescreva, não afirme condição clínica e não transforme
 associação temporal em causalidade. Não trate expressão facial como emoção objetiva
 e não produza percentual fictício de emoção.
-Responda SOMENTE com JSON válido, sem Markdown, no schema
-{ELYRA_OUTPUT_SCHEMA_VERSION}, com estas chaves exatas:
-contractVersion, outputSchemaVersion, operation, correlationId,
-sourceReportSchemaVersion, sourceAnalyticsVersion, language, summary,
-observations, limitations, disclaimer e safety.
-Cada observation exige category, evidencePath e text. safety deve declarar false
-para diagnosticClaim, prescription, causalClaim, facialEmotionAsFact e
-fictitiousEmotionPercentage. O disclaimer deve ser exatamente: {ELYRA_DISCLAIMER}"""
+
+Responda SOMENTE com JSON válido, sem Markdown, sem cercas ``` e sem texto
+antes ou depois. Use EXATAMENTE estes valores nos campos constantes — eles não
+são escolha sua, são identidade do contrato:
+
+  "contractVersion": "{ELYRA_CONTRACT_VERSION}"
+  "outputSchemaVersion": "{ELYRA_OUTPUT_SCHEMA_VERSION}"
+  "operation": "{ELYRA_OPERATION}"
+  "correlationId": "{echo_correlation}"
+  "sourceReportSchemaVersion": "{REPORT_SCHEMA_VERSION}"
+  "sourceAnalyticsVersion": "{ANALYTICS_VERSION}"
+  "language": "pt-BR"
+
+`summary`: uma string de 1 a 1000 caracteres.
+`observations`: LISTA de 1 a 5 objetos, cada um com exatamente:
+  "category": uma de "metric", "data_quality", "temporal_association";
+  "evidencePath": uma de "metrics.mood", "metrics.anxiety", "metrics.energy",
+  "metrics.sleepDurationMinutes", "dataQuality", "associations.prePeriodEnergy";
+  "text": string de 1 a 320 caracteres.
+Use somente evidencePath correspondente a dado realmente presente no snapshot.
+
+`limitations`: LISTA de 2 a 5 strings, cada uma com no máximo 320 caracteres.
+Nunca devolva limitations como objeto ou string única.
+
+`safety`: objeto com exatamente estas cinco chaves, todas boolean false:
+  diagnosticClaim, prescription, causalClaim, facialEmotionAsFact,
+  fictitiousEmotionPercentage.
+
+`disclaimer`: exatamente este texto, sem alterar nenhuma palavra:
+{ELYRA_DISCLAIMER}"""
 
     def deterministic_mock(
         self,

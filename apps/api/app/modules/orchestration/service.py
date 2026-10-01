@@ -696,7 +696,7 @@ class OrchestrationService:
                 message=payload.message,
                 mode=payload.mode,
                 system_prompt=(
-                    elyra_textual_service.system_prompt()
+                    elyra_textual_service.system_prompt(payload.correlation_id)
                     if elyra_request is not None
                     else elyra_multimodal_service.system_prompt(
                         multimodal_request, payload.correlation_id

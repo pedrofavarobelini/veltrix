@@ -569,7 +569,19 @@ def test_synthetic_real_provider_returns_valid_versioned_output(
     assert data["elyra"]["outputSchemaVersion"] == ELYRA_OUTPUT_SCHEMA_VERSION
     assert data["audit"]["real_provider_attempt_count"] == 1
     assert len(calls) == 1
-    assert ELYRA_CONTRACT_VERSION in calls[0][1]
+    prompt = calls[0][1]
+    assert prompt is not None
+    assert ELYRA_CONTRACT_VERSION in prompt
+    assert ELYRA_OUTPUT_SCHEMA_VERSION in prompt
+    assert ELYRA_OPERATION in prompt
+    assert '"correlationId": "elyra-stage09-request-001"' in prompt
+    assert '"sourceReportSchemaVersion": "report_snapshot/v1"' in prompt
+    assert '"sourceAnalyticsVersion": "elyra-analytics/v1"' in prompt
+    assert '"language": "pt-BR"' in prompt
+    assert '"metric", "data_quality", "temporal_association"' in prompt
+    assert '"metrics.sleepDurationMinutes"' in prompt
+    assert "LISTA de 2 a 5 strings" in prompt
+    assert "todas boolean false" in prompt
     assert real_provider_guard == []
 
 
