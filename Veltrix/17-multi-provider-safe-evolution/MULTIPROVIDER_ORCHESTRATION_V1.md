@@ -12,7 +12,7 @@ Frente conjunta Veltrix + Elyra, 01/10/2026. Base: `feat/elyra-multimodal-v2`
 | Auto routing engine | candidatos derivados do catálogo; sem tupla fixa |
 | Gemini | homologado, autorizado no auto (inalterado) |
 | Claude / OpenAI / Grok / DeepSeek | **não homologados** — `PENDING_REAL_SMOKE` |
-| Elyra provider-agnostic | sim (ADR-0007 da Elyra) |
+| Elyra provider-agnostic | sim (ADR-0034 da Elyra, reaplicada sobre a Stage 29 em `feat/elyra-provider-agnostic-current`) |
 | `REAL_PROVIDER_INTERNET_EXPOSURE` | **BLOCKED** |
 | Deploy real | **NOT EXECUTED**; chamadas externas reais: **0** |
 
