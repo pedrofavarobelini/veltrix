@@ -12,9 +12,12 @@ da identidade, da autorização, do binding e do estado local já existentes. O
 pipeline decide se a mesma decisão será apenas observada (`shadow`) ou aplicada
 (`enforced`).
 
-Claude e OpenAI aparecem como candidatos conhecidos e potencialmente
-priorizados, mas são eliminados pelo motivo correto — nunca executados e nunca
-autorizados artificialmente para produzir uma decisão diferente.
+Universo de candidatos: TODOS os providers externos reais do catálogo
+(`routing_candidate_ids()`), não uma lista fixa. Listas por projeto/task são
+apenas preferência de ORDEM; quem não aparece nelas entra depois, na ordem de
+`static_priority` do catálogo. Providers não homologados/autorizados aparecem
+como candidatos conhecidos e são eliminados pelo motivo correto — nunca
+executados e nunca autorizados artificialmente.
 """
 
 from __future__ import annotations
@@ -28,7 +31,10 @@ from app.modules.caller_identity.schemas import (
 )
 from app.modules.provider_authorization.service import provider_authorization_service
 from app.modules.provider_binding.service import provider_binding_service
-from app.modules.provider_catalog.schemas import ProviderCategory
+from app.modules.provider_catalog.schemas import (
+    ProviderCapability,
+    ProviderCategory,
+)
 from app.modules.provider_catalog.service import provider_catalog_service
 from app.modules.provider_health.schemas import CircuitState
 from app.modules.provider_health.service import provider_health_service
@@ -43,8 +49,11 @@ from app.modules.shadow_routing.schemas import (
 FLAG_SHADOW_ROUTING = "PEDROCORE_SHADOW_ROUTING_ENABLED"
 FLAG_ROUTING_MODE = "PEDROCORE_PROVIDER_ROUTING_MODE"
 
-# Prioridade estática, declarada em código e ordenada: nada é derivado de
+# Preferência estática de ORDEM, declarada em código: nada é derivado de
 # métrica dinâmica. Tuplas garantem ordem estável, sem depender de dict/set.
+# Estas listas não limitam o universo: providers do catálogo ausentes delas
+# são acrescentados depois, pela `static_priority` do catálogo. Projeto sem
+# preferência (ex.: elyra) usa somente a ordem do catálogo.
 _PRIORITY_BY_PROJECT_TASK: dict[tuple[str, str], tuple[str, ...]] = {
     ("finguard", "assistant_chat"): ("gemini", "claude", "openai"),
     ("finguard", "finance_advice"): ("gemini", "claude", "openai"),
@@ -56,7 +65,14 @@ _PRIORITY_BY_PROJECT: dict[str, tuple[str, ...]] = {
     "pedrocore": ("gemini", "claude", "openai"),
 }
 
-_DEFAULT_PRIORITY: tuple[str, ...] = ("gemini", "claude", "openai")
+# Capabilities exigidas do provider para que ele possa atender a task. Vêm do
+# catálogo explícito; nome comercial de modelo nunca vira capability. Toda task
+# roteada para provider externo gera texto; task que exija algo a mais declara
+# aqui, e o catálogo precisa declarar a capability para o provider sobreviver.
+_DEFAULT_REQUIRED_CAPABILITIES: tuple[ProviderCapability, ...] = (
+    ProviderCapability.TEXT_GENERATION,
+)
+_REQUIRED_CAPABILITIES_BY_TASK: dict[str, tuple[ProviderCapability, ...]] = {}
 
 SELECTED_REASON = "Primeiro candidato da prioridade estática que passou por todos os filtros."
 NO_CANDIDATE_REASON = "Nenhum candidato sobreviveu aos filtros eliminatórios."
@@ -98,12 +114,30 @@ class ShadowRoutingService:
         return POLICY_VERSION
 
     def priority_for(self, project_id: str, task_type: str) -> tuple[str, ...]:
+        """Ordem determinística dos candidatos: preferência + catálogo.
+
+        Preferência declarada por projeto/task primeiro; depois, todo provider
+        externo real do catálogo que ainda não apareceu, em `static_priority`.
+        Sem duplicatas; mesma entrada, mesma saída.
+        """
         project = (project_id or "").strip().lower()
         task = (task_type or "").strip().lower()
-        by_task = _PRIORITY_BY_PROJECT_TASK.get((project, task))
-        if by_task is not None:
-            return by_task
-        return _PRIORITY_BY_PROJECT.get(project, _DEFAULT_PRIORITY)
+        preferred = _PRIORITY_BY_PROJECT_TASK.get((project, task))
+        if preferred is None:
+            preferred = _PRIORITY_BY_PROJECT.get(project, ())
+        ordered: list[str] = []
+        for provider_id in (
+            *preferred,
+            *provider_catalog_service.routing_candidate_ids(),
+        ):
+            if provider_id not in ordered:
+                ordered.append(provider_id)
+        return tuple(ordered)
+
+    @staticmethod
+    def required_capabilities_for(task_type: str) -> tuple[ProviderCapability, ...]:
+        task = (task_type or "").strip().lower()
+        return _REQUIRED_CAPABILITIES_BY_TASK.get(task, _DEFAULT_REQUIRED_CAPABILITIES)
 
     def evaluate(
         self,
@@ -231,6 +265,11 @@ class ShadowRoutingService:
 
         if not definition.supports_task(task_type):
             return EliminationReason.TASK_INCOMPATIBLE, None
+
+        if not set(self.required_capabilities_for(task_type)).issubset(
+            definition.capabilities
+        ):
+            return EliminationReason.CAPABILITY_MISSING, None
 
         if not policy_allowed:
             return EliminationReason.PROJECT_POLICY_BLOCKED, None

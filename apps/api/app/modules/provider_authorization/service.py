@@ -13,8 +13,10 @@ A força da identidade entra na chave da matriz: identidade `ambiguous`
 nunca alcança provider real, mesmo declarando `origin_system=finguard`.
 
 Esta matriz não escolhe provider e não reordena candidatos: ela apenas
-autoriza ou nega o provider que o pipeline já selecionaria. `provider=auto`
-continua Gemini-only.
+autoriza ou nega cada candidato. É aqui que se decide QUAIS providers
+externos podem receber dados de cada projeto — para um consumer com dado
+sensível (Elyra), acrescentar um provider a esta matriz é decisão de
+governança do owner, não consequência de homologação técnica.
 """
 
 from __future__ import annotations
@@ -91,8 +93,8 @@ class AuthorizationRule:
         )
 
 
-# Matriz explícita. Somente Gemini é homologado; nenhum outro provider real é
-# autorizado para qualquer identidade, projeto, papel ou ambiente.
+# Matriz explícita. Hoje somente Gemini é homologado; nenhum outro provider
+# real é autorizado para qualquer identidade, projeto, papel ou ambiente.
 #
 # `IdentityStrength.AMBIGUOUS` não aparece em nenhuma regra: credencial
 # compartilhada nunca alcança provider real.

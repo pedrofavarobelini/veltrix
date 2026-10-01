@@ -7,8 +7,11 @@ tasks compatíveis, prioridade estática e os estados SEPARADOS de registro,
 implementação, configuração, homologação, autorização e saúde.
 
 Regras desta etapa:
-  - o catálogo NÃO decide roteamento: `provider=auto` continua Gemini-only
-    (`AUTO_REAL_PROVIDER_CANDIDATES` em orchestration/service.py);
+  - o catálogo NÃO decide roteamento, mas é a FONTE ÚNICA dos candidatos:
+    `provider=auto` deriva seus candidatos daqui (`authorized_auto_ids()` no
+    modo legacy, `routing_candidate_ids()` no motor shadow/enforced). Hoje
+    somente Gemini está homologado/autorizado, então o auto segue Gemini-only
+    por DADO, não por código;
   - nenhum valor de credencial entra aqui — só nomes de env var;
   - `registered`, `implemented`, `configured`, `homologation`, `authorized`
     e `health` são conceitos distintos e nunca inferidos um do outro;

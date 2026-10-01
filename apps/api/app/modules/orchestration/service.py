@@ -174,7 +174,18 @@ PROVIDER_REAL_BLOCKED_WARNING = (
     "fallback seguro aplicado."
 )
 AUTO_PROVIDER_NAME = "auto"
-AUTO_REAL_PROVIDER_CANDIDATES = ("gemini",)
+
+
+def auto_real_provider_candidates() -> tuple[str, ...]:
+    """Candidatos reais de `provider=auto` no modo legacy.
+
+    Derivados do catálogo (fonte única), nunca de uma tupla fixa: um provider
+    só aparece aqui depois de homologado e autorizado para o automático no
+    catálogo. Com o catálogo atual o resultado é `("gemini",)`.
+    """
+    return provider_catalog_service.authorized_auto_ids()
+
+
 AUTO_PROVIDER_REAL_BLOCKED_WARNING = (
     "Provider auto exige allow_real_provider=true explicito; fallback Mock seguro aplicado."
 )
@@ -1369,18 +1380,17 @@ class OrchestrationService:
     def _select_auto_real_provider(self, caller, project_id: str):
         """Seleciona provider real disponivel para provider=auto.
 
-        Nesta frente, a politica real autorizada comeca por Gemini. Outros
-        providers reais continuam registrados para o chat do Veltrix, mas nao
-        entram na decisao auto do contrato FinGuard ate frente propria.
-
-        A lista de candidatos permanece congelada; a autorização por projeto
-        apenas NEGA o candidato — nunca promove outro provider real no lugar
-        dele. Negado vira fallback Mock seguro, nunca segundo provider real.
+        Modo legacy (default conservador). Os candidatos vêm do catálogo
+        (`auto_real_provider_candidates()`); o primeiro CONFIGURADO é o único
+        avaliado. A autorização por projeto apenas NEGA esse candidato — nunca
+        promove outro provider real no lugar dele. Negado vira fallback Mock
+        seguro, nunca segundo provider real. Escolha entre vários providers
+        homologados por projeto/task/capability é papel do modo `enforced`.
 
         Retorna (provider, decisão negada). Provider None com decisão None
         significa "nenhum provider real configurado".
         """
-        for provider_name in AUTO_REAL_PROVIDER_CANDIDATES:
+        for provider_name in auto_real_provider_candidates():
             provider = provider_registry.get(provider_name)
             if provider is None or not provider.real_provider or not provider.is_configured:
                 continue
@@ -1579,12 +1589,21 @@ class OrchestrationService:
 
     @staticmethod
     def _auto_candidate() -> str | None:
-        """Candidato do modo automático — congelado em Gemini-only.
+        """Candidato legacy usado pelo binding para derivar o modelo.
 
-        Serve apenas para o binding derivar internamente o modelo do provider
-        que o `auto` já escolheria. Não amplia a lista nem reordena nada.
+        Espelha exatamente `_select_auto_real_provider`: o primeiro candidato
+        do catálogo que está configurado. Sem nenhum configurado, cai no
+        primeiro candidato (o binding continua válido e a execução termina em
+        "nenhum provider real disponível", como antes).
         """
-        return AUTO_REAL_PROVIDER_CANDIDATES[0] if AUTO_REAL_PROVIDER_CANDIDATES else None
+        candidates = auto_real_provider_candidates()
+        for provider_name in candidates:
+            provider = provider_registry.get(provider_name)
+            if provider is not None and provider.name == provider_name and (
+                provider.is_configured
+            ):
+                return provider_name
+        return candidates[0] if candidates else None
 
     @staticmethod
     def _selection_mode(requested_provider: str) -> str:

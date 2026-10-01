@@ -54,12 +54,22 @@ class ProviderRegistry:
                     "name": "auto",
                     "label": "Auto",
                     "default_model": "auto",
-                    "configured": self._providers["gemini"].is_configured,
+                    "configured": self._auto_configured(),
                     "real_provider": True,
                 },
             ]
         )
         return providers
+
+    @staticmethod
+    def _auto_configured() -> bool:
+        """`auto` utilizável = algum candidato homologado do catálogo configurado.
+
+        Importação tardia: o catálogo lê este registry na construção.
+        """
+        from app.modules.provider_catalog.service import provider_catalog_service
+
+        return bool(provider_catalog_service.auto_eligible_ids())
 
 
 provider_registry = ProviderRegistry()

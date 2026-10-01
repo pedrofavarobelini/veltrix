@@ -308,10 +308,10 @@ class ProviderCatalogService:
         )
 
     def auto_eligible_ids(self) -> tuple[str, ...]:
-        """Elegíveis estáticos no automático, ordenados por prioridade.
+        """Elegíveis estáticos no automático agora, ordenados por prioridade.
 
-        Consultivo nesta etapa: o pipeline continua usando
-        `AUTO_REAL_PROVIDER_CANDIDATES`, que permanece Gemini-only.
+        Inclui `configured`: é o retrato do ambiente atual, não a política.
+        A política de candidatos é `authorized_auto_ids()`.
         """
         eligible = [
             definition
@@ -322,7 +322,14 @@ class ProviderCatalogService:
         return tuple(definition.provider_id for definition in eligible)
 
     def authorized_auto_ids(self) -> tuple[str, ...]:
-        """Autorizados estaticamente no automático, independente de configuração."""
+        """Fonte única dos candidatos reais de `provider=auto` (modo legacy).
+
+        Autorizados estaticamente no automático, independente de configuração.
+        As invariantes de `_build`/`ProviderDefinition` garantem que
+        `authorized_for_auto` implica registrado, implementado e homologado:
+        homologar um provider aqui é o ÚNICO jeito de ele virar candidato.
+        Configuração (chave presente) é verificada por requisição, depois.
+        """
         authorized = [
             definition
             for definition in self.definitions()
@@ -330,6 +337,23 @@ class ProviderCatalogService:
         ]
         authorized.sort(key=lambda item: (item.static_priority or 10_000, item.provider_id))
         return tuple(definition.provider_id for definition in authorized)
+
+    def routing_candidate_ids(self) -> tuple[str, ...]:
+        """Universo de candidatos do motor de roteamento (shadow/enforced).
+
+        Todos os providers externos reais do catálogo, em ordem estável de
+        `static_priority`. Estar aqui NÃO torna ninguém elegível: o motor
+        aplica, candidato a candidato, os filtros eliminatórios (registro,
+        implementação, configuração, homologação, autorização, task,
+        capability, modelo, binding, circuito e safe mode).
+        """
+        real = [
+            definition
+            for definition in self.definitions()
+            if definition.is_real_provider
+        ]
+        real.sort(key=lambda item: (item.static_priority or 10_000, item.provider_id))
+        return tuple(definition.provider_id for definition in real)
 
     def snapshot(self) -> list[dict[str, Any]]:
         """Projeção de diagnóstico interno, sem segredos e sem endpoints privados."""

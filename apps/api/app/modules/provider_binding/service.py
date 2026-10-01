@@ -3,7 +3,8 @@
 Regras centrais:
 
   - o modelo NUNCA seleciona provider: em `provider=auto` o candidato real
-    continua vindo de `AUTO_REAL_PROVIDER_CANDIDATES` (Gemini-only);
+    vem do catálogo (legacy) ou do motor de roteamento (enforced), e o
+    binding apenas deriva o modelo default homologado desse candidato;
   - consumidor comum não define modelo;
   - modelo explícito precisa pertencer ao provider pedido, ser conhecido pelo
     catálogo, estar homologado quando o provider é externo e ser compatível

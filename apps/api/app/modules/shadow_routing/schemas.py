@@ -12,7 +12,10 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-POLICY_VERSION = "static-priority-v2"
+# v3: o universo de candidatos passou a vir do catálogo (todos os providers
+# externos reais) e ganhou o filtro de capability; listas por projeto/task só
+# ORDENAM, nunca limitam quem é considerado.
+POLICY_VERSION = "static-priority-v3"
 
 
 class RoutingMode(str, Enum):
@@ -33,6 +36,7 @@ class EliminationReason(str, Enum):
     AMBIGUOUS_IDENTITY = "ambiguous_identity"
     NOT_AUTHORIZED = "not_authorized"
     TASK_INCOMPATIBLE = "task_incompatible"
+    CAPABILITY_MISSING = "capability_missing"
     MODEL_INCOMPATIBLE = "model_incompatible"
     MODEL_NOT_HOMOLOGATED = "model_not_homologated"
     MODEL_NOT_AUTHORIZED = "model_not_authorized"
