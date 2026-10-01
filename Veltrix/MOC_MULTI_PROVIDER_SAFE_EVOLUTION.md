@@ -53,6 +53,13 @@ health e fallback do Veltrix.
   sem destravar retry, secundário ou fallback real.
 - Validação após a frente: `703 passed, 7 skipped`; eval `14/14`.
 
+## Candidatos do auto derivados do catálogo
+
+- [[17-multi-provider-safe-evolution/MULTIPROVIDER_ORCHESTRATION_V1]] —
+  remove a tupla Gemini-only como fonte, motor considera os cinco providers
+  externos, filtro de capability; nenhuma homologação nova. Branch
+  `feat/multiprovider-orchestration-v1`, não mergeada.
+
 ## Etapas 1–7
 
 - [[17-multi-provider-safe-evolution/ETAPA_1_CATALOGO_PROVIDERS]]

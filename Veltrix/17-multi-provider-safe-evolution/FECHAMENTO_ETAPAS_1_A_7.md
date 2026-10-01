@@ -37,6 +37,12 @@ O motor não cria homologação. Claude, OpenAI, DeepSeek e Grok continuam
 conhecidos e implementados estruturalmente, mas não homologados nem autorizados
 para o automático.
 
+> **Evolução posterior (01/10/2026).** A frente
+> [[MULTIPROVIDER_ORCHESTRATION_V1]] removeu `AUTO_REAL_PROVIDER_CANDIDATES`
+> como fonte de candidatos: o auto passou a derivar do catálogo, e o motor a
+> considerar todos os providers externos. Este fechamento permanece como
+> registro histórico do estado em `e389b2c`.
+
 ## 2. Fluxo atual completo
 
 ```text
